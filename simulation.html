@@ -25,21 +25,10 @@
       color: rgba(255,255,255,0.3); text-decoration: none;
     }
     .back-link:hover { color: #c8e054; }
-    .exp-id {
-      font-family: 'Space Mono', monospace; font-size: 9px;
-      letter-spacing: 0.14em; color: rgba(255,255,255,0.2);
-    }
-    .exp-title {
-      font-size: 11px; font-weight: 400;
-      color: rgba(255,255,255,0.5); letter-spacing: 0.04em;
-    }
-    .ui-stats {
-      display: flex; gap: 1.5rem;
-    }
-    .stat {
-      font-family: 'Space Mono', monospace; font-size: 9px;
-      letter-spacing: 0.1em; color: rgba(255,255,255,0.2);
-    }
+    .exp-id { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: rgba(255,255,255,0.2); }
+    .exp-title { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; }
+    .ui-stats { display: flex; gap: 1.5rem; }
+    .stat { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); }
     .stat em { color: #c8e054; font-style: normal; }
     .ui-bottom {
       position: fixed; bottom: 0; left: 0; right: 0;
@@ -58,25 +47,10 @@
       color: rgba(200,224,84,0.6); cursor: pointer;
     }
     .regen-btn:hover { border-color: #c8e054; color: #c8e054; }
-    .hint {
-      font-family: 'Space Mono', monospace; font-size: 8px;
-      letter-spacing: 0.1em; color: rgba(255,255,255,0.15);
-    }
-    .legend {
-      display: flex; gap: 1.25rem; align-items: center;
-    }
-    .legend-item {
-      display: flex; align-items: center; gap: 6px;
-      font-family: 'Space Mono', monospace; font-size: 8px;
-      letter-spacing: 0.1em; color: rgba(255,255,255,0.25);
-    }
-    .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-    }
+    .hint { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: rgba(255,255,255,0.15); }
   </style>
 </head>
 <body>
-
 <div id="canvas-container"><canvas id="cv"></canvas></div>
 
 <div class="ui-band">
@@ -86,310 +60,301 @@
     <span class="exp-title">neurotic compulsions & the vertical city</span>
   </div>
   <div class="ui-stats">
-    <span class="stat">cells: <em id="stat-cells">0</em></span>
-    <span class="stat">agents: <em id="stat-agents">18</em></span>
+    <span class="stat">voxels: <em id="stat-voxels">0</em></span>
     <span class="stat">status: <em id="stat-status">collapsing</em></span>
   </div>
 </div>
 
 <div class="ui-bottom">
-  <div class="legend">
-    <div class="legend-item"><div class="dot" style="background:#d4954a;"></div>hierarchy</div>
-    <div class="legend-item"><div class="dot" style="background:#4a80cc;"></div>visibility</div>
-    <div class="legend-item"><div class="dot" style="background:#4ab870;"></div>isolation</div>
-  </div>
-  <button class="regen-btn" id="regen-btn">↺ regenerate</button>
   <span class="hint">drag · scroll</span>
+  <button class="regen-btn" id="regen-btn">↺ regenerate</button>
+  <span class="hint">geometry of societies // 01</span>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script>
 (function(){
-const cv = document.getElementById('cv');
-const W = window.innerWidth, H = window.innerHeight;
-cv.width = W; cv.height = H;
+  const cv = document.getElementById('cv');
+  const W = window.innerWidth, H = window.innerHeight;
+  cv.width = W; cv.height = H;
 
-const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
-renderer.setSize(W,H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-renderer.setClearColor(0x000000,1);
-renderer.shadowMap.enabled = true;
+  const renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 45, 100);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 50, 105);
 
-const cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 200);
-cam.position.set(22,18,22);
-cam.lookAt(0,4,0);
+  const cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 200);
+  cam.position.set(22, 18, 22);
+  cam.lookAt(0, 6, 0);
 
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
-const dl = new THREE.DirectionalLight(0xffffff,1.0);
-dl.position.set(12,30,8);
-dl.castShadow = true;
-dl.shadow.mapSize.set(1024,1024);
-dl.shadow.camera.left=-30; dl.shadow.camera.right=30;
-dl.shadow.camera.top=30; dl.shadow.camera.bottom=-30;
-scene.add(dl);
-const dl2 = new THREE.DirectionalLight(0xc8e054, 0.15);
-dl2.position.set(-10, 5, -10);
-scene.add(dl2);
-const GRID=20, CELL=1.4;
-const TYPES={EMPTY:0,GROUND:1,LOW:2,MID:3,HIGH:4,TOWER:5};
-const WEIGHTS=[0,8,12,8,4,2];
-const HEIGHTS=[0,0.3,1.2,2.4,3.8,6.5];
-const HEIGHT_VAR=[0,0.1,0.4,0.6,0.9,1.4];
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.1);
+  dl.position.set(15, 40, 10);
+  dl.castShadow = true;
+  dl.shadow.mapSize.set(2048, 2048);
+  dl.shadow.camera.left = -35;
+  dl.shadow.camera.right = 35;
+  dl.shadow.camera.top = 35;
+  dl.shadow.camera.bottom = -35;
+  dl.shadow.camera.far = 120;
+  scene.add(dl);
+  const dl2 = new THREE.DirectionalLight(0xddddff, 0.2);
+  dl2.position.set(-12, 8, -12);
+  scene.add(dl2);
 
-function seededRng(s){let v=s%99991;return()=>{v=(v*16807)%2147483647;return(v-1)/2147483646;};}
+  // --- VOXEL CONFIG ---
+  // Every voxel is a perfect cube of this size
+  const V = 0.28;
+  const GAP = 0.01; // tiny gap between voxels so edges are visible
+  const VOXEL_SIZE = V - GAP;
 
-const mats={
-  ground:new THREE.MeshLambertMaterial({color:0xe8e8e8}),
-  low:new THREE.MeshLambertMaterial({color:0xd8d8d8}),
-  mid:new THREE.MeshLambertMaterial({color:0xc8c8c8}),
-  high:new THREE.MeshLambertMaterial({color:0xb8b8b8}),
-  tower:new THREE.MeshLambertMaterial({color:0xf0f0f0}),
-  accent:new THREE.MeshLambertMaterial({color:0xc8e054}),
-  dark:new THREE.MeshLambertMaterial({color:0x0a0a0a}),
-};
+  // Grid of columns
+  const GRID = 32;
+  const CELL = V; // one voxel per cell in XZ
 
-let grid=[], meshes=[], buildQueue=[], isBuilding=false;
-let totalCells=0, collapsedCells=0;
+  // How many voxels tall each type gets
+  const TYPES = { EMPTY: 0, GROUND: 1, LOW: 2, MID: 3, HIGH: 4, TOWER: 5, SPIRE: 6 };
+  const VOXEL_COUNTS = [0, 1, 3, 7, 14, 24, 38]; // number of voxels stacked
+  const COUNT_VAR    = [0, 0, 1, 2,  4,  6,  8]; // random variation
 
-function initGrid(seed){
-  const r=seededRng(seed); grid=[];
-  for(let x=0;x<GRID;x++){
-    grid[x]=[];
-    for(let z=0;z<GRID;z++){
-      const dist=Math.sqrt((x-GRID/2)**2+(z-GRID/2)**2)/(GRID/2);
-      grid[x][z]={collapsed:false,type:-1,heightBias:Math.max(0,1-dist*1.1),r:r(),h:r()};
-    }
+  function rng(s) {
+    let v = ((s % 99991) + 99991) % 99991;
+    return () => { v = (v * 16807 + 1) % 2147483647; return (v-1)/2147483646; };
   }
-}
 
-function getNeighborMax(x,z){
-  let max=0;
-  [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dx,dz])=>{
-    const nx=x+dx,nz=z+dz;
-    if(nx>=0&&nx<GRID&&nz>=0&&nz<GRID&&grid[nx][nz].collapsed) max=Math.max(max,grid[nx][nz].type);
-  });
-  return max;
-}
+  // Shared geometry — one cube, reused for all voxels
+  const VOXEL_GEO = new THREE.BoxGeometry(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
 
-function spawnVoxel(x,z,type,hrng,r){
-  if(type===TYPES.EMPTY)return;
-  const wx=(x-GRID/2)*CELL, wz=(z-GRID/2)*CELL;
-  const baseH=HEIGHTS[type]+hrng*HEIGHT_VAR[type];
-  const floors=Math.max(1,Math.round(baseH/0.95));
-  for(let f=0;f<floors;f++){
-    const fh=baseH/floors;
-    const fw=CELL*0.91-f*0.015, fd=CELL*0.91-f*0.015;
-    let mat=mats.ground;
-    if(type===TYPES.LOW)mat=mats.low;
-    if(type===TYPES.MID)mat=mats.mid;
-    if(type===TYPES.HIGH)mat=mats.high;
-    if(type===TYPES.TOWER)mat=f===floors-1?mats.tower:mats.high;
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(fw,fh*0.95,fd),mat);
-    mesh.position.set(wx,f*fh+fh/2,wz);
-    mesh.castShadow=true; mesh.receiveShadow=true;
-    mesh.scale.set(0.01,0.01,0.01);
-    scene.add(mesh); meshes.push(mesh);
-    if(type>=TYPES.MID&&f===floors-1){
-      for(let w=0;w<Math.floor(r()*3)+1;w++){
-        const wm=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.18,0.04),r()<0.25?mats.accent:mats.dark);
-        wm.position.set(wx+(r()-0.5)*fw*0.5,f*fh+fh*0.4,wz+fd/2+0.02);
-        wm.scale.set(0.01,0.01,0.01);
-        scene.add(wm); meshes.push(wm);
+  // Gray palette — light at top, darker at bottom
+  const GRAY_LEVELS = [
+    0xffffff, 0xf5f5f5, 0xebebeb, 0xe0e0e0,
+    0xd4d4d4, 0xc8c8c8, 0xbbbbbb, 0xaeaeae,
+    0xa0a0a0, 0x929292
+  ];
+  const grayMats = GRAY_LEVELS.map(c => new THREE.MeshLambertMaterial({color: c}));
+  const accMat   = new THREE.MeshLambertMaterial({color: 0xc8e054});
+  const darkMat  = new THREE.MeshLambertMaterial({color: 0x060606});
+
+  function voxelMat(floorIndex, totalFloors) {
+    // Top voxels are brightest, bottom darkest
+    const t = 1 - (floorIndex / Math.max(1, totalFloors - 1));
+    const idx = Math.floor(t * (grayMats.length - 1));
+    return grayMats[Math.max(0, Math.min(grayMats.length-1, idx))];
+  }
+
+  let grid = [], meshes = [], buildQueue = [], isBuilding = false;
+  let totalVoxels = 0;
+
+  function initGrid(seed) {
+    const r = rng(seed);
+    grid = [];
+    for (let x = 0; x < GRID; x++) {
+      grid[x] = [];
+      for (let z = 0; z < GRID; z++) {
+        const cx = x - GRID/2, cz = z - GRID/2;
+        const dist = Math.sqrt(cx*cx + cz*cz) / (GRID/2);
+        const bias = Math.pow(Math.max(0, 1 - dist * 1.05), 1.6);
+        grid[x][z] = { collapsed: false, type: -1, bias, rh: r() };
       }
     }
-    if(type===TYPES.TOWER&&f===floors-1){
-      const ant=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.55,0.07),mats.accent);
-      ant.position.set(wx+(r()-0.5)*0.25,f*fh+fh+0.27,wz+(r()-0.5)*0.25);
-      ant.scale.set(0.01,0.01,0.01);
-      scene.add(ant); meshes.push(ant);
+  }
+
+  function neighborMax(x, z) {
+    let m = 0;
+    [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]].forEach(([dx,dz]) => {
+      const nx=x+dx, nz=z+dz;
+      if (nx>=0&&nx<GRID&&nz>=0&&nz<GRID&&grid[nx][nz].collapsed)
+        m = Math.max(m, grid[nx][nz].type);
+    });
+    return m;
+  }
+
+  function spawnColumn(x, z, type, rh, r) {
+    if (type === TYPES.EMPTY) return;
+    const wx = (x - GRID/2) * CELL + CELL/2;
+    const wz = (z - GRID/2) * CELL + CELL/2;
+
+    const count = VOXEL_COUNTS[type] + Math.floor(rh * COUNT_VAR[type]);
+
+    for (let f = 0; f < count; f++) {
+      const mat = voxelMat(f, count);
+      const mesh = new THREE.Mesh(VOXEL_GEO, mat);
+      // Each voxel sits exactly on top of the previous
+      mesh.position.set(wx, f * V + V/2, wz);
+      mesh.castShadow = true;
+      mesh.receiveShadow = (f === 0);
+      mesh.scale.set(0.01, 0.01, 0.01);
+      scene.add(mesh);
+      meshes.push(mesh);
+      totalVoxels++;
+    }
+
+    // Accent voxel on very top of towers/spires (rare)
+    if (type >= TYPES.TOWER && r() > 0.65) {
+      const top = count;
+      const acc = new THREE.Mesh(VOXEL_GEO, accMat);
+      acc.position.set(wx, top * V + V/2, wz);
+      acc.scale.set(0.01, 0.01, 0.01);
+      scene.add(acc);
+      meshes.push(acc);
+    }
+
+    // Dark window voxels on facade (very sparse, only mid+)
+    if (type >= TYPES.MID) {
+      const winCount = Math.floor(r() * 3);
+      for (let w = 0; w < winCount; w++) {
+        const wf = 1 + Math.floor(r() * (count - 2));
+        const side = Math.floor(r() * 4);
+        const offsets = [[V, 0], [-V, 0], [0, V], [0, -V]];
+        const [ox, oz] = offsets[side];
+        const wm = new THREE.Mesh(VOXEL_GEO, r() < 0.15 ? accMat : darkMat);
+        wm.position.set(wx + ox * 0.5, wf * V + V/2, wz + oz * 0.5);
+        wm.scale.set(0.3, 0.3, 0.3);
+        scene.add(wm);
+        meshes.push(wm);
+      }
     }
   }
-  const rim=new THREE.Mesh(new THREE.BoxGeometry(CELL*0.93,0.05,CELL*0.93),type===TYPES.TOWER?mats.accent:mats.ground);
-  rim.position.set(wx,baseH+0.025,wz);
-  rim.scale.set(0.01,0.01,0.01);
-  scene.add(rim); meshes.push(rim);
-}
 
-function collapseCell(x,z,seed){
-  const cell=grid[x][z];
-  if(cell.collapsed)return;
-  const r=seededRng(seed*1000+x*100+z);
-  const neighborMax=getNeighborMax(x,z);
-  const dist=Math.sqrt((x-GRID/2)**2+(z-GRID/2)**2)/(GRID/2);
-  let w=[...WEIGHTS];
-  w[TYPES.HIGH]*=(cell.heightBias*2+0.2);
-  w[TYPES.TOWER]*=(cell.heightBias*3+0.1);
-  w[TYPES.MID]*=(cell.heightBias*1.5+0.5);
-  w[TYPES.EMPTY]*=(dist>0.75?3:0.3);
-  if(neighborMax>=TYPES.HIGH)w[TYPES.TOWER]*=2.5;
-  if(neighborMax<=TYPES.LOW){w[TYPES.HIGH]*=0.2;w[TYPES.TOWER]*=0.05;}
-  const total=w.reduce((a,b)=>a+b,0);
-  let rand=r()*total,cum=0,chosen=TYPES.GROUND;
-  for(let t=0;t<w.length;t++){cum+=w[t];if(rand<=cum){chosen=t;break;}}
-  cell.collapsed=true; cell.type=chosen; collapsedCells++;
-  spawnVoxel(x,z,chosen,cell.h,r);
-}
+  const WEIGHTS = [0, 6, 14, 10, 6, 3, 1];
 
-function buildWFC(seed){
-  meshes.forEach(m=>scene.remove(m)); meshes=[];
-  buildQueue=[]; collapsedCells=0;
-  initGrid(seed);
-  const order=[];
-  for(let x=0;x<GRID;x++) for(let z=0;z<GRID;z++) order.push([x,z]);
-  order.sort((a,b)=>{
-    const da=Math.sqrt((a[0]-GRID/2)**2+(a[1]-GRID/2)**2);
-    const db=Math.sqrt((b[0]-GRID/2)**2+(b[1]-GRID/2)**2);
-    return da-db+(Math.random()-0.5)*1.5;
-  });
-  totalCells=order.length;
-  buildQueue=order.map((pos,i)=>({pos,delay:i*16,seed}));
-  isBuilding=true;
-  buildQueue.startTime=performance.now();
-  document.getElementById('stat-status').textContent='collapsing';
-}
+  function collapseCell(x, z, seed) {
+    const cell = grid[x][z];
+    if (cell.collapsed) return;
+    const r = rng(seed * 1000 + x * 200 + z);
+    const nm = neighborMax(x, z);
+    const dist = Math.sqrt((x-GRID/2)**2 + (z-GRID/2)**2) / (GRID/2);
 
-function processQueue(){
-  const elapsed=performance.now()-buildQueue.startTime;
-  let p=0;
-  while(buildQueue.length>0&&buildQueue[0].delay<elapsed&&p<5){
-    const{pos,seed}=buildQueue.shift();
-    collapseCell(pos[0],pos[1],seed); p++;
+    let w = [...WEIGHTS];
+    w[TYPES.SPIRE]  *= (cell.bias * 5 + 0.05);
+    w[TYPES.TOWER]  *= (cell.bias * 4 + 0.1);
+    w[TYPES.HIGH]   *= (cell.bias * 2.5 + 0.3);
+    w[TYPES.MID]    *= (cell.bias * 1.5 + 0.5);
+    w[TYPES.EMPTY]  *= (dist > 0.8 ? 5 : 0.1);
+    w[TYPES.GROUND] *= (dist > 0.7 ? 1.5 : 0.5);
+    if (nm >= TYPES.HIGH)  { w[TYPES.TOWER] *= 2.5; w[TYPES.SPIRE] *= 3; }
+    if (nm >= TYPES.TOWER) { w[TYPES.SPIRE] *= 4; }
+    if (nm <= TYPES.LOW)   { w[TYPES.HIGH] *= 0.2; w[TYPES.TOWER] *= 0.05; w[TYPES.SPIRE] *= 0.01; }
+
+    const total = w.reduce((a,b) => a+b, 0);
+    let rand = r() * total, cum = 0, chosen = TYPES.GROUND;
+    for (let t = 0; t < w.length; t++) { cum += w[t]; if (rand <= cum) { chosen = t; break; } }
+
+    cell.collapsed = true;
+    cell.type = chosen;
+    spawnColumn(x, z, chosen, cell.rh, r);
   }
-  if(buildQueue.length===0){isBuilding=false;document.getElementById('stat-status').textContent='resolved';}
-}
 
-function animateSpawn(){
-  meshes.forEach(m=>{
-    if(m.scale.x<1){m.scale.x=Math.min(1,m.scale.x+0.09);m.scale.y=Math.min(1,m.scale.y+0.07);m.scale.z=Math.min(1,m.scale.z+0.09);}
-  });
-}
+  function buildWFC(seed) {
+    meshes.forEach(m => scene.remove(m));
+    meshes = [];
+    buildQueue = [];
+    totalVoxels = 0;
+    initGrid(seed);
 
-// Nodes for agents
-const nodes=[];
-function buildNodes(){
-  nodes.length=0;
-  for(let x=0;x<GRID;x++) for(let z=0;z<GRID;z++){
-    const cell=grid[x][z];
-    if(cell.collapsed&&cell.type>=TYPES.LOW){
-      const wx=(x-GRID/2)*CELL, wz=(z-GRID/2)*CELL;
-      nodes.push({x:wx,y:HEIGHTS[cell.type]+0.5,z:wz,connections:[],agentCount:0,
-        isPeripheral:Math.sqrt(wx*wx+wz*wz)>GRID*CELL*0.35});
+    const order = [];
+    for (let x = 0; x < GRID; x++)
+      for (let z = 0; z < GRID; z++)
+        order.push([x, z]);
+
+    const jr = rng(seed + 1);
+    order.sort((a, b) => {
+      const da = Math.sqrt((a[0]-GRID/2)**2 + (a[1]-GRID/2)**2);
+      const db = Math.sqrt((b[0]-GRID/2)**2 + (b[1]-GRID/2)**2);
+      return da - db + (jr()-0.5) * 2.5;
+    });
+
+    buildQueue = order.map((pos, i) => ({ pos, delay: i * 5, seed }));
+    isBuilding = true;
+    buildQueue.startTime = performance.now();
+    document.getElementById('stat-status').textContent = 'collapsing';
+  }
+
+  function processQueue() {
+    const elapsed = performance.now() - buildQueue.startTime;
+    let p = 0;
+    while (buildQueue.length > 0 && buildQueue[0].delay < elapsed && p < 10) {
+      const { pos, seed } = buildQueue.shift();
+      collapseCell(pos[0], pos[1], seed);
+      p++;
+    }
+    if (buildQueue.length === 0) {
+      isBuilding = false;
+      document.getElementById('stat-status').textContent = 'resolved';
     }
   }
-  for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
-    const a=nodes[i],b=nodes[j];
-    if(Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2)<4.5){a.connections.push(j);b.connections.push(i);}
-  }
-}
 
-const AGENT_COLORS={hierarchy:0xd4954a,visibility:0x4a80cc,isolation:0x4ab870};
-const agentMeshes=[];
-const agentData=[];
-
-function spawnAgents(){
-  agentMeshes.forEach(m=>scene.remove(m)); agentMeshes.length=0; agentData.length=0;
-  if(nodes.length<5)return;
-  const ar=seededRng(777);
-  const types=['hierarchy','visibility','isolation'];
-  const shapes={
-    hierarchy:new THREE.ConeGeometry(0.22,0.42,6),
-    visibility:new THREE.BoxGeometry(0.3,0.3,0.3),
-    isolation:new THREE.SphereGeometry(0.18,8,8)
-  };
-  for(let i=0;i<18;i++){
-    const type=types[i%3];
-    const ni=Math.floor(ar()*nodes.length);
-    const mesh=new THREE.Mesh(shapes[type],new THREE.MeshLambertMaterial({color:AGENT_COLORS[type]}));
-    mesh.castShadow=true;
-    scene.add(mesh); agentMeshes.push(mesh);
-    agentData.push({mesh,type,nodeIdx:ni,targetIdx:ni,progress:ar(),speed:0.005+ar()*0.005,nexus:-1});
-  }
-}
-
-function pickNext(ag){
-  const cur=nodes[ag.nodeIdx];
-  if(!cur||cur.connections.length===0)return(ag.nodeIdx+1)%nodes.length;
-  if(ag.type==='hierarchy'){
-    let best=-1,bestY=-Infinity;
-    cur.connections.forEach(i=>{if(nodes[i].y>bestY){bestY=nodes[i].y;best=i;}});
-    return best>=0?best:cur.connections[Math.floor(Math.random()*cur.connections.length)];
-  }
-  if(ag.type==='visibility'){
-    let best=-1,bestS=-Infinity;
-    cur.connections.forEach(i=>{
-      let n=0; nodes[i].connections.forEach(j=>n+=nodes[j].agentCount);
-      const s=n-nodes[i].agentCount*3;
-      if(s>bestS){bestS=s;best=i;}
+  function animateSpawn() {
+    meshes.forEach(m => {
+      if (m.scale.x < 1) {
+        m.scale.x = Math.min(1, m.scale.x + 0.14);
+        m.scale.y = Math.min(1, m.scale.y + 0.10);
+        m.scale.z = Math.min(1, m.scale.z + 0.14);
+      }
     });
-    return best>=0?best:cur.connections[Math.floor(Math.random()*cur.connections.length)];
   }
-  if(ag.type==='isolation'){
-    let best=-1,bestS=Infinity;
-    cur.connections.forEach(i=>{
-      const s=nodes[i].agentCount+(nodes[i].isPeripheral?0:6);
-      if(s<bestS){bestS=s;best=i;}
-    });
-    if(best>=0)ag.nexus=best;
-    return best>=0?best:cur.connections[Math.floor(Math.random()*cur.connections.length)];
-  }
-  return cur.connections[Math.floor(Math.random()*cur.connections.length)];
-}
 
-let dragging=false,pm={x:0,y:0};
-let sph={th:Math.PI*0.28,ph:0.88,r:42},tSph={...sph};
-document.addEventListener('mousedown',e=>{dragging=true;pm={x:e.clientX,y:e.clientY};});
-window.addEventListener('mouseup',()=>dragging=false);
-window.addEventListener('mousemove',e=>{
-  if(!dragging)return;
-  tSph.th-=(e.clientX-pm.x)*0.007;
-  tSph.ph=Math.max(0.2,Math.min(1.4,tSph.ph+(e.clientY-pm.y)*0.007));
-  pm={x:e.clientX,y:e.clientY};
-});
-document.addEventListener('wheel',e=>{
-  tSph.r=Math.max(10,Math.min(75,tSph.r+e.deltaY*0.05));
-  e.preventDefault();
-},{passive:false});
+  let dragging = false, pm = {x:0, y:0};
+  let sph = {th: Math.PI*0.28, ph: 0.88, r: 40};
+  let tSph = {...sph};
 
-document.getElementById('regen-btn').addEventListener('click',()=>{
-  agentMeshes.forEach(m=>scene.remove(m)); agentMeshes.length=0; agentData.length=0;
-  buildWFC(Math.floor(Math.random()*99999));
-});
-
-buildWFC(42);
-let agentsSpawned=false, frame=0;
-
-function loop(){
-  requestAnimationFrame(loop);
-  frame++;
-  if(isBuilding||buildQueue.length>0) processQueue();
-  animateSpawn();
-  if(!isBuilding&&!agentsSpawned&&meshes.length>0){
-    buildNodes(); spawnAgents(); agentsSpawned=true;
-  }
-  nodes.forEach(n=>n.agentCount=0);
-  agentData.forEach(ag=>{if(nodes[ag.nodeIdx])nodes[ag.nodeIdx].agentCount++;});
-  agentData.forEach(ag=>{
-    const cn=nodes[ag.nodeIdx],tn=nodes[ag.targetIdx];
-    if(!cn||!tn){ag.mesh.visible=false;return;}
-    ag.mesh.visible=true;
-    ag.progress+=ag.speed;
-    if(ag.progress>=1){ag.nodeIdx=ag.targetIdx;ag.progress=0;ag.targetIdx=pickNext(ag);}
-    const p=ag.progress;
-    ag.mesh.position.set(cn.x+(tn.x-cn.x)*p,cn.y+(tn.y-cn.y)*p+Math.sin(p*Math.PI)*0.4+0.3,cn.z+(tn.z-cn.z)*p);
-    if(ag.type==='hierarchy')ag.mesh.rotation.y=frame*0.05;
+  document.addEventListener('mousedown', e => { dragging=true; pm={x:e.clientX, y:e.clientY}; });
+  window.addEventListener('mouseup', () => dragging=false);
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    tSph.th -= (e.clientX-pm.x)*0.007;
+    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.clientY-pm.y)*0.007));
+    pm = {x:e.clientX, y:e.clientY};
   });
-  sph.th+=(tSph.th-sph.th)*0.07;
-  sph.ph+=(tSph.ph-sph.ph)*0.07;
-  sph.r+=(tSph.r-sph.r)*0.07;
-  cam.position.set(sph.r*Math.sin(sph.ph)*Math.sin(sph.th),sph.r*Math.cos(sph.ph)+3,sph.r*Math.sin(sph.ph)*Math.cos(sph.th));
-  cam.lookAt(0,4,0);
-  if(frame%15===0) document.getElementById('stat-cells').textContent=collapsedCells;
-  renderer.render(scene,cam);
-}
-loop();
+  document.addEventListener('wheel', e => {
+    tSph.r = Math.max(8, Math.min(80, tSph.r+e.deltaY*0.05));
+    e.preventDefault();
+  }, {passive:false});
+
+  let lastTouch = null;
+  document.addEventListener('touchstart', e => { lastTouch=e.touches[0]; });
+  document.addEventListener('touchmove', e => {
+    if (!lastTouch) return;
+    tSph.th -= (e.touches[0].clientX-lastTouch.clientX)*0.007;
+    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.007));
+    lastTouch=e.touches[0];
+    e.preventDefault();
+  }, {passive:false});
+
+  document.getElementById('regen-btn').addEventListener('click', () => {
+    buildWFC(Math.floor(Math.random()*99999));
+  });
+
+  buildWFC(42);
+
+  let frame = 0;
+  function loop() {
+    requestAnimationFrame(loop);
+    frame++;
+    if (isBuilding || buildQueue.length > 0) processQueue();
+    animateSpawn();
+
+    sph.th += (tSph.th-sph.th)*0.07;
+    sph.ph += (tSph.ph-sph.ph)*0.07;
+    sph.r  += (tSph.r -sph.r )*0.07;
+    cam.position.set(
+      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
+      sph.r*Math.cos(sph.ph)+4,
+      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
+    );
+    cam.lookAt(0, 6, 0);
+
+    if (frame%15===0)
+      document.getElementById('stat-voxels').textContent = totalVoxels;
+
+    renderer.render(scene, cam);
+  }
+  loop();
 })();
 </script>
 </body>
