@@ -130,8 +130,9 @@ dl.shadow.mapSize.set(1024,1024);
 dl.shadow.camera.left=-30; dl.shadow.camera.right=30;
 dl.shadow.camera.top=30; dl.shadow.camera.bottom=-30;
 scene.add(dl);
-scene.add(Object.assign(new THREE.DirectionalLight(0xc8e054,0.15),{position:new THREE.Vector3(-10,5,-10)}));
-
+const dl2 = new THREE.DirectionalLight(0xc8e054, 0.15);
+dl2.position.set(-10, 5, -10);
+scene.add(dl2);
 const GRID=20, CELL=1.4;
 const TYPES={EMPTY:0,GROUND:1,LOW:2,MID:3,HIGH:4,TOWER:5};
 const WEIGHTS=[0,8,12,8,4,2];
