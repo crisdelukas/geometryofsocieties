@@ -134,7 +134,7 @@
   dl2.position.set(-300, 200, -300);
   scene.add(dl2);
 
-  var sph = {th: Math.PI * 1.75, ph: 0.22, r: 1200};
+  var sph = {th: Math.PI * 1.75, ph: 1.20, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
   function setProgress(pct, msg) {
@@ -262,7 +262,7 @@
   window.addEventListener('mousemove', function(e){
     if(!dragging) return;
     tSph.th = Math.max(Math.PI * 1.42, Math.min(Math.PI * 2.08, tSph.th - (e.clientX-pm.x)*0.006));
-    tSph.ph = Math.max(0.12, Math.min(0.35, tSph.ph+(e.clientY-pm.y)*0.006));
+    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.006));
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
