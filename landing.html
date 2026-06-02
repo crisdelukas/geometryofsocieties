@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geometry of Societies</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
+    #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .ui-band {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 10px 1.75rem;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.55);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      z-index: 10;
+    }
+    .wordmark { font-size: 11px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: #e8e8e8; }
+    .wordmark em { font-style: normal; color: #c8e054; }
+    .nav { display: flex; gap: 2rem; }
+    .nav a {
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav a:hover { color: #c8e054; }
+    .nav a.active { color: rgba(255,255,255,0.7); }
+
+    .ui-bottom {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      padding: 14px 1.75rem;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .bottom-left { display: flex; flex-direction: column; gap: 6px; }
+    .exp-label {
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+    }
+    .exp-label em { color: #c8e054; font-style: normal; }
+    .enter-btn {
+      pointer-events: all;
+      background: transparent;
+      border: 0.5px solid rgba(200,224,84,0.4);
+      padding: 8px 20px;
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(200,224,84,0.7); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .enter-btn:hover { border-color: #c8e054; color: #c8e054; background: rgba(200,224,84,0.05); }
+    .hint {
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.12);
+    }
+
+    .loading {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      gap: 16px; z-index: 100;
+      transition: opacity 0.8s;
+    }
+    .loading.hidden { opacity: 0; pointer-events: none; }
+    .loading-text {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .loading-text em { color: #c8e054; font-style: normal; }
+    .loading-bar-wrap {
+      width: 200px; height: 0.5px; background: rgba(255,255,255,0.1);
+    }
+    .loading-bar {
+      height: 100%; width: 0%; background: #c8e054;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <p class="loading-text">geometry <em>of</em> societies</p>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+  <p class="loading-text" id="loading-status">loading city...</p>
+</div>
+
+<div id="canvas-container"><canvas id="cv"></canvas></div>
+
+<div class="ui-band">
+  <div class="wordmark">geometry <em>of</em> societies</div>
+  <nav class="nav">
+    <a href="index.html" class="active">experiments</a>
+    <a href="#">about</a>
+    <a href="#">methods</a>
+    <a href="#">writing</a>
+  </nav>
+</div>
+
+<div class="ui-bottom">
+  <div class="bottom-left">
+    <span class="exp-label">// experimental social laboratory</span>
+    <span class="exp-label">agents: <em id="stat-agents">0</em> &nbsp;|&nbsp; paths: <em>20</em></span>
+  </div>
+  <button class="enter-btn" onclick="window.location='index.html'">enter laboratory →</button>
+  <span class="hint">drag · scroll</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script>
+(function(){
+
+// ── Renderer & Scene ──────────────────────────────────────────────
+const cv = document.getElementById('cv');
+const W = window.innerWidth, H = window.innerHeight;
+cv.width = W; cv.height = H;
+
+const renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000000, 0.004);
+
+const cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 2000);
+cam.position.set(800, 500, 800);
+cam.lookAt(500, 200, 500);
+
+// ── Lights ────────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dl = new THREE.DirectionalLight(0xffffff, 1.0);
+dl.position.set(400, 800, 300);
+dl.castShadow = true;
+dl.shadow.mapSize.set(2048, 2048);
+dl.shadow.camera.left = -600;
+dl.shadow.camera.right = 600;
+dl.shadow.camera.top = 600;
+dl.shadow.camera.bottom = -600;
+dl.shadow.camera.far = 2000;
+scene.add(dl);
+const dl2 = new THREE.DirectionalLight(0xc8e054, 0.08);
+dl2.position.set(-300, 200, -300);
+scene.add(dl2);
+
+// ── Loading UI ────────────────────────────────────────────────────
+function setProgress(pct, msg) {
+  document.getElementById('loading-bar').style.width = pct + '%';
+  if(msg) document.getElementById('loading-status').innerHTML = msg;
+}
+function hideLoading() {
+  const el = document.getElementById('loading');
+  el.classList.add('hidden');
+  setTimeout(() => el.style.display = 'none', 900);
+}
+
+// ── Load GLB ──────────────────────────────────────────────────────
+// Three.js r134 GLTFLoader via CDN
+const loaderScript = document.createElement('script');
+loaderScript.src = 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js';
+document.head.appendChild(loaderScript);
+
+loaderScript.onload = function() {
+  setProgress(10, 'initialising loader...');
+  const loader = new THREE.GLTFLoader();
+
+  loader.load(
+    'cityMeshSmall.glb',
+    function(gltf) {
+      setProgress(70, 'placing city...');
+
+      const cityMat = new THREE.MeshLambertMaterial({ color: 0xd8d8d8 });
+
+      gltf.scene.traverse(function(child) {
+        if(child.isMesh) {
+          child.material = cityMat;
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+
+      // Center the model
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      gltf.scene.position.sub(center);
+      gltf.scene.position.y += size.y / 2;
+      scene.add(gltf.scene);
+
+      // Adjust camera to fit model
+      const maxDim = Math.max(size.x, size.y, size.z);
+      cam.position.set(maxDim * 0.9, maxDim * 0.6, maxDim * 0.9);
+      cam.lookAt(0, size.y * 0.3, 0);
+      tSph.r = maxDim * 1.2;
+      sph.r = tSph.r;
+
+      setProgress(85, 'loading paths...');
+      loadPaths(center, size);
+    },
+    function(xhr) {
+      const pct = Math.round((xhr.loaded / xhr.total) * 60) + 10;
+      setProgress(pct, 'loading city... ' + Math.round(xhr.loaded/1024/1024) + 'MB');
+    },
+    function(err) {
+      console.error('GLB load error:', err);
+      setProgress(100, 'error loading model');
+    }
+  );
+};
+
+// ── Load Paths CSV ────────────────────────────────────────────────
+let pathData = {};
+let cityOffset = new THREE.Vector3();
+let citySize = new THREE.Vector3();
+
+function loadPaths(center, size) {
+  cityOffset = center;
+  citySize = size;
+
+  fetch('paths.csv')
+    .then(r => r.text())
+    .then(text => {
+      const lines = text.trim().split('\n').slice(1); // skip header
+      lines.forEach(line => {
+        const [pid, idx, x, y, z] = line.split(',').map(Number);
+        if(!pathData[pid]) pathData[pid] = [];
+        pathData[pid][idx] = new THREE.Vector3(
+          x - center.x,
+          y - center.y + size.y / 2,
+          z - center.z
+        );
+      });
+      setProgress(95, 'spawning agents...');
+      spawnAgents();
+      setProgress(100, 'ready');
+      setTimeout(hideLoading, 500);
+    })
+    .catch(err => {
+      console.error('Paths load error:', err);
+      setProgress(100, 'ready (no paths)');
+      setTimeout(hideLoading, 500);
+    });
+}
+
+// ── Agents ────────────────────────────────────────────────────────
+const agents = [];
+const AGENT_COLOR = 0x1a1a1a;
+const AGENT_GEO = new THREE.CapsuleGeometry
+  ? new THREE.CapsuleGeometry(1.5, 4, 4, 8)
+  : new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
+const AGENT_MAT = new THREE.MeshLambertMaterial({ color: AGENT_COLOR });
+
+// How many agents per path type
+const AGENTS_PER_PATH = {
+  short: 1,
+  medium: 1,
+  long: 2
+};
+
+function pathType(pid) {
+  const len = pathData[pid] ? pathData[pid].length : 0;
+  if(len <= 15) return 'short';
+  if(len <= 44) return 'medium';
+  return 'long';
+}
+
+function spawnAgents() {
+  let count = 0;
+  Object.keys(pathData).forEach(pid => {
+    const pts = pathData[pid].filter(Boolean);
+    if(pts.length < 2) return;
+    const type = pathType(pid);
+    const n = type === 'long' ? 2 : 1;
+    for(let i = 0; i < n; i++) {
+      const mesh = new THREE.Mesh(AGENT_GEO, AGENT_MAT.clone());
+      mesh.castShadow = true;
+      scene.add(mesh);
+      const startIdx = Math.floor((i / n) * pts.length);
+      agents.push({
+        mesh,
+        path: pts,
+        idx: startIdx,
+        progress: Math.random(),
+        speed: 0.004 + Math.random() * 0.004
+      });
+      count++;
+    }
+  });
+  document.getElementById('stat-agents').textContent = count;
+}
+
+// ── Camera Controls ───────────────────────────────────────────────
+let dragging = false, pm = {x:0, y:0};
+let sph = {th: Math.PI * 0.25, ph: 0.85, r: 1200};
+let tSph = {...sph};
+
+document.addEventListener('mousedown', e => { dragging=true; pm={x:e.clientX, y:e.clientY}; });
+window.addEventListener('mouseup', () => dragging=false);
+window.addEventListener('mousemove', e => {
+  if(!dragging) return;
+  tSph.th -= (e.clientX-pm.x) * 0.006;
+  tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph + (e.clientY-pm.y) * 0.006));
+  pm = {x:e.clientX, y:e.clientY};
+});
+document.addEventListener('wheel', e => {
+  tSph.r = Math.max(50, Math.min(3000, tSph.r + e.deltaY * 0.5));
+  e.preventDefault();
+}, {passive:false});
+
+let lastTouch = null;
+document.addEventListener('touchstart', e => { lastTouch=e.touches[0]; });
+document.addEventListener('touchmove', e => {
+  if(!lastTouch) return;
+  tSph.th -= (e.touches[0].clientX-lastTouch.clientX)*0.006;
+  tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.006));
+  lastTouch=e.touches[0];
+  e.preventDefault();
+}, {passive:false});
+
+// ── Animation Loop ────────────────────────────────────────────────
+let frame = 0;
+function loop() {
+  requestAnimationFrame(loop);
+  frame++;
+
+  // Smooth camera
+  sph.th += (tSph.th - sph.th) * 0.07;
+  sph.ph += (tSph.ph - sph.ph) * 0.07;
+  sph.r  += (tSph.r  - sph.r)  * 0.07;
+  cam.position.set(
+    sph.r * Math.sin(sph.ph) * Math.sin(sph.th),
+    sph.r * Math.cos(sph.ph),
+    sph.r * Math.sin(sph.ph) * Math.cos(sph.th)
+  );
+  cam.lookAt(0, 0, 0);
+
+  // Move agents
+  agents.forEach(ag => {
+    if(!ag.path || ag.path.length < 2) return;
+    ag.progress += ag.speed;
+    if(ag.progress >= 1) {
+      ag.progress = 0;
+      ag.idx = (ag.idx + 1) % ag.path.length;
+    }
+    const cur = ag.path[ag.idx];
+    const nxt = ag.path[(ag.idx + 1) % ag.path.length];
+    if(!cur || !nxt) return;
+    const p = ag.progress;
+    ag.mesh.position.lerpVectors(cur, nxt, p);
+    ag.mesh.position.y += 3;
+    // Face direction of travel
+    const dir = nxt.clone().sub(cur);
+    if(dir.length() > 0.01) {
+      ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+    }
+  });
+
+  renderer.render(scene, cam);
+}
+loop();
+
+})();
+</script>
+</body>
+</html>
