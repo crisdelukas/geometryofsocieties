@@ -134,7 +134,7 @@
   dl2.position.set(-300, 200, -300);
   scene.add(dl2);
 
-  var sph = {th: Math.PI * 1.25, ph: 0.75, r: 1200};
+  var sph = {th: Math.PI * 0.75, ph: 0.75, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
   function setProgress(pct, msg) {
@@ -180,7 +180,7 @@
       scene.add(gltf.scene);
 
       maxDim = Math.max(size.x, size.y, size.z);
-      tSph.r = maxDim * 2.5;
+      tSph.r = maxDim * 1.2;
       sph.r = tSph.r;
       cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
       cam.lookAt(0, 0, 0);
