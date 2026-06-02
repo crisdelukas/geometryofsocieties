@@ -125,9 +125,9 @@
   cam.position.set(800, 500, 800);
   cam.lookAt(0, -maxDim * 0.15, 0);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  var dl = new THREE.DirectionalLight(0xffffff, 1.0);
-  dl.position.set(400, 800, 300);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+  var dl = new THREE.DirectionalLight(0xffffff, 1.4);
+  dl.position.set(200, 600, 800);
   dl.castShadow = true;
   scene.add(dl);
   var dl2 = new THREE.DirectionalLight(0xc8e054, 0.08);
@@ -161,7 +161,7 @@
     function(gltf) {
       setProgress(70, 'placing city...');
 
-      var cityMat = new THREE.MeshLambertMaterial({color: 0xd8d8d8});
+      var cityMat = new THREE.MeshLambertMaterial({color: 0xb8b8b8});
       gltf.scene.traverse(function(child) {
         if(child.isMesh) {
           child.material = cityMat;
