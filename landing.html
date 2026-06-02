@@ -10,7 +10,6 @@
     body { background: #000000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
     #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
     canvas { display: block; width: 100%; height: 100%; }
-
     .ui-band {
       position: fixed; top: 0; left: 0; right: 0;
       padding: 10px 1.75rem;
@@ -26,17 +25,14 @@
       font-family: 'Space Mono', monospace; font-size: 8px;
       letter-spacing: 0.14em; text-transform: uppercase;
       color: rgba(255,255,255,0.25); text-decoration: none;
-      transition: color 0.2s;
     }
     .nav a:hover { color: #c8e054; }
     .nav a.active { color: rgba(255,255,255,0.7); }
-
     .ui-bottom {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 14px 1.75rem;
       display: flex; justify-content: space-between; align-items: flex-end;
-      z-index: 10;
-      pointer-events: none;
+      z-index: 10; pointer-events: none;
     }
     .bottom-left { display: flex; flex-direction: column; gap: 6px; }
     .exp-label {
@@ -53,14 +49,12 @@
       font-family: 'Space Mono', monospace; font-size: 8px;
       letter-spacing: 0.16em; text-transform: uppercase;
       color: rgba(200,224,84,0.7); cursor: pointer;
-      transition: all 0.2s;
     }
-    .enter-btn:hover { border-color: #c8e054; color: #c8e054; background: rgba(200,224,84,0.05); }
+    .enter-btn:hover { border-color: #c8e054; color: #c8e054; }
     .hint {
       font-family: 'Space Mono', monospace; font-size: 8px;
       letter-spacing: 0.1em; color: rgba(255,255,255,0.12);
     }
-
     .loading {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: #000000;
@@ -76,13 +70,8 @@
       color: rgba(255,255,255,0.3);
     }
     .loading-text em { color: #c8e054; font-style: normal; }
-    .loading-bar-wrap {
-      width: 200px; height: 0.5px; background: rgba(255,255,255,0.1);
-    }
-    .loading-bar {
-      height: 100%; width: 0%; background: #c8e054;
-      transition: width 0.3s;
-    }
+    .loading-bar-wrap { width: 200px; height: 0.5px; background: rgba(255,255,255,0.1); }
+    .loading-bar { height: 100%; width: 0%; background: #c8e054; transition: width 0.3s; }
   </style>
 </head>
 <body>
@@ -115,72 +104,63 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function(){
 
-// ── Renderer & Scene ──────────────────────────────────────────────
-const cv = document.getElementById('cv');
-const W = window.innerWidth, H = window.innerHeight;
-cv.width = W; cv.height = H;
+  var cv = document.getElementById('cv');
+  var W = window.innerWidth, H = window.innerHeight;
+  cv.width = W; cv.height = H;
 
-const renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
-renderer.setSize(W, H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setClearColor(0x000000, 1);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  var renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 1);
+  renderer.shadowMap.enabled = true;
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x000000, 0.004);
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x000000, 0.003);
 
-const cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 2000);
-cam.position.set(800, 500, 800);
-cam.lookAt(500, 200, 500);
+  var cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 5000);
+  cam.position.set(800, 500, 800);
+  cam.lookAt(0, 0, 0);
 
-// ── Lights ────────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const dl = new THREE.DirectionalLight(0xffffff, 1.0);
-dl.position.set(400, 800, 300);
-dl.castShadow = true;
-dl.shadow.mapSize.set(2048, 2048);
-dl.shadow.camera.left = -600;
-dl.shadow.camera.right = 600;
-dl.shadow.camera.top = 600;
-dl.shadow.camera.bottom = -600;
-dl.shadow.camera.far = 2000;
-scene.add(dl);
-const dl2 = new THREE.DirectionalLight(0xc8e054, 0.08);
-dl2.position.set(-300, 200, -300);
-scene.add(dl2);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  var dl = new THREE.DirectionalLight(0xffffff, 1.0);
+  dl.position.set(400, 800, 300);
+  dl.castShadow = true;
+  scene.add(dl);
+  var dl2 = new THREE.DirectionalLight(0xc8e054, 0.08);
+  dl2.position.set(-300, 200, -300);
+  scene.add(dl2);
 
-// ── Loading UI ────────────────────────────────────────────────────
-function setProgress(pct, msg) {
-  document.getElementById('loading-bar').style.width = pct + '%';
-  if(msg) document.getElementById('loading-status').innerHTML = msg;
-}
-function hideLoading() {
-  const el = document.getElementById('loading');
-  el.classList.add('hidden');
-  setTimeout(() => el.style.display = 'none', 900);
-}
+  var sph = {th: Math.PI * 0.25, ph: 0.85, r: 1200};
+  var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
-// ── Load GLB ──────────────────────────────────────────────────────
-// Three.js r134 GLTFLoader via CDN
-const loaderScript = document.createElement('script');
-loaderScript.src = 'https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js';
-document.head.appendChild(loaderScript);
+  function setProgress(pct, msg) {
+    document.getElementById('loading-bar').style.width = pct + '%';
+    if(msg) document.getElementById('loading-status').textContent = msg;
+  }
 
-loaderScript.onload = function() {
-  setProgress(10, 'initialising loader...');
-  const loader = new THREE.GLTFLoader();
+  function hideLoading() {
+    var el = document.getElementById('loading');
+    el.classList.add('hidden');
+    setTimeout(function(){ el.style.display = 'none'; }, 900);
+  }
 
+  var pathData = {};
+  var cityCenter = new THREE.Vector3();
+  var citySize = new THREE.Vector3();
+
+  setProgress(5, 'loading city...');
+
+  var loader = new THREE.GLTFLoader();
   loader.load(
     'cityMeshSmall.glb',
     function(gltf) {
       setProgress(70, 'placing city...');
 
-      const cityMat = new THREE.MeshLambertMaterial({ color: 0xd8d8d8 });
-
+      var cityMat = new THREE.MeshLambertMaterial({color: 0xd8d8d8});
       gltf.scene.traverse(function(child) {
         if(child.isMesh) {
           child.material = cityMat;
@@ -189,182 +169,140 @@ loaderScript.onload = function() {
         }
       });
 
-      // Center the model
-      const box = new THREE.Box3().setFromObject(gltf.scene);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
+      var box = new THREE.Box3().setFromObject(gltf.scene);
+      var center = box.getCenter(new THREE.Vector3());
+      var size = box.getSize(new THREE.Vector3());
+      cityCenter.copy(center);
+      citySize.copy(size);
+
       gltf.scene.position.sub(center);
-      gltf.scene.position.y += size.y / 2;
       scene.add(gltf.scene);
 
-      // Adjust camera to fit model
-      const maxDim = Math.max(size.x, size.y, size.z);
-      cam.position.set(maxDim * 0.9, maxDim * 0.6, maxDim * 0.9);
-      cam.lookAt(0, size.y * 0.3, 0);
-      if(typeof tSph !== 'undefined') { tSph.r = maxDim * 1.2; sph.r = tSph.r; }
+      var maxDim = Math.max(size.x, size.y, size.z);
+      tSph.r = maxDim * 1.4;
+      sph.r = tSph.r;
+      cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
+      cam.lookAt(0, 0, 0);
 
       setProgress(85, 'loading paths...');
       loadPaths(center, size);
     },
     function(xhr) {
-      const pct = Math.round((xhr.loaded / xhr.total) * 60) + 10;
-      setProgress(pct, 'loading city... ' + Math.round(xhr.loaded/1024/1024) + 'MB');
+      if(xhr.total > 0) {
+        var pct = Math.round((xhr.loaded / xhr.total) * 60) + 5;
+        setProgress(pct, 'loading city... ' + Math.round(xhr.loaded/1024/1024) + 'MB');
+      }
     },
     function(err) {
-      console.error('GLB load error:', err);
+      console.error('GLB error:', err);
       setProgress(100, 'error loading model');
     }
   );
-};
 
-// ── Load Paths CSV ────────────────────────────────────────────────
-let pathData = {};
-let cityOffset = new THREE.Vector3();
-let citySize = new THREE.Vector3();
-
-function loadPaths(center, size) {
-  cityOffset = center;
-  citySize = size;
-
-  fetch('paths.csv')
-    .then(r => r.text())
-    .then(text => {
-      const lines = text.trim().split('\n').slice(1); // skip header
-      lines.forEach(line => {
-        const [pid, idx, x, y, z] = line.split(',').map(Number);
-        if(!pathData[pid]) pathData[pid] = [];
-        pathData[pid][idx] = new THREE.Vector3(
-          x - center.x,
-          y - center.y + size.y / 2,
-          z - center.z
-        );
+  function loadPaths(center, size) {
+    fetch('paths.csv')
+      .then(function(r){ return r.text(); })
+      .then(function(text) {
+        var lines = text.trim().split('\n').slice(1);
+        lines.forEach(function(line) {
+          var parts = line.split(',');
+          var pid = parseInt(parts[0]);
+          var idx = parseInt(parts[1]);
+          var x = parseFloat(parts[2]) - center.x;
+          var y = parseFloat(parts[3]) - center.y;
+          var z = parseFloat(parts[4]) - center.z;
+          if(!pathData[pid]) pathData[pid] = [];
+          pathData[pid][idx] = new THREE.Vector3(x, y, z);
+        });
+        setProgress(95, 'spawning agents...');
+        spawnAgents();
+        setProgress(100, 'ready');
+        setTimeout(hideLoading, 600);
+      })
+      .catch(function(err) {
+        console.error('Paths error:', err);
+        setTimeout(hideLoading, 600);
       });
-      setProgress(95, 'spawning agents...');
-      spawnAgents();
-      setProgress(100, 'ready');
-      setTimeout(hideLoading, 500);
-    })
-    .catch(err => {
-      console.error('Paths load error:', err);
-      setProgress(100, 'ready (no paths)');
-      setTimeout(hideLoading, 500);
+  }
+
+  var agents = [];
+  var agentGeo = new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
+  var agentMat = new THREE.MeshLambertMaterial({color: 0x111111});
+
+  function spawnAgents() {
+    var count = 0;
+    Object.keys(pathData).forEach(function(pid) {
+      var pts = pathData[pid].filter(Boolean);
+      if(pts.length < 2) return;
+      var n = pts.length > 44 ? 2 : 1;
+      for(var i = 0; i < n; i++) {
+        var mesh = new THREE.Mesh(agentGeo, agentMat);
+        mesh.castShadow = true;
+        scene.add(mesh);
+        var startIdx = Math.floor((i / n) * pts.length);
+        agents.push({
+          mesh: mesh,
+          path: pts,
+          idx: startIdx,
+          progress: Math.random(),
+          speed: 0.004 + Math.random() * 0.004
+        });
+        count++;
+      }
     });
-}
+    document.getElementById('stat-agents').textContent = count;
+  }
 
-// ── Agents ────────────────────────────────────────────────────────
-const agents = [];
-const AGENT_COLOR = 0x1a1a1a;
-cconst AGENT_GEO = new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
-const AGENT_MAT = new THREE.MeshLambertMaterial({ color: AGENT_COLOR });
+  var dragging = false;
+  var pm = {x:0, y:0};
 
-// How many agents per path type
-const AGENTS_PER_PATH = {
-  short: 1,
-  medium: 1,
-  long: 2
-};
-
-function pathType(pid) {
-  const len = pathData[pid] ? pathData[pid].length : 0;
-  if(len <= 15) return 'short';
-  if(len <= 44) return 'medium';
-  return 'long';
-}
-
-function spawnAgents() {
-  let count = 0;
-  Object.keys(pathData).forEach(pid => {
-    const pts = pathData[pid].filter(Boolean);
-    if(pts.length < 2) return;
-    const type = pathType(pid);
-    const n = type === 'long' ? 2 : 1;
-    for(let i = 0; i < n; i++) {
-      const mesh = new THREE.Mesh(AGENT_GEO, AGENT_MAT.clone());
-      mesh.castShadow = true;
-      scene.add(mesh);
-      const startIdx = Math.floor((i / n) * pts.length);
-      agents.push({
-        mesh,
-        path: pts,
-        idx: startIdx,
-        progress: Math.random(),
-        speed: 0.004 + Math.random() * 0.004
-      });
-      count++;
-    }
+  document.addEventListener('mousedown', function(e){ dragging=true; pm={x:e.clientX,y:e.clientY}; });
+  window.addEventListener('mouseup', function(){ dragging=false; });
+  window.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    tSph.th -= (e.clientX-pm.x)*0.006;
+    tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph+(e.clientY-pm.y)*0.006));
+    pm = {x:e.clientX, y:e.clientY};
   });
-  document.getElementById('stat-agents').textContent = count;
-}
+  document.addEventListener('wheel', function(e){
+    tSph.r = Math.max(50, Math.min(5000, tSph.r+e.deltaY*0.5));
+    e.preventDefault();
+  }, {passive:false});
 
-// ── Camera Controls ───────────────────────────────────────────────
-let dragging = false, pm = {x:0, y:0};
-let sph = {th: Math.PI * 0.25, ph: 0.85, r: 1200};
-let tSph = {...sph};
+  function loop() {
+    requestAnimationFrame(loop);
 
-document.addEventListener('mousedown', e => { dragging=true; pm={x:e.clientX, y:e.clientY}; });
-window.addEventListener('mouseup', () => dragging=false);
-window.addEventListener('mousemove', e => {
-  if(!dragging) return;
-  tSph.th -= (e.clientX-pm.x) * 0.006;
-  tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph + (e.clientY-pm.y) * 0.006));
-  pm = {x:e.clientX, y:e.clientY};
-});
-document.addEventListener('wheel', e => {
-  tSph.r = Math.max(50, Math.min(3000, tSph.r + e.deltaY * 0.5));
-  e.preventDefault();
-}, {passive:false});
+    sph.th += (tSph.th-sph.th)*0.07;
+    sph.ph += (tSph.ph-sph.ph)*0.07;
+    sph.r  += (tSph.r -sph.r )*0.07;
+    cam.position.set(
+      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
+      sph.r*Math.cos(sph.ph),
+      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
+    );
+    cam.lookAt(0, 0, 0);
 
-let lastTouch = null;
-document.addEventListener('touchstart', e => { lastTouch=e.touches[0]; });
-document.addEventListener('touchmove', e => {
-  if(!lastTouch) return;
-  tSph.th -= (e.touches[0].clientX-lastTouch.clientX)*0.006;
-  tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.006));
-  lastTouch=e.touches[0];
-  e.preventDefault();
-}, {passive:false});
+    agents.forEach(function(ag) {
+      if(!ag.path || ag.path.length < 2) return;
+      ag.progress += ag.speed;
+      if(ag.progress >= 1) {
+        ag.progress = 0;
+        ag.idx = (ag.idx + 1) % ag.path.length;
+      }
+      var cur = ag.path[ag.idx];
+      var nxt = ag.path[(ag.idx+1) % ag.path.length];
+      if(!cur || !nxt) return;
+      ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
+      ag.mesh.position.y += 3;
+      var dir = nxt.clone().sub(cur);
+      if(dir.length() > 0.01) {
+        ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+      }
+    });
 
-// ── Animation Loop ────────────────────────────────────────────────
-let frame = 0;
-function loop() {
-  requestAnimationFrame(loop);
-  frame++;
-
-  // Smooth camera
-  sph.th += (tSph.th - sph.th) * 0.07;
-  sph.ph += (tSph.ph - sph.ph) * 0.07;
-  sph.r  += (tSph.r  - sph.r)  * 0.07;
-  cam.position.set(
-    sph.r * Math.sin(sph.ph) * Math.sin(sph.th),
-    sph.r * Math.cos(sph.ph),
-    sph.r * Math.sin(sph.ph) * Math.cos(sph.th)
-  );
-  cam.lookAt(0, 0, 0);
-
-  // Move agents
-  agents.forEach(ag => {
-    if(!ag.path || ag.path.length < 2) return;
-    ag.progress += ag.speed;
-    if(ag.progress >= 1) {
-      ag.progress = 0;
-      ag.idx = (ag.idx + 1) % ag.path.length;
-    }
-    const cur = ag.path[ag.idx];
-    const nxt = ag.path[(ag.idx + 1) % ag.path.length];
-    if(!cur || !nxt) return;
-    const p = ag.progress;
-    ag.mesh.position.lerpVectors(cur, nxt, p);
-    ag.mesh.position.y += 3;
-    // Face direction of travel
-    const dir = nxt.clone().sub(cur);
-    if(dir.length() > 0.01) {
-      ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
-    }
-  });
-
-  renderer.render(scene, cam);
-}
-loop();
+    renderer.render(scene, cam);
+  }
+  loop();
 
 })();
 </script>
