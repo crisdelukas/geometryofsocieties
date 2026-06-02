@@ -121,7 +121,7 @@
   var scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x000000, 0.00005);
 
-  var cam = new THREE.PerspectiveCamera(75, W/H, 0.1, 5000);
+  var cam = new THREE.PerspectiveCamera(22, W/H, 0.1, 5000);
   cam.position.set(800, 500, 800);
   cam.lookAt(0, -maxDim * 0.15, 0);
 
@@ -134,7 +134,7 @@
   dl2.position.set(-300, 200, -300);
   scene.add(dl2);
 
-  var sph = {th: Math.PI * 1.75, ph: 0.75, r: 1200};
+  var sph = {th: Math.PI * 1.75, ph: 0.55, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
   function setProgress(pct, msg) {
@@ -180,7 +180,7 @@
       scene.add(gltf.scene);
 
       maxDim = Math.max(size.x, size.y, size.z);
-      tSph.r = maxDim * 1.2;
+      tSph.r = maxDim * 0.7;
       sph.r = tSph.r;
       cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
       cam.lookAt(0, -maxDim * 0.15, 0);
@@ -266,7 +266,7 @@
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
-    tSph.r = Math.max(maxDim * 0.8, Math.min(maxDim * 2.2, tSph.r+e.deltaY*0.5));
+    tSph.r = Math.max(maxDim * 0.3, Math.min(maxDim * 1.1, tSph.r+e.deltaY*0.5));
     e.preventDefault();
   }, {passive:false});
 
