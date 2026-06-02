@@ -134,7 +134,7 @@
   dl2.position.set(-300, 200, -300);
   scene.add(dl2);
 
-  var sph = {th: Math.PI * 1.75, ph: 0.55, r: 1200};
+  var sph = {th: Math.PI * 1.75, ph: 0.38, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
   function setProgress(pct, msg) {
@@ -180,7 +180,7 @@
       scene.add(gltf.scene);
 
       maxDim = Math.max(size.x, size.y, size.z);
-      tSph.r = maxDim * 0.7;
+      tSph.r = maxDim * 0.9;
       sph.r = tSph.r;
       cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
       cam.lookAt(0, -maxDim * 0.15, 0);
@@ -261,7 +261,7 @@
   window.addEventListener('mouseup', function(){ dragging=false; });
   window.addEventListener('mousemove', function(e){
     if(!dragging) return;
-    tSph.th -= (e.clientX-pm.x)*0.006;
+    tSph.th = Math.max(Math.PI * 1.42, Math.min(Math.PI * 2.08, tSph.th - (e.clientX-pm.x)*0.006));
     tSph.ph = Math.max(0.5, Math.min(1.1, tSph.ph+(e.clientY-pm.y)*0.006));
     pm = {x:e.clientX, y:e.clientY};
   });
