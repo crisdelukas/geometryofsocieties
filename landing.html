@@ -201,8 +201,7 @@ loaderScript.onload = function() {
       const maxDim = Math.max(size.x, size.y, size.z);
       cam.position.set(maxDim * 0.9, maxDim * 0.6, maxDim * 0.9);
       cam.lookAt(0, size.y * 0.3, 0);
-      tSph.r = maxDim * 1.2;
-      sph.r = tSph.r;
+      if(typeof tSph !== 'undefined') { tSph.r = maxDim * 1.2; sph.r = tSph.r; }
 
       setProgress(85, 'loading paths...');
       loadPaths(center, size);
@@ -255,9 +254,7 @@ function loadPaths(center, size) {
 // ── Agents ────────────────────────────────────────────────────────
 const agents = [];
 const AGENT_COLOR = 0x1a1a1a;
-const AGENT_GEO = new THREE.CapsuleGeometry
-  ? new THREE.CapsuleGeometry(1.5, 4, 4, 8)
-  : new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
+cconst AGENT_GEO = new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
 const AGENT_MAT = new THREE.MeshLambertMaterial({ color: AGENT_COLOR });
 
 // How many agents per path type
