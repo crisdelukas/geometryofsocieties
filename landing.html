@@ -134,7 +134,7 @@
   dl2.position.set(-300, 200, -300);
   scene.add(dl2);
 
-  var sph = {th: Math.PI * 0.25, ph: 0.85, r: 1200};
+  var sph = {th: Math.PI * 1.25, ph: 0.75, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
 
   function setProgress(pct, msg) {
@@ -151,6 +151,7 @@
   var pathData = {};
   var cityCenter = new THREE.Vector3();
   var citySize = new THREE.Vector3();
+  var maxDim = 1000;
 
   setProgress(5, 'loading city...');
 
@@ -178,7 +179,7 @@
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
 
-      var maxDim = Math.max(size.x, size.y, size.z);
+      maxDim = Math.max(size.x, size.y, size.z);
       tSph.r = maxDim * 2.5;
       sph.r = tSph.r;
       cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
@@ -261,11 +262,11 @@
   window.addEventListener('mousemove', function(e){
     if(!dragging) return;
     tSph.th -= (e.clientX-pm.x)*0.006;
-    tSph.ph = Math.max(0.1, Math.min(1.4, tSph.ph+(e.clientY-pm.y)*0.006));
+    tSph.ph = Math.max(0.5, Math.min(1.1, tSph.ph+(e.clientY-pm.y)*0.006));
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
-    tSph.r = Math.max(50, Math.min(5000, tSph.r+e.deltaY*0.5));
+    tSph.r = Math.max(maxDim * 0.8, Math.min(maxDim * 2.2, tSph.r+e.deltaY*0.5));
     e.preventDefault();
   }, {passive:false});
 
