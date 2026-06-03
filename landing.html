@@ -112,45 +112,37 @@
   var W = window.innerWidth, H = window.innerHeight;
   cv.width = W; cv.height = H;
 
+  // Renderer
   var renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 1);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.65;
+  renderer.toneMappingExposure = 0.75;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
+  // Scene
   var scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x000000, 0.00005);
+  scene.fog = new THREE.Fog(0x000000, 3000, 6000);
 
-  var cam = new THREE.PerspectiveCamera(22, W/H, 0.1, 5000);
-  cam.position.set(800, 500, 800);
-  cam.lookAt(0, -maxDim * 0.15, 0);
+  // Camera — set up after model loads
+  var cam = new THREE.PerspectiveCamera(22, W/H, 1, 8000);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  var dl = new THREE.DirectionalLight(0xffffff, 1.0);
-  dl.position.set(2, 3, -1);
-  dl.castShadow = true;
-  dl.shadow.mapSize.width = 4096;
-  dl.shadow.mapSize.height = 4096;
-  dl.shadow.camera.near = 0.5;
-  dl.shadow.camera.far = 5000;
-  dl.shadow.camera.left = -2000;
-  dl.shadow.camera.right = 2000;
-  dl.shadow.camera.top = 2000;
-  dl.shadow.camera.bottom = -2000;
-  dl.shadow.bias = -0.0001;
-  scene.add(dl);
+  // Lights — set up after model loads so we know maxDim
+  var maxDim = 1000;
+  var lookTarget = new THREE.Vector3(0, 0, 0);
 
-  var sph = {th: Math.PI * 1.75, ph: 1.20, r: 1200};
-  var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
+  // Spherical camera coords
+  var sph  = {th: Math.PI * 1.75, ph: 0.72, r: 2000};
+  var tSph = {th: Math.PI * 1.75, ph: 0.72, r: 2000};
 
+  // Progress
   function setProgress(pct, msg) {
     document.getElementById('loading-bar').style.width = pct + '%';
     if(msg) document.getElementById('loading-status').textContent = msg;
   }
-
   function hideLoading() {
     var el = document.getElementById('loading');
     el.classList.add('hidden');
@@ -158,9 +150,6 @@
   }
 
   var pathData = {};
-  var cityCenter = new THREE.Vector3();
-  var citySize = new THREE.Vector3();
-  var maxDim = 1000;
 
   setProgress(5, 'loading city...');
 
@@ -170,11 +159,13 @@
     function(gltf) {
       setProgress(70, 'placing city...');
 
+      // Material
       var cityMat = new THREE.MeshStandardMaterial({
-        color: 0xbbbbbb,
-        roughness: 1.0,
+        color: 0xc8c8c8,
+        roughness: 0.95,
         metalness: 0.0
       });
+
       gltf.scene.traverse(function(child) {
         if(child.isMesh) {
           child.material = cityMat;
@@ -183,23 +174,45 @@
         }
       });
 
+      // Center model
       var box = new THREE.Box3().setFromObject(gltf.scene);
       var center = box.getCenter(new THREE.Vector3());
-      var size = box.getSize(new THREE.Vector3());
-      cityCenter.copy(center);
-      citySize.copy(size);
-
+      var size   = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
 
+      // Compute maxDim and look target
       maxDim = Math.max(size.x, size.y, size.z);
-      tSph.r = maxDim * 0.9;
-      sph.r = tSph.r;
-      cam.position.set(tSph.r * 0.7, tSph.r * 0.5, tSph.r * 0.7);
-      cam.lookAt(0, -maxDim * 0.15, 0);
+      lookTarget.set(0, -size.y * 0.1, 0);
+
+      // Set camera distance
+      tSph.r = maxDim * 0.75;
+      sph.r  = tSph.r;
+
+      // Lights — now we know the scale
+      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+      var dl = new THREE.DirectionalLight(0xffffff, 0.9);
+      dl.position.set(maxDim * 0.6, maxDim * 1.2, maxDim * 0.3);
+      dl.castShadow = true;
+      dl.shadow.mapSize.width  = 2048;
+      dl.shadow.mapSize.height = 2048;
+      dl.shadow.camera.near   = 1;
+      dl.shadow.camera.far    = maxDim * 4;
+      dl.shadow.camera.left   = -maxDim;
+      dl.shadow.camera.right  =  maxDim;
+      dl.shadow.camera.top    =  maxDim;
+      dl.shadow.camera.bottom = -maxDim;
+      dl.shadow.bias = -0.001;
+      scene.add(dl);
+
+      // Soft fill from opposite side
+      var fill = new THREE.DirectionalLight(0xffffff, 0.25);
+      fill.position.set(-maxDim * 0.4, maxDim * 0.5, -maxDim * 0.4);
+      scene.add(fill);
 
       setProgress(85, 'loading paths...');
-      loadPaths(center, size);
+      loadPaths(center);
     },
     function(xhr) {
       if(xhr.total > 0) {
@@ -213,7 +226,7 @@
     }
   );
 
-  function loadPaths(center, size) {
+  function loadPaths(center) {
     fetch('paths.csv')
       .then(function(r){ return r.text(); })
       .then(function(text) {
@@ -240,8 +253,8 @@
   }
 
   var agents = [];
-  var agentGeo = new THREE.CylinderGeometry(1.5, 1.5, 6, 8);
-  var agentMat = new THREE.MeshLambertMaterial({color: 0x111111});
+  var agentGeo = new THREE.CylinderGeometry(2, 2, 8, 8);
+  var agentMat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.8});
 
   function spawnAgents() {
     var count = 0;
@@ -267,51 +280,63 @@
     document.getElementById('stat-agents').textContent = count;
   }
 
+  // Camera controls
   var dragging = false;
   var pm = {x:0, y:0};
 
   document.addEventListener('mousedown', function(e){ dragging=true; pm={x:e.clientX,y:e.clientY}; });
-  window.addEventListener('mouseup', function(){ dragging=false; });
-  window.addEventListener('mousemove', function(e){
+  window.addEventListener('mouseup',    function(){  dragging=false; });
+  window.addEventListener('mousemove',  function(e){
     if(!dragging) return;
-    tSph.th = Math.max(Math.PI * 1.42, Math.min(Math.PI * 2.08, tSph.th - (e.clientX-pm.x)*0.006));
-    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.006));
+    tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.clientX-pm.x)*0.005));
+    tSph.ph = Math.max(0.45,         Math.min(0.95,         tSph.ph+(e.clientY-pm.y)*0.005));
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
-    tSph.r = Math.max(maxDim * 0.35, Math.min(maxDim * 0.9, tSph.r+e.deltaY*0.5));
+    tSph.r = Math.max(maxDim*0.4, Math.min(maxDim*1.2, tSph.r+e.deltaY*0.4));
     e.preventDefault();
   }, {passive:false});
 
+  // Touch
+  var lastTouch = null;
+  document.addEventListener('touchstart',  function(e){ lastTouch=e.touches[0]; });
+  document.addEventListener('touchmove',   function(e){
+    if(!lastTouch) return;
+    tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.touches[0].clientX-lastTouch.clientX)*0.005));
+    tSph.ph = Math.max(0.45,         Math.min(0.95,         tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.005));
+    lastTouch=e.touches[0];
+    e.preventDefault();
+  }, {passive:false});
+
+  // Loop
   function loop() {
     requestAnimationFrame(loop);
 
     sph.th += (tSph.th-sph.th)*0.07;
     sph.ph += (tSph.ph-sph.ph)*0.07;
     sph.r  += (tSph.r -sph.r )*0.07;
+
     cam.position.set(
-      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
-      sph.r*Math.cos(sph.ph),
-      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
+      sph.r * Math.sin(sph.ph) * Math.sin(sph.th),
+      sph.r * Math.cos(sph.ph),
+      sph.r * Math.sin(sph.ph) * Math.cos(sph.th)
     );
-    cam.lookAt(0, -maxDim * 0.15, 0);
+    cam.lookAt(lookTarget);
 
     agents.forEach(function(ag) {
       if(!ag.path || ag.path.length < 2) return;
       ag.progress += ag.speed;
       if(ag.progress >= 1) {
         ag.progress = 0;
-        ag.idx = (ag.idx + 1) % ag.path.length;
+        ag.idx = (ag.idx+1) % ag.path.length;
       }
       var cur = ag.path[ag.idx];
       var nxt = ag.path[(ag.idx+1) % ag.path.length];
       if(!cur || !nxt) return;
       ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
-      ag.mesh.position.y += 3;
+      ag.mesh.position.y += 4;
       var dir = nxt.clone().sub(cur);
-      if(dir.length() > 0.01) {
-        ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
-      }
+      if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
     });
 
     renderer.render(scene, cam);
