@@ -125,8 +125,8 @@
   cam.position.set(800, 500, 800);
   cam.lookAt(0, -maxDim * 0.15, 0);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.25));
-  var dl = new THREE.DirectionalLight(0xffffff, 1.4);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  var dl = new THREE.DirectionalLight(0xffffff, 0.3);
   dl.position.set(200, 600, 800);
   dl.castShadow = true;
   scene.add(dl);
