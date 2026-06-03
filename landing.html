@@ -135,8 +135,8 @@
   var lookTarget = new THREE.Vector3(0, 0, 0);
 
   // Spherical camera coords
-  var sph  = {th: Math.PI * 1.75, ph: 0.72, r: 2000};
-  var tSph = {th: Math.PI * 1.75, ph: 0.72, r: 2000};
+  var sph  = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
+  var tSph = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
 
   // Progress
   function setProgress(pct, msg) {
@@ -186,7 +186,7 @@
       lookTarget.set(0, -size.y * 0.1, 0);
 
       // Set camera distance
-      tSph.r = maxDim * 0.75;
+      tSph.r = maxDim * 0.55;
       sph.r  = tSph.r;
 
       // Lights — now we know the scale
@@ -289,11 +289,11 @@
   window.addEventListener('mousemove',  function(e){
     if(!dragging) return;
     tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.clientX-pm.x)*0.005));
-    tSph.ph = Math.max(0.45,         Math.min(0.95,         tSph.ph+(e.clientY-pm.y)*0.005));
+    tSph.ph = Math.max(0.9,         Math.min(1.35,         tSph.ph+(e.clientY-pm.y)*0.005));
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
-    tSph.r = Math.max(maxDim*0.4, Math.min(maxDim*1.2, tSph.r+e.deltaY*0.4));
+    tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
   }, {passive:false});
 
