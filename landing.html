@@ -130,7 +130,17 @@
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
   var dl = new THREE.DirectionalLight(0xffffff, 1.0);
-  dl.position.set(1, 1.5, 0.5);
+  dl.position.set(2, 3, -1);
+  dl.castShadow = true;
+  dl.shadow.mapSize.width = 4096;
+  dl.shadow.mapSize.height = 4096;
+  dl.shadow.camera.near = 0.5;
+  dl.shadow.camera.far = 5000;
+  dl.shadow.camera.left = -2000;
+  dl.shadow.camera.right = 2000;
+  dl.shadow.camera.top = 2000;
+  dl.shadow.camera.bottom = -2000;
+  dl.shadow.bias = -0.0001;
   scene.add(dl);
 
   var sph = {th: Math.PI * 1.75, ph: 1.20, r: 1200};
