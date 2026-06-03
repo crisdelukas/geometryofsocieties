@@ -125,9 +125,19 @@
   cam.position.set(800, 500, 800);
   cam.lookAt(0, -maxDim * 0.15, 0);
 
-  var hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-  hemi.position.set(0, 1, 0);
-  scene.add(hemi);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+
+  var dl1 = new THREE.DirectionalLight(0xffffff, 0.4);
+  dl1.position.set(1, 2, 1);
+  scene.add(dl1);
+
+  var dl2 = new THREE.DirectionalLight(0xffffff, 0.3);
+  dl2.position.set(-1, 1, -1);
+  scene.add(dl2);
+
+  var dl3 = new THREE.DirectionalLight(0xffffff, 0.2);
+  dl3.position.set(0, 1, -2);
+  scene.add(dl3);
 
   var sph = {th: Math.PI * 1.75, ph: 1.20, r: 1200};
   var tSph = {th: sph.th, ph: sph.ph, r: sph.r};
