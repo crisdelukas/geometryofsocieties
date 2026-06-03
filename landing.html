@@ -120,7 +120,7 @@
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.75;
+  renderer.toneMappingExposure = 0.55;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
   // Scene
@@ -190,7 +190,7 @@
       sph.r  = tSph.r;
 
       // Lights — now we know the scale
-      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
       var dl = new THREE.DirectionalLight(0xffffff, 0.9);
       dl.position.set(maxDim * 0.6, maxDim * 1.2, maxDim * 0.3);
