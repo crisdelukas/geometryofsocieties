@@ -237,8 +237,8 @@
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
           var x = parseFloat(parts[2]) - center.x;
-          var y = parseFloat(parts[3]) - center.y;
-          var z = parseFloat(parts[4]) - center.z;
+          var y = parseFloat(parts[4]) - center.z;
+          var z = parseFloat(parts[3]) - center.y;
           if(!pathData[pid]) pathData[pid] = [];
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
         });
