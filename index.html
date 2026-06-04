@@ -177,6 +177,7 @@
       // Center model
       var box = new THREE.Box3().setFromObject(gltf.scene);
       var center = box.getCenter(new THREE.Vector3());
+      console.log('center', center.x, center.y, center.z);
       var size   = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
