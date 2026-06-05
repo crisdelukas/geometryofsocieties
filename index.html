@@ -236,9 +236,9 @@
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
-          var x = parseFloat(parts[2]);
-          var y = parseFloat(parts[4]);
-          var z = parseFloat(parts[3]);
+          var x = parseFloat(parts[2]) - 759.3363865;
+          var y = parseFloat(parts[4]) + 597.4524299999999;
+          var z = parseFloat(parts[3]) - 279.2523499999999;
           if(!pathData[pid]) pathData[pid] = [];
           if(pid === 0 && idx === 0) console.log('first point', x, y, z);
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
