@@ -246,17 +246,6 @@
         var csvCenterY = sumY / count;
         var csvCenterZ = sumZ / count;
         console.log('csv center', csvCenterX, csvCenterY, csvCenterZ);
-        // Test point from Rhino: 506.310126, 436.728514, 318.012596
-        var testMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(20, 8, 8),
-          new THREE.MeshStandardMaterial({color: 0xff0000})
-        );
-        testMesh.position.set(
-          506.310126 - csvCenterX,
-          318.012596 - csvCenterZ,
-          436.728514 - csvCenterY
-        );
-        scene.add(testMesh);
         
         lines.forEach(function(line) {
           var parts = line.split(',');
