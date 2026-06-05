@@ -232,13 +232,28 @@
       .then(function(r){ return r.text(); })
       .then(function(text) {
         var lines = text.trim().split('\n').slice(1);
+
+        var sumX = 0, sumY = 0, sumZ = 0, count = 0;
+        var rawLines = text.trim().split('\n').slice(1);
+        rawLines.forEach(function(line) {
+          var parts = line.split(',');
+          sumX += parseFloat(parts[2]);
+          sumY += parseFloat(parts[3]);
+          sumZ += parseFloat(parts[4]);
+          count++;
+        });
+        var csvCenterX = sumX / count;
+        var csvCenterY = sumY / count;
+        var csvCenterZ = sumZ / count;
+        console.log('csv center', csvCenterX, csvCenterY, csvCenterZ);
+        
         lines.forEach(function(line) {
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
-          var x = parseFloat(parts[2]) - 759.3363865;
-          var y = parseFloat(parts[4]) + 597.4524299999999;
-          var z = parseFloat(parts[3]) - 279.2523499999999;
+          var x = parseFloat(parts[2]) - csvCenterX;
+          var y = parseFloat(parts[4]) - csvCenterZ;
+          var z = parseFloat(parts[3]) - csvCenterY;
           if(!pathData[pid]) pathData[pid] = [];
           if(pid === 0 && idx === 0) console.log('first point', x, y, z);
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
