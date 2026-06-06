@@ -181,6 +181,7 @@
       var size   = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
+      gltf.scene.rotation.x = Math.PI;
 
       // Compute maxDim and look target
       maxDim = Math.max(size.x, size.y, size.z);
