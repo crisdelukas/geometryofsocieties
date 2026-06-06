@@ -155,7 +155,7 @@
 
   var loader = new THREE.GLTFLoader();
   loader.load(
-    'cityMeshSmall2.glb',
+    'cityMesh.glb',
     function(gltf) {
       setProgress(70, 'placing city...');
 
@@ -228,34 +228,29 @@
   );
 
   function loadPaths(center) {
-    fetch('paths.csv')
+    fetch('paths2.csv')
       .then(function(r){ return r.text(); })
       .then(function(text) {
         var lines = text.trim().split('\n').slice(1);
 
         var sumX = 0, sumY = 0, sumZ = 0, count = 0;
-        var rawLines = text.trim().split('\n').slice(1);
-        rawLines.forEach(function(line) {
+        lines.forEach(function(line) {
           var parts = line.split(',');
           sumX += parseFloat(parts[2]);
-          sumY += parseFloat(parts[4]);
-          sumZ += parseFloat(parts[3]);
+          sumY += parseFloat(parts[3]);
+          sumZ += parseFloat(parts[4]);
           count++;
         });
-        var csvCenterX = sumX / count;
-        var csvCenterY = sumY / count;
-        var csvCenterZ = sumZ / count;
-        console.log('csv center', csvCenterX, csvCenterY, csvCenterZ);
-        
+        var cx = sumX/count, cy = sumY/count, cz = sumZ/count;
+
         lines.forEach(function(line) {
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
-          var x = parseFloat(parts[2]) - csvCenterX;
-          var y = parseFloat(parts[4]) - csvCenterZ;
-          var z = parseFloat(parts[3]) - csvCenterY;
+          var x = parseFloat(parts[2]) - cx;
+          var y = parseFloat(parts[3]) - cy;
+          var z = parseFloat(parts[4]) - cz;
           if(!pathData[pid]) pathData[pid] = [];
-          if(pid === 0 && idx === 0) console.log('first point', x, y, z);
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
         });
         setProgress(95, 'spawning agents...');
@@ -362,7 +357,7 @@
       var nxt = ag.path[(ag.idx+1) % ag.path.length];
       if(!cur || !nxt) return;
       ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
-      ag.mesh.position.y -= 130;
+      ag.mesh.position.y -= 0;
       var dir = nxt.clone().sub(cur);
       if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
     });
