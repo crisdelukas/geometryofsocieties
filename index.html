@@ -233,23 +233,14 @@
       .then(function(text) {
         var lines = text.trim().split('\n').slice(1);
 
-        var sumX = 0, sumY = 0, sumZ = 0, count = 0;
-        lines.forEach(function(line) {
-          var parts = line.split(',');
-          sumX += parseFloat(parts[2]);
-          sumY += parseFloat(parts[3]);
-          sumZ += parseFloat(parts[4]);
-          count++;
-        });
-        var cx = sumX/count, cy = sumY/count, cz = sumZ/count;
-
         lines.forEach(function(line) {
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
-          var x = parseFloat(parts[2]) - cx;
-          var y = parseFloat(parts[3]) - cy;
-          var z = parseFloat(parts[4]) - cz;
+          var x = parseFloat(parts[2]) - center.x;
+          var y = parseFloat(parts[3]) - center.y;
+          var z = parseFloat(parts[4]) - center.z;
+          
           if(!pathData[pid]) pathData[pid] = [];
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
         });
