@@ -238,8 +238,8 @@
         rawLines.forEach(function(line) {
           var parts = line.split(',');
           sumX += parseFloat(parts[2]);
-          sumY += parseFloat(parts[3]);
-          sumZ += parseFloat(parts[4]);
+          sumY += parseFloat(parts[4]);
+          sumZ += parseFloat(parts[3]);
           count++;
         });
         var csvCenterX = sumX / count;
