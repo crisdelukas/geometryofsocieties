@@ -252,8 +252,8 @@
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
           var x = parseFloat(parts[2]) - csvCenterX;
-          var y = parseFloat(parts[3]) - csvCenterZ;
-          var z = parseFloat(parts[4]) - csvCenterY;
+          var y = parseFloat(parts[4]) - csvCenterZ;
+          var z = parseFloat(parts[3]) - csvCenterY;
           if(!pathData[pid]) pathData[pid] = [];
           if(pid === 0 && idx === 0) console.log('first point', x, y, z);
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
