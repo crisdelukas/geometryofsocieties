@@ -259,7 +259,18 @@
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
         });
         setProgress(95, 'spawning agents...');
+        function debugPaths() {
+          Object.keys(pathData).forEach(function(pid) {
+            var pts = pathData[pid].filter(Boolean);
+            if(pts.length < 2) return;
+            var geometry = new THREE.BufferGeometry().setFromPoints(pts);
+            var material = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.8, transparent: true});
+            var line = new THREE.Line(geometry, material);
+            scene.add(line);
+          });
+        }
         spawnAgents();
+        debugPaths();
         setProgress(100, 'ready');
         setTimeout(hideLoading, 600);
       })
