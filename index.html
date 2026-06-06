@@ -251,7 +251,7 @@
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
           var idx = parseInt(parts[1]);
-          var x = -(parseFloat(parts[2]) - csvCenter);
+          var x = parseFloat(parts[2]);
           var y = parseFloat(parts[3]) - csvCenterZ;
           var z = parseFloat(parts[4]) - csvCenterY;
           if(!pathData[pid]) pathData[pid] = [];
