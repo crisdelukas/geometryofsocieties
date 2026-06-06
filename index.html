@@ -155,7 +155,7 @@
 
   var loader = new THREE.GLTFLoader();
   loader.load(
-    'cityMesh.glb',
+    'cityMeshSmall.glb',
     function(gltf) {
       setProgress(70, 'placing city...');
 
@@ -181,7 +181,6 @@
       var size   = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
-      gltf.scene.rotation.x = Math.PI;
 
       // Compute maxDim and look target
       maxDim = Math.max(size.x, size.y, size.z);
@@ -229,7 +228,7 @@
   );
 
   function loadPaths(center) {
-    fetch('paths2.csv')
+    fetch('paths.csv')
       .then(function(r){ return r.text(); })
       .then(function(text) {
         var lines = text.trim().split('\n').slice(1);
