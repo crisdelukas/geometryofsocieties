@@ -112,7 +112,6 @@
   var W = window.innerWidth, H = window.innerHeight;
   cv.width = W; cv.height = H;
 
-  // Renderer
   var renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -123,22 +122,16 @@
   renderer.toneMappingExposure = 0.55;
   renderer.outputEncoding = THREE.sRGBEncoding;
 
-  // Scene
   var scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x000000, 3000, 6000);
 
-  // Camera — set up after model loads
   var cam = new THREE.PerspectiveCamera(22, W/H, 1, 8000);
-
-  // Lights — set up after model loads so we know maxDim
   var maxDim = 1000;
   var lookTarget = new THREE.Vector3(0, 0, 0);
 
-  // Spherical camera coords
   var sph  = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
   var tSph = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
 
-  // Progress
   function setProgress(pct, msg) {
     document.getElementById('loading-bar').style.width = pct + '%';
     if(msg) document.getElementById('loading-status').textContent = msg;
@@ -150,95 +143,74 @@
   }
 
   var pathData = {};
+  var agents = [];
+  var mixers = [];
+  var characterGltf = null;
 
+  // ── Load city ──────────────────────────────────────────────────────────────
   setProgress(5, 'loading city...');
-
-  var loader = new THREE.GLTFLoader();
-  loader.load(
+  var cityLoader = new THREE.GLTFLoader();
+  cityLoader.load(
     'cityMeshFixed.glb',
     function(gltf) {
-      setProgress(70, 'placing city...');
-
-      // Material
-      var cityMat = new THREE.MeshStandardMaterial({
-        color: 0xc8c8c8,
-        roughness: 0.95,
-        metalness: 0.0
-      });
-
+      setProgress(60, 'placing city...');
+      var cityMat = new THREE.MeshStandardMaterial({color: 0xc8c8c8, roughness: 0.95, metalness: 0.0});
       gltf.scene.traverse(function(child) {
-        if(child.isMesh) {
-          child.material = cityMat;
-          child.castShadow = true;
-          child.receiveShadow = true;
-        }
+        if(child.isMesh) { child.material = cityMat; child.castShadow = true; child.receiveShadow = true; }
       });
-
-      // Center model
       var box = new THREE.Box3().setFromObject(gltf.scene);
       var center = box.getCenter(new THREE.Vector3());
-      // Load character to check animations
-      var charLoader = new THREE.GLTFLoader();
-      charLoader.load('character.glb', function(charGltf) {
-        console.log('animations:', charGltf.animations.map(function(a){ return a.name; }));
-      });
-      var size   = box.getSize(new THREE.Vector3());
+      var size = box.getSize(new THREE.Vector3());
       gltf.scene.position.sub(center);
       scene.add(gltf.scene);
 
-      // Compute maxDim and look target
       maxDim = Math.max(size.x, size.y, size.z);
       lookTarget.set(0, -size.y * 0.22, 0);
-
-      // Set camera distance
       tSph.r = maxDim * 0.68;
       sph.r  = tSph.r;
 
-      // Lights — now we know the scale
       scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
       var dl = new THREE.DirectionalLight(0xffffff, 0.9);
-      dl.position.set(maxDim * 0.6, maxDim * 1.2, maxDim * 0.3);
+      dl.position.set(maxDim*0.6, maxDim*1.2, maxDim*0.3);
       dl.castShadow = true;
-      dl.shadow.mapSize.width  = 2048;
-      dl.shadow.mapSize.height = 2048;
-      dl.shadow.camera.near   = 1;
-      dl.shadow.camera.far    = maxDim * 4;
-      dl.shadow.camera.left   = -maxDim;
-      dl.shadow.camera.right  =  maxDim;
-      dl.shadow.camera.top    =  maxDim;
-      dl.shadow.camera.bottom = -maxDim;
+      dl.shadow.mapSize.set(2048, 2048);
+      dl.shadow.camera.near = 1; dl.shadow.camera.far = maxDim*4;
+      dl.shadow.camera.left = -maxDim; dl.shadow.camera.right = maxDim;
+      dl.shadow.camera.top = maxDim; dl.shadow.camera.bottom = -maxDim;
       dl.shadow.bias = -0.001;
       scene.add(dl);
-
-      // Soft fill from opposite side
       var fill = new THREE.DirectionalLight(0xffffff, 0.25);
-      fill.position.set(-maxDim * 0.4, maxDim * 0.5, -maxDim * 0.4);
+      fill.position.set(-maxDim*0.4, maxDim*0.5, -maxDim*0.4);
       scene.add(fill);
 
-      setProgress(85, 'loading paths...');
-      loadPaths(center);
+      setProgress(70, 'loading character...');
+      loadCharacter(function() {
+        setProgress(85, 'loading paths...');
+        loadPaths(center);
+      });
     },
     function(xhr) {
-      if(xhr.total > 0) {
-        var pct = Math.round((xhr.loaded / xhr.total) * 60) + 5;
-        setProgress(pct, 'loading city... ' + Math.round(xhr.loaded/1024/1024) + 'MB');
-      }
+      if(xhr.total > 0) setProgress(Math.round((xhr.loaded/xhr.total)*55)+5, 'loading city...');
     },
-    function(err) {
-      console.error('GLB error:', err);
-      setProgress(100, 'error loading model');
-    }
-  );
-  
-  var characterGltf = null;
-  var charLoader = new THREE.GLTFLoader();
-  charLoader.load('character.glb',
-    function(gltf){ characterGltf = gltf; console.log('char ready'); },
-    null,
-    function(err){ console.error('char err', err); }
+    function(err) { console.error('city error', err); setProgress(100, 'error loading city'); }
   );
 
+  // ── Load character ─────────────────────────────────────────────────────────
+  function loadCharacter(callback) {
+    var charLoader = new THREE.GLTFLoader();
+    charLoader.load(
+      'character.glb',
+      function(gltf) {
+        characterGltf = gltf;
+        console.log('character loaded, animations:', gltf.animations.map(function(a){ return a.name; }));
+        callback();
+      },
+      null,
+      function(err) { console.error('character error', err); callback(); }
+    );
+  }
+
+  // ── Load paths ─────────────────────────────────────────────────────────────
   function loadPaths(center) {
     fetch('paths.csv')
       .then(function(r){ return r.text(); })
@@ -261,54 +233,23 @@
         setTimeout(hideLoading, 600);
       })
       .catch(function(err) {
-        console.error('Paths error:', err);
+        console.error('paths error', err);
         setTimeout(hideLoading, 600);
       });
   }
 
+  // ── Debug paths ────────────────────────────────────────────────────────────
   function debugPaths() {
     Object.keys(pathData).forEach(function(pid) {
       var pts = pathData[pid].filter(Boolean);
-      console.log('path', pid, 'has', pts.length, 'points');
       if(pts.length < 2) return;
-      var geometry = new THREE.BufferGeometry().setFromPoints(pts);
-      var material = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.8, transparent: true});
-      var line = new THREE.Line(geometry, material);
-      scene.add(line);
+      var geo = new THREE.BufferGeometry().setFromPoints(pts);
+      var mat = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.6, transparent: true});
+      scene.add(new THREE.Line(geo, mat));
     });
   }
-        
-        spawnAgents();
-        debugPaths();
-        });
-        setProgress(100, 'ready');
-        setTimeout(hideLoading, 600);
-      });
-      .catch(function(err) {
-        console.error('Paths error:', err);
-        setTimeout(hideLoading, 600);
-      });
-  }
 
-  var agents = [];
-  var characterGltf = null;
-  var mixers = [];
-
-  function loadCharacter(callback) {
-    var charLoader = new THREE.GLTFLoader();
-    charLoader.load('character.glb', 
-      function(gltf) {
-        characterGltf = gltf;
-        console.log('character loaded ok');
-        callback();
-      },
-      null,
-      function(err) {
-        console.error('character load error', err);
-      }
-    );
-  }
-
+  // ── Spawn agents ───────────────────────────────────────────────────────────
   function spawnAgents() {
     var count = 0;
     Object.keys(pathData).forEach(function(pid) {
@@ -316,28 +257,35 @@
       if(pts.length < 2) return;
       var n = pts.length > 44 ? 2 : 1;
       for(var i = 0; i < n; i++) {
-        // Clone character
-        if(!characterGltf) return;
-        var clone = characterGltf.scene.clone(true);
-        console.log('spawning agent at', pts[startIdx]);
-        clone.position.copy(pts[startIdx]);
-        clone.scale.setScalar(0.8);
-        scene.add(clone);
-
-        // Setup animation mixer
-        var mixer = new THREE.AnimationMixer(clone);
-        var walkAction = mixer.clipAction(characterGltf.animations[0]); // walking
-        walkAction.play();
-        mixers.push(mixer);
-
         var startIdx = Math.floor((i / n) * pts.length);
+        var agentMesh, mixer, walkAction, idleAction;
+
+        if(characterGltf) {
+          // Use real character
+          var clone = THREE.SkeletonUtils ? THREE.SkeletonUtils.clone(characterGltf.scene) : characterGltf.scene.clone(true);
+          clone.scale.setScalar(1.5);
+          scene.add(clone);
+          mixer = new THREE.AnimationMixer(clone);
+          walkAction = mixer.clipAction(characterGltf.animations[0]);
+          idleAction = mixer.clipAction(characterGltf.animations[1]);
+          walkAction.play();
+          mixers.push(mixer);
+          agentMesh = clone;
+        } else {
+          // Fallback cylinder
+          var geo = new THREE.CylinderGeometry(2, 2, 8, 8);
+          var mat = new THREE.MeshStandardMaterial({color: 0x333333});
+          agentMesh = new THREE.Mesh(geo, mat);
+          scene.add(agentMesh);
+        }
+
+        if(pts[startIdx]) agentMesh.position.copy(pts[startIdx]);
+
         agents.push({
-          mesh: clone,
-          mixer: mixer,
-          walkAction: walkAction,
-          idleAction: mixer.clipAction(characterGltf.animations[1]),
-          lookAction: mixer.clipAction(characterGltf.animations[2]),
-          surprisedAction: mixer.clipAction(characterGltf.animations[3]),
+          mesh: agentMesh,
+          mixer: mixer || null,
+          walkAction: walkAction || null,
+          idleAction: idleAction || null,
           path: pts,
           idx: startIdx,
           progress: Math.random(),
@@ -346,54 +294,51 @@
         count++;
       }
     });
+    console.log('spawned', count, 'agents');
     document.getElementById('stat-agents').textContent = count;
   }
 
-  // Camera controls
-  var dragging = false;
-  var pm = {x:0, y:0};
-
+  // ── Camera controls ────────────────────────────────────────────────────────
+  var dragging = false, pm = {x:0, y:0};
   document.addEventListener('mousedown', function(e){ dragging=true; pm={x:e.clientX,y:e.clientY}; });
-  window.addEventListener('mouseup',    function(){  dragging=false; });
-  window.addEventListener('mousemove',  function(e){
+  window.addEventListener('mouseup', function(){ dragging=false; });
+  window.addEventListener('mousemove', function(e){
     if(!dragging) return;
     tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.clientX-pm.x)*0.005));
-    tSph.ph = Math.max(0.9,         Math.min(1.35,         tSph.ph+(e.clientY-pm.y)*0.005));
+    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.005));
     pm = {x:e.clientX, y:e.clientY};
   });
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
   }, {passive:false});
-
-  // Touch
   var lastTouch = null;
-  document.addEventListener('touchstart',  function(e){ lastTouch=e.touches[0]; });
-  document.addEventListener('touchmove',   function(e){
+  document.addEventListener('touchstart', function(e){ lastTouch=e.touches[0]; });
+  document.addEventListener('touchmove', function(e){
     if(!lastTouch) return;
     tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.touches[0].clientX-lastTouch.clientX)*0.005));
-    tSph.ph = Math.max(0.45,         Math.min(0.95,         tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.005));
-    lastTouch=e.touches[0];
-    e.preventDefault();
+    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.005));
+    lastTouch=e.touches[0]; e.preventDefault();
   }, {passive:false});
 
-  // Loop
+  // ── Render loop ────────────────────────────────────────────────────────────
+  var clock = new THREE.Clock();
   function loop() {
     requestAnimationFrame(loop);
+    var delta = clock.getDelta();
 
     sph.th += (tSph.th-sph.th)*0.07;
     sph.ph += (tSph.ph-sph.ph)*0.07;
     sph.r  += (tSph.r -sph.r )*0.07;
-
     cam.position.set(
-      sph.r * Math.sin(sph.ph) * Math.sin(sph.th),
-      sph.r * Math.cos(sph.ph),
-      sph.r * Math.sin(sph.ph) * Math.cos(sph.th)
+      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
+      sph.r*Math.cos(sph.ph),
+      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
     );
     cam.lookAt(lookTarget);
 
-    var delta = 0.016;
     mixers.forEach(function(m){ m.update(delta); });
+
     agents.forEach(function(ag) {
       if(!ag.path || ag.path.length < 2) return;
       ag.progress += ag.speed;
@@ -405,7 +350,6 @@
       var nxt = ag.path[(ag.idx+1) % ag.path.length];
       if(!cur || !nxt) return;
       ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
-      ag.mesh.position.y -= 0;
       var dir = nxt.clone().sub(cur);
       if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
     });
