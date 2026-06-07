@@ -265,10 +265,10 @@
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
           if(root) root.position.set(0, 0, 0);
-          walkAction: mixer.clipAction(characterGltf.animations[0]),
-          idleAction: mixer.clipAction(characterGltf.animations[1]),
-          lookAction: mixer.clipAction(characterGltf.animations[2]),
-          surprisedAction: mixer.clipAction(characterGltf.animations[3]),
+          walkAction = mixer.clipAction(characterGltf.animations[0]);
+          idleAction = mixer.clipAction(characterGltf.animations[1]);
+          var lookAction = mixer.clipAction(characterGltf.animations[2]);
+          var surprisedAction = mixer.clipAction(characterGltf.animations[3]);
           walkAction.play();
           mixer.timeScale = 1;
           mixers.push(mixer);
