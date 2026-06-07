@@ -324,8 +324,8 @@
       agents.forEach(function(ag) {
         if(!ag.lookAction || !ag.walkAction) return;
         if(Math.random() > 0.4) {
-          ag.lookAction.reset().play();
-          ag.walkAction.crossFadeTo(ag.lookAction, 0.3, true);
+          ag.lookAction.enabled = true;
+          ag.walkAction.crossFadeTo(ag.lookAction, 0.5, true);
         }
       });
     }
@@ -335,8 +335,7 @@
       zoomActive = false;
       agents.forEach(function(ag) {
         if(!ag.lookAction || !ag.walkAction) return;
-        ag.walkAction.reset().play();
-        ag.lookAction.crossFadeTo(ag.walkAction, 0.3, true);
+        ag.lookAction.crossFadeTo(ag.walkAction, 0.5, true);
       });
     }, 2000);
   
