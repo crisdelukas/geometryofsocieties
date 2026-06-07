@@ -231,6 +231,13 @@
     }
   );
 
+  var characterGltf = null;
+  var charLoader = new THREE.GLTFLoader();
+  charLoader.load('character.glb',
+    function(gltf){ characterGltf = gltf; console.log('char ready'); },
+    null,
+    function(err){ console.error('char err', err); }
+  );
   function loadPaths(center) {
     fetch('paths.csv')
       .then(function(r){ return r.text(); })
