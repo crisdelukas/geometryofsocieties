@@ -200,7 +200,7 @@
   function loadCharacter(callback) {
     var charLoader = new THREE.GLTFLoader();
     charLoader.load(
-      'character.glb',
+      'character2.glb',
       function(gltf) {
         characterGltf = gltf;
         console.log('character loaded, animations:', gltf.animations.map(function(a){ return a.name; }));
