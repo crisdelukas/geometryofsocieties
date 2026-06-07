@@ -260,9 +260,14 @@
           clone.scale.setScalar(25);
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
+          var root = clone.getObjectByName('mixamorigHips');
+          if(root) root.position.set(0, 0, 0);
           walkAction = mixer.clipAction(characterGltf.animations[0]);
           idleAction = mixer.clipAction(characterGltf.animations[1]);
+          walkAction.clampWhenFinished = false;
+          walkAction.setLoop(THREE.LoopRepeat, Infinity);
           walkAction.play();
+          mixer.timeScale = 1;
           mixers.push(mixer);
           agentMesh = clone;
         } else {
