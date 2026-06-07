@@ -177,7 +177,6 @@
       // Center model
       var box = new THREE.Box3().setFromObject(gltf.scene);
       var center = box.getCenter(new THREE.Vector3());
-      console.log('center', center.x, center.y, center.z);
       // Load character to check animations
       var charLoader = new THREE.GLTFLoader();
       charLoader.load('character.glb', function(charGltf) {
