@@ -260,8 +260,10 @@
             scene.add(line);
           });
         }
-        spawnAgents();
-        debugPaths();
+        loadCharacter(function() {
+          spawnAgents();
+          debugPaths();
+        });
         setProgress(100, 'ready');
         setTimeout(hideLoading, 600);
       })
@@ -272,9 +274,17 @@
   }
 
   var agents = [];
-  var agentGeo = new THREE.CylinderGeometry(2, 2, 8, 8);
-  var agentMat = new THREE.MeshStandardMaterial({color: 0x111111, roughness: 0.8});
-  
+  var characterGltf = null;
+  var mixers = [];
+
+  function loadCharacter(callback) {
+    var charLoader = new THREE.GLTFLoader();
+    charLoader.load('character.glb', function(gltf) {
+      characterGltf = gltf;
+      callback();
+    });
+  }
+
   function spawnAgents() {
     var count = 0;
     Object.keys(pathData).forEach(function(pid) {
@@ -282,12 +292,25 @@
       if(pts.length < 2) return;
       var n = pts.length > 44 ? 2 : 1;
       for(var i = 0; i < n; i++) {
-        var mesh = new THREE.Mesh(agentGeo, agentMat);
-        mesh.castShadow = true;
-        scene.add(mesh);
+        // Clone character
+        var clone = characterGltf.scene.clone(true);
+        clone.scale.setScalar(0.8);
+        scene.add(clone);
+
+        // Setup animation mixer
+        var mixer = new THREE.AnimationMixer(clone);
+        var walkAction = mixer.clipAction(characterGltf.animations[0]); // walking
+        walkAction.play();
+        mixers.push(mixer);
+
         var startIdx = Math.floor((i / n) * pts.length);
         agents.push({
-          mesh: mesh,
+          mesh: clone,
+          mixer: mixer,
+          walkAction: walkAction,
+          idleAction: mixer.clipAction(characterGltf.animations[1]),
+          lookAction: mixer.clipAction(characterGltf.animations[2]),
+          surprisedAction: mixer.clipAction(characterGltf.animations[3]),
           path: pts,
           idx: startIdx,
           progress: Math.random(),
@@ -342,6 +365,8 @@
     );
     cam.lookAt(lookTarget);
 
+    var delta = 0.016;
+    mixers.forEach(function(m){ m.update(delta); });
     agents.forEach(function(ag) {
       if(!ag.path || ag.path.length < 2) return;
       ag.progress += ag.speed;
