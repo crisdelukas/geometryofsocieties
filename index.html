@@ -294,6 +294,8 @@
       for(var i = 0; i < n; i++) {
         // Clone character
         var clone = characterGltf.scene.clone(true);
+        console.log('spawning agent at', pts[startIdx]);
+        clone.position.copy(pts[startIdx]);
         clone.scale.setScalar(0.8);
         scene.add(clone);
 
