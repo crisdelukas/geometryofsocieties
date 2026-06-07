@@ -257,7 +257,7 @@
           clone.traverse(function(child) {
             if(child.isMesh) console.log('mesh found:', child.name, child.geometry.attributes.position ? child.geometry.attributes.position.count : 'no geo');
           });
-          clone.scale.setScalar(25);
+          clone.scale.setScalar(35);
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
