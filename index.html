@@ -269,6 +269,12 @@
             if(child.isMesh) console.log('mesh found:', child.name, child.geometry.attributes.position ? child.geometry.attributes.position.count : 'no geo');
           });
           clone.scale.setScalar(1.5);
+          clone.traverse(function(child) {
+            if(child.isMesh) {
+              child.material = new THREE.MeshStandardMaterial({color: 0xff0000});
+              child.visible = true;
+            }
+          });
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
           walkAction = mixer.clipAction(characterGltf.animations[0]);
