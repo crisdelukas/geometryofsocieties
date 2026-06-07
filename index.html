@@ -260,9 +260,8 @@
             scene.add(line);
           });
         }
-        loadCharacter(function() {
-          spawnAgents();
-          debugPaths();
+        spawnAgents();
+        debugPaths();
         });
         setProgress(100, 'ready');
         setTimeout(hideLoading, 600);
