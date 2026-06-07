@@ -306,6 +306,7 @@
       var n = pts.length > 44 ? 2 : 1;
       for(var i = 0; i < n; i++) {
         // Clone character
+        if(!characterGltf) return;
         var clone = characterGltf.scene.clone(true);
         console.log('spawning agent at', pts[startIdx]);
         clone.position.copy(pts[startIdx]);
