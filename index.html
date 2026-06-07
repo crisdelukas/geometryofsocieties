@@ -248,7 +248,7 @@
       var n = pts.length > 44 ? 2 : 1;
       for(var i = 0; i < n; i++) {
         var startIdx = Math.floor((i / n) * pts.length);
-        var agentMesh, mixer, walkAction, idleAction;
+        var agentMesh, mixer, walkAction, idleAction, lookAction, surprisedAction;
 
         if(characterGltf) {
           // Use real character
@@ -267,8 +267,8 @@
           if(root) root.position.set(0, 0, 0);
           walkAction = mixer.clipAction(characterGltf.animations[0]);
           idleAction = mixer.clipAction(characterGltf.animations[1]);
-          var lookAction = mixer.clipAction(characterGltf.animations[2]);
-          var surprisedAction = mixer.clipAction(characterGltf.animations[3]);
+          lookAction = mixer.clipAction(characterGltf.animations[2]);
+          surprisedAction = mixer.clipAction(characterGltf.animations[3]);
           walkAction.play();
           mixer.timeScale = 1;
           mixers.push(mixer);
