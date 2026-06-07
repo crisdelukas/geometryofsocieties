@@ -268,10 +268,10 @@
           idleAction = mixer.clipAction(characterGltf.animations[1]);
           lookAction = mixer.clipAction(characterGltf.animations[2]);
           surprisedAction = mixer.clipAction(characterGltf.animations[3]);
-          idleAction.play(); idleAction.weight = 0;
-          lookAction.play(); lookAction.weight = 0;
-          surprisedAction.play(); surprisedAction.weight = 0;
           walkAction.play();
+          idleAction.play(); idleAction.setEffectiveWeight(0);
+          lookAction.play(); lookAction.setEffectiveWeight(0);
+          surprisedAction.play(); surprisedAction.setEffectiveWeight(0);
           mixer.timeScale = 1;
           mixers.push(mixer);
           agentMesh = clone;
