@@ -230,7 +230,7 @@
       setProgress(100, 'error loading model');
     }
   );
-
+  
   var characterGltf = null;
   var charLoader = new THREE.GLTFLoader();
   charLoader.load('character.glb',
@@ -238,12 +238,12 @@
     null,
     function(err){ console.error('char err', err); }
   );
+
   function loadPaths(center) {
     fetch('paths.csv')
       .then(function(r){ return r.text(); })
       .then(function(text) {
         var lines = text.trim().split('\n').slice(1);
-
         lines.forEach(function(line) {
           var parts = line.split(',');
           var pid = parseInt(parts[0]);
@@ -251,22 +251,33 @@
           var x = parseFloat(parts[2]) - center.x;
           var y = parseFloat(parts[3]) - center.y;
           var z = parseFloat(parts[4]) - center.z;
-          
           if(!pathData[pid]) pathData[pid] = [];
           pathData[pid][idx] = new THREE.Vector3(x, y, z);
         });
         setProgress(95, 'spawning agents...');
-        function debugPaths() {
-          Object.keys(pathData).forEach(function(pid) {
-            var pts = pathData[pid].filter(Boolean);
-            console.log('path', pid, 'has', pts.length, 'points');
-            if(pts.length < 2) return;
-            var geometry = new THREE.BufferGeometry().setFromPoints(pts);
-            var material = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.8, transparent: true});
-            var line = new THREE.Line(geometry, material);
-            scene.add(line);
-          });
-        }
+        spawnAgents();
+        debugPaths();
+        setProgress(100, 'ready');
+        setTimeout(hideLoading, 600);
+      })
+      .catch(function(err) {
+        console.error('Paths error:', err);
+        setTimeout(hideLoading, 600);
+      });
+  }
+
+  function debugPaths() {
+    Object.keys(pathData).forEach(function(pid) {
+      var pts = pathData[pid].filter(Boolean);
+      console.log('path', pid, 'has', pts.length, 'points');
+      if(pts.length < 2) return;
+      var geometry = new THREE.BufferGeometry().setFromPoints(pts);
+      var material = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.8, transparent: true});
+      var line = new THREE.Line(geometry, material);
+      scene.add(line);
+    });
+  }
+        
         spawnAgents();
         debugPaths();
         });
