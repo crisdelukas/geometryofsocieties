@@ -257,7 +257,7 @@
           clone.traverse(function(child) {
             if(child.isMesh) console.log('mesh found:', child.name, child.geometry.attributes.position ? child.geometry.attributes.position.count : 'no geo');
           });
-          clone.scale.setScalar(35);
+          clone.scale.setScalar(30);
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
@@ -349,6 +349,9 @@
       var nxt = ag.path[(ag.idx+1) % ag.path.length];
       if(!cur || !nxt) return;
       ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
+      var hips = ag.mesh.getObjectByName('mixamorigHips');
+      if(hips) hips.position.x = 0;
+      if(hips) hips.position.z = 0;
       var dir = nxt.clone().sub(cur);
       if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
     });
