@@ -253,6 +253,7 @@
         function debugPaths() {
           Object.keys(pathData).forEach(function(pid) {
             var pts = pathData[pid].filter(Boolean);
+            console.log('path', pid, 'has', pts.length, 'points');
             if(pts.length < 2) return;
             var geometry = new THREE.BufferGeometry().setFromPoints(pts);
             var material = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.8, transparent: true});
