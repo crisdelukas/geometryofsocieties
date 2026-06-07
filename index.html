@@ -327,8 +327,8 @@
       agents.forEach(function(ag) {
         if(!ag.lookAction || !ag.walkAction) return;
         if(Math.random() > 0.4) {
-          ag.lookAction.enabled = true;
-          ag.walkAction.crossFadeTo(ag.lookAction, 0.5, true);
+          ag.walkAction.setEffectiveWeight(0);
+          ag.lookAction.setEffectiveWeight(1);
         }
       });
     }
@@ -338,10 +338,11 @@
       zoomActive = false;
       agents.forEach(function(ag) {
         if(!ag.lookAction || !ag.walkAction) return;
-        ag.lookAction.crossFadeTo(ag.walkAction, 0.5, true);
+        ag.lookAction.setEffectiveWeight(0);
+        ag.walkAction.setEffectiveWeight(1);
       });
     }, 2000);
-  
+
   }, {passive:false});
   
   var lastTouch = null;
