@@ -203,6 +203,9 @@
       'character2.glb',
       function(gltf) {
         characterGltf = gltf;
+        gltf.animations.forEach(function(a, i) {
+          console.log(i, a.name, 'tracks:', a.tracks.length);
+        });
         console.log('character loaded, animations:', gltf.animations.map(function(a){ return a.name; }));
         callback();
       },
