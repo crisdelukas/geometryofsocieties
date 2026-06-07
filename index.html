@@ -229,7 +229,6 @@
         });
         setProgress(95, 'spawning agents...');
         spawnAgents();
-        debugPaths();
         setProgress(100, 'ready');
         setTimeout(hideLoading, 600);
       })
@@ -315,27 +314,32 @@
   });
   
   var zoomTimeout = null;
+  var zoomActive = false;
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
 
-    agents.forEach(function(ag) {
-      if(!ag.lookAction || !ag.walkAction) return;
-      if(Math.random() > 0.4) {
-        ag.lookAction.reset().play();
-        ag.walkAction.crossFadeTo(ag.lookAction, 0.3, true);
-      }
-    });
+    if(!zoomActive) {
+      zoomActive = true;
+      agents.forEach(function(ag) {
+        if(!ag.lookAction || !ag.walkAction) return;
+        if(Math.random() > 0.4) {
+          ag.lookAction.reset().play();
+          ag.walkAction.crossFadeTo(ag.lookAction, 0.3, true);
+        }
+      });
+    }
 
     clearTimeout(zoomTimeout);
     zoomTimeout = setTimeout(function() {
+      zoomActive = false;
       agents.forEach(function(ag) {
         if(!ag.lookAction || !ag.walkAction) return;
         ag.walkAction.reset().play();
         ag.lookAction.crossFadeTo(ag.walkAction, 0.3, true);
       });
     }, 2000);
-
+  
   }, {passive:false});
   
   var lastTouch = null;
