@@ -357,7 +357,12 @@
     renderer.render(scene, cam);
   }
   loop();
-
+window.addEventListener('resize', function() {
+  var W = window.innerWidth, H = window.innerHeight;
+  renderer.setSize(W, H);
+  cam.aspect = W / H;
+  cam.updateProjectionMatrix();
+});
 })();
 </script>
 </body>
