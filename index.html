@@ -258,12 +258,17 @@
             if(child.isMesh) console.log('mesh found:', child.name, child.geometry.attributes.position ? child.geometry.attributes.position.count : 'no geo');
           });
           clone.scale.setScalar(30);
+          clone.traverse(function(child) {
+            if(child.isMesh) child.castShadow = true;
+          });
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
           if(root) root.position.set(0, 0, 0);
-          walkAction = mixer.clipAction(characterGltf.animations[0]);
-          idleAction = mixer.clipAction(characterGltf.animations[1]);
+          walkAction: mixer.clipAction(characterGltf.animations[0]),
+          idleAction: mixer.clipAction(characterGltf.animations[1]),
+          lookAction: mixer.clipAction(characterGltf.animations[2]),
+          surprisedAction: mixer.clipAction(characterGltf.animations[3]),
           walkAction.play();
           mixer.timeScale = 1;
           mixers.push(mixer);
