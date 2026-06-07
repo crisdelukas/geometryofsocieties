@@ -271,9 +271,9 @@
           idleAction = mixer.clipAction(characterGltf.animations[1], clone);
           lookAction = mixer.clipAction(characterGltf.animations[2], clone);
           surprisedAction = mixer.clipAction(characterGltf.animations[3], clone);
-          walkAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          walkAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
-          lookAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
+          lookAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
           surprisedAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           mixer.timeScale = 1;
           mixers.push(mixer);
