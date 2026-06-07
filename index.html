@@ -279,10 +279,17 @@
 
   function loadCharacter(callback) {
     var charLoader = new THREE.GLTFLoader();
-    charLoader.load('character.glb', function(gltf) {
-      characterGltf = gltf;
-      callback();
-    });
+    charLoader.load('character.glb', 
+      function(gltf) {
+        characterGltf = gltf;
+        console.log('character loaded ok');
+        callback();
+      },
+      null,
+      function(err) {
+        console.error('character load error', err);
+      }
+    );
   }
 
   function spawnAgents() {
