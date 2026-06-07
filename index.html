@@ -288,7 +288,10 @@
           mixer: mixer || null,
           walkAction: walkAction || null,
           idleAction: idleAction || null,
+          lookAction: lookAction || null,
+          surprisedAction: surprisedAction || null,
           path: pts,
+          
           idx: startIdx,
           progress: Math.random(),
           speed: 0.004 + Math.random() * 0.004
@@ -310,10 +313,33 @@
     tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.005));
     pm = {x:e.clientX, y:e.clientY};
   });
+  
+  var zoomTimeout = null;
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
+
+    // Trigger look animation on ~60% of agents
+    agents.forEach(function(ag) {
+      if(!ag.lookAction) return;
+      if(Math.random() > 0.4) {
+        ag.walkAction.fadeOut(0.3);
+        ag.lookAction.reset().fadeIn(0.3).play();
+      }
+    });
+
+    // Return to walk after 2 seconds of no scrolling
+    clearTimeout(zoomTimeout);
+    zoomTimeout = setTimeout(function() {
+      agents.forEach(function(ag) {
+        if(!ag.lookAction) return;
+        ag.lookAction.fadeOut(0.3);
+        ag.walkAction.reset().fadeIn(0.3).play();
+      });
+    }, 2000);
+
   }, {passive:false});
+  
   var lastTouch = null;
   document.addEventListener('touchstart', function(e){ lastTouch=e.touches[0]; });
   document.addEventListener('touchmove', function(e){
