@@ -239,17 +239,6 @@
       });
   }
 
-  // ── Debug paths ────────────────────────────────────────────────────────────
-  function debugPaths() {
-    Object.keys(pathData).forEach(function(pid) {
-      var pts = pathData[pid].filter(Boolean);
-      if(pts.length < 2) return;
-      var geo = new THREE.BufferGeometry().setFromPoints(pts);
-      var mat = new THREE.LineBasicMaterial({color: 0xc8e054, opacity: 0.6, transparent: true});
-      scene.add(new THREE.Line(geo, mat));
-    });
-  }
-
   // ── Spawn agents ───────────────────────────────────────────────────────────
   function spawnAgents() {
     var count = 0;
