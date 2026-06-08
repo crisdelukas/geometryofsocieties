@@ -250,7 +250,7 @@
       var n = pts.length > 44 ? 2 : 1;
       for(var i = 0; i < n; i++) {
         var startIdx = Math.floor((i / n) * pts.length);
-        var agentMesh, mixer, walkAction, idleAction, lookAction, surprisedAction;
+        var agentMesh, mixer, walkAction, idleAction, lookAction, stairsAction, surprisedAction;
 
         if(characterGltf) {
           // Use real character
@@ -267,13 +267,15 @@
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
           if(root) root.position.set(0, 0, 0);
-          walkAction = mixer.clipAction(characterGltf.animations[2], clone);
-          idleAction = mixer.clipAction(characterGltf.animations[3], clone);
-          lookAction = mixer.clipAction(characterGltf.animations[0], clone);
-          surprisedAction = mixer.clipAction(characterGltf.animations[2], clone);
+          walkAction = mixer.clipAction(characterGltf.animations[0], clone);
+          idleAction = mixer.clipAction(characterGltf.animations[1], clone);
+          lookAction = mixer.clipAction(characterGltf.animations[2], clone);
+          stairsAction = mixer.clipAction(characterGltf.animations[3], clone);
+          surprisedAction = mixer.clipAction(characterGltf.animations[4], clone);
           walkAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           lookAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          stairsAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           surprisedAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           mixer.timeScale = 1;
           mixers.push(mixer);
@@ -295,6 +297,7 @@
           idleAction: idleAction || null,
           lookAction: lookAction || null,
           surprisedAction: surprisedAction || null,
+          stairsAction: stairsAction || null,
           path: pts,
           
           idx: startIdx,
