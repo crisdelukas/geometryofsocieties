@@ -322,33 +322,17 @@
     pm = {x:e.clientX, y:e.clientY};
   });
   
-  var zoomTimeout = null;
-  var zoomActive = false;
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
-
-    if(!zoomActive) {
-      zoomActive = true;
-      agents.forEach(function(ag) {
-        if(!ag.lookAction || !ag.walkAction) return;
-        if(Math.random() > 0.4) {
-          ag.walkAction.setEffectiveWeight(0);
-          ag.lookAction.setEffectiveWeight(1);
-        }
-      });
+    if(agents[0] && agents[0].lookAction) {
+      console.log('lookAction enabled:', agents[0].lookAction.enabled);
+      console.log('lookAction weight:', agents[0].lookAction.getEffectiveWeight());
+      console.log('walkAction weight:', agents[0].walkAction.getEffectiveWeight());
+      agents[0].walkAction.setEffectiveWeight(0);
+      agents[0].lookAction.setEffectiveWeight(1);
+      console.log('after - lookAction weight:', agents[0].lookAction.getEffectiveWeight());
     }
-
-    clearTimeout(zoomTimeout);
-    zoomTimeout = setTimeout(function() {
-      zoomActive = false;
-      agents.forEach(function(ag) {
-        if(!ag.lookAction || !ag.walkAction) return;
-        ag.lookAction.setEffectiveWeight(0);
-        ag.walkAction.setEffectiveWeight(1);
-      });
-    }, 2000);
-
   }, {passive:false});
   
   var lastTouch = null;
