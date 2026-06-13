@@ -372,7 +372,7 @@
     if(!dragging) return;
     if(!dragActive) {
       dragActive = true;
-    a  gents.forEach(function(ag) {
+      agents.forEach(function(ag) {
         if(!ag.surprisedAction || !ag.walkAction) return;
         ag.walkAction.setEffectiveWeight(0);
         ag.surprisedAction.setEffectiveWeight(1);
