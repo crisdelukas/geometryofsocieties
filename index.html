@@ -286,7 +286,13 @@
           lookAction = characterGltf.animations[2] ? mixer.clipAction(characterGltf.animations[2], clone) : null;
           stairsAction = characterGltf.animations[3] ? mixer.clipAction(characterGltf.animations[3], clone) : null;
           surprisedAction = characterGltf.animations[4] ? mixer.clipAction(characterGltf.animations[4], clone) : null;
-          walkAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          var isStairs = (parseInt(pid) === 5 || parseInt(pid) === 8);
+          if(isStairs) {
+            walkAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
+            if(stairsAction) stairsAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          } else {
+            walkAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+          }
           if(idleAction) idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           if(lookAction) lookAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           if(stairsAction) stairsAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
@@ -306,6 +312,7 @@
 
         agents.push({
           mesh: agentMesh,
+          isStairs: (parseInt(pid) === 5 || parseInt(pid) === 8),
           mixer: mixer || null,
           walkAction: walkAction || null,
           idleAction: idleAction || null,
