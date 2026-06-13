@@ -265,6 +265,13 @@
           });
           scene.add(clone);
           mixer = new THREE.AnimationMixer(clone);
+          if(count === 0) {
+            var boneNames = [];
+            clone.traverse(function(child) {
+              if(child.isBone) boneNames.push(child.name);
+            });
+            console.log('bones:', boneNames);
+            }
           var root = clone.getObjectByName('mixamorigHips');
           if(root) root.position.set(0, 0, 0);
           walkAction = mixer.clipAction(characterGltf.animations[0], clone);
