@@ -200,7 +200,7 @@
   function loadCharacter(callback) {
     var charLoader = new THREE.GLTFLoader();
     charLoader.load(
-      'character3.glb',
+      'character.glb',
       function(gltf) {
         characterGltf = gltf;
         gltf.animations.forEach(function(a, i) {
@@ -278,6 +278,7 @@
           idleAction = characterGltf.animations[1] ? mixer.clipAction(characterGltf.animations[1], clone) : null;
           lookAction = characterGltf.animations[2] ? mixer.clipAction(characterGltf.animations[2], clone) : null;
           stairsAction = characterGltf.animations[3] ? mixer.clipAction(characterGltf.animations[3], clone) : null;
+          surprisedAction = characterGltf.animations[4] ? mixer.clipAction(characterGltf.animations[4], clone) : null;
           walkAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
           if(idleAction) idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           if(lookAction) lookAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
