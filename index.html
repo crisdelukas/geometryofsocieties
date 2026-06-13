@@ -344,6 +344,8 @@
   });
 
   document.addEventListener('wheel', function(e){
+    var stairsClip = agents[0].stairsAction ? agents[0].stairsAction.getClip() : null;
+    if(stairsClip) console.log('stairs first track:', stairsClip.tracks[0].name);
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
   }, {passive:false});
