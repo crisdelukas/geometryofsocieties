@@ -169,8 +169,6 @@
     <span class="exp-label">// experimental social laboratory</span>
     <span class="exp-label">agents: <em id="stat-agents">0</em> &nbsp;|&nbsp; paths: <em>20</em></span>
   </div>
-  <button class="enter-btn" id="enter-btn">enter laboratory →</button>
-  <span class="hint">drag · scroll</span>
 </div>
 
 <!-- Mobile swipe hint -->
@@ -232,9 +230,6 @@
       }, 650);
     }, 1000);
   }
-
-  // ── Enter button (desktop) ─────────────────────────────────────────────────
-  document.getElementById('enter-btn').addEventListener('click', triggerEnterTransition);
 
   // ── Swipe up (mobile) ─────────────────────────────────────────────────────
   var touchStartY = null;
@@ -520,6 +515,9 @@
       if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
     });
 
+    if(!transitioning && sph.r < maxDim * 0.08) {
+      triggerEnterTransition();
+    }
     renderer.render(scene, cam);
   }
   loop();
