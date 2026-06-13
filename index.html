@@ -335,37 +335,12 @@
     tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.005));
     pm = {x:e.clientX, y:e.clientY};
   });
-  
-  var zoomTimeout = null;
-  var zoomActive = false;
+
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
-
-    if(!zoomActive) {
-      zoomActive = true;
-      agents.forEach(function(ag) {
-        if(!ag.lookAction || !ag.walkAction) return;
-        if(Math.random() > 0.4) {
-          ag.walkAction.setEffectiveWeight(0);
-          ag.lookAction.setEffectiveWeight(1);
-          ag.looking = true;
-        }
-      });
-    }
-
-    clearTimeout(zoomTimeout);
-    zoomTimeout = setTimeout(function() {
-      zoomActive = false;
-      agents.forEach(function(ag) {
-        if(!ag.lookAction || !ag.walkAction) return;
-        ag.lookAction.setEffectiveWeight(0);
-        ag.walkAction.setEffectiveWeight(1);
-        ag.looking = false;
-      });
-    }, 2000);
-
   }, {passive:false});
+  
   var dragTimeout = null;
   var dragActive = false;
   document.addEventListener('mousemove', function(e){
