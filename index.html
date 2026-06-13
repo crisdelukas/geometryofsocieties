@@ -366,6 +366,30 @@
     }, 2000);
 
   }, {passive:false});
+  var dragTimeout = null;
+  var dragActive = false;
+  document.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    if(!dragActive) {
+      dragActive = true;
+    a  gents.forEach(function(ag) {
+        if(!ag.surprisedAction || !ag.walkAction) return;
+        ag.walkAction.setEffectiveWeight(0);
+        ag.surprisedAction.setEffectiveWeight(1);
+        ag.looking = true;
+      });
+    }
+    clearTimeout(dragTimeout);
+    dragTimeout = setTimeout(function() {
+      dragActive = false;
+      agents.forEach(function(ag) {
+        if(!ag.surprisedAction || !ag.walkAction) return;
+        ag.surprisedAction.setEffectiveWeight(0);
+        ag.walkAction.setEffectiveWeight(1);
+        ag.looking = false;
+      });
+    }, 1500);
+  });
   
   var lastTouch = null;
   document.addEventListener('touchstart', function(e){ lastTouch=e.touches[0]; });
