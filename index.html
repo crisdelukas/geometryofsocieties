@@ -10,6 +10,8 @@
     body { background: #000000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
     #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
     canvas { display: block; width: 100%; height: 100%; }
+
+    /* ── Top bar ── */
     .ui-band {
       position: fixed; top: 0; left: 0; right: 0;
       padding: 10px 1.75rem;
@@ -18,16 +20,33 @@
       border-bottom: 0.5px solid rgba(255,255,255,0.06);
       z-index: 10;
     }
-    .wordmark { font-size: 11px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: #e8e8e8; }
-    .wordmark em { font-style: normal; color: #c8e054; }
+    .wordmark {
+      display: flex; flex-direction: column; gap: 1px;
+    }
+    .wordmark-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: #e8e8e8;
+    }
+    .wordmark-title em { font-style: normal; color: #c8e054; }
+    .wordmark-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+    }
+
     .nav { display: flex; gap: 2rem; }
     .nav a {
       font-family: 'Space Mono', monospace; font-size: 8px;
       letter-spacing: 0.14em; text-transform: uppercase;
       color: rgba(255,255,255,0.25); text-decoration: none;
+      transition: color 0.2s;
     }
     .nav a:hover { color: #c8e054; }
     .nav a.active { color: rgba(255,255,255,0.7); }
+
+    /* ── Bottom bar ── */
     .ui-bottom {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 14px 1.75rem;
@@ -35,6 +54,492 @@
       z-index: 10; pointer-events: none;
     }
     .bottom-left { display: flex; flex-direction: column; gap: 6px; }
+    .exp-label {
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+    }
+    .exp-label em { color: #c8e054; font-style: normal; }
+
+    /* ── Enter button ── */
+    .enter-btn {
+      pointer-events: all;
+      background: transparent;
+      border: 0.5px solid rgba(200,224,84,0.4);
+      padding: 8px 20px;
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(200,224,84,0.7); cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      position: relative;
+    }
+    .enter-btn:hover { border-color: #c8e054; color: #c8e054; }
+    .enter-btn:disabled { opacity: 0.4; cursor: default; }
+
+    .hint {
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.12);
+    }
+
+    /* ── Swipe hint (mobile only) ── */
+    .swipe-hint {
+      display: none;
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      z-index: 10; pointer-events: none;
+      flex-direction: column; align-items: center; gap: 6px;
+    }
+    .swipe-arrow {
+      width: 1px; height: 28px;
+      background: linear-gradient(to top, rgba(200,224,84,0.6), transparent);
+      animation: swipePulse 2s ease-in-out infinite;
+    }
+    .swipe-label {
+      font-family: 'Space Mono', monospace; font-size: 7px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(200,224,84,0.45);
+    }
+    @keyframes swipePulse {
+      0%, 100% { opacity: 0.4; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.1); }
+    }
+    @media (max-width: 768px) {
+      .swipe-hint { display: flex; }
+      .enter-btn { display: none; }
+      .hint { display: none; }
+    }
+
+    /* ── Transition fade overlay ── */
+    #fade-overlay {
+      position: fixed; inset: 0;
+      background: #000;
+      opacity: 0; pointer-events: none;
+      z-index: 50;
+      transition: opacity 0.6s ease;
+    }
+    #fade-overlay.visible { opacity: 1; pointer-events: all; }
+
+    /* ── Loading ── */
+    .loading {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      gap: 16px; z-index: 100;
+      transition: opacity 0.8s;
+    }
+    .loading.hidden { opacity: 0; pointer-events: none; }
+    .loading-text {
+      font-family: 'Space Mono', monospace; font-size: 10px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .loading-text em { color: #c8e054; font-style: normal; }
+    .loading-bar-wrap { width: 200px; height: 0.5px; background: rgba(255,255,255,0.1); }
+    .loading-bar { height: 100%; width: 0%; background: #c8e054; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <p class="loading-text">geometry <em>of</em> societies</p>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+  <p class="loading-text" id="loading-status">loading city...</p>
+</div>
+
+<div id="canvas-container"><canvas id="cv"></canvas></div>
+
+<!-- Fade overlay for transition -->
+<div id="fade-overlay"></div>
+
+<div class="ui-band">
+  <div class="wordmark">
+    <span class="wordmark-title">geometry <em>of</em> societies</span>
+    <span class="wordmark-sub">experimental social laboratory · est. 2026</span>
+  </div>
+  <nav class="nav">
+    <a href="experiments.html" class="active">experiments</a>
+    <a href="#">about</a>
+    <a href="#">methods</a>
+    <a href="#">writing</a>
+  </nav>
+</div>
+
+<div class="ui-bottom">
+  <div class="bottom-left">
+    <span class="exp-label">// experimental social laboratory</span>
+    <span class="exp-label">agents: <em id="stat-agents">0</em> &nbsp;|&nbsp; paths: <em>20</em></span>
+  </div>
+  <button class="enter-btn" id="enter-btn">enter laboratory →</button>
+  <span class="hint">drag · scroll</span>
+</div>
+
+<!-- Mobile swipe hint -->
+<div class="swipe-hint">
+  <div class="swipe-arrow"></div>
+  <span class="swipe-label">swipe up to enter</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/utils/SkeletonUtils.js"></script>
+<script>
+(function(){
+
+  var cv = document.getElementById('cv');
+  var W = window.innerWidth, H = window.innerHeight;
+  cv.width = W; cv.height = H;
+
+  var renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x000000, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.55;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 3000, 6000);
+
+  var cam = new THREE.PerspectiveCamera(22, W/H, 1, 8000);
+  var maxDim = 1000;
+  var lookTarget = new THREE.Vector3(0, 0, 0);
+
+  var sph  = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
+  var tSph = {th: Math.PI * 1.75, ph: 1.20, r: 2000};
+
+  // ── Transition state ───────────────────────────────────────────────────────
+  var transitioning = false;
+
+  function triggerEnterTransition() {
+    if (transitioning) return;
+    transitioning = true;
+
+    var btn = document.getElementById('enter-btn');
+    if (btn) btn.disabled = true;
+
+    // Zoom target: move camera much closer (10% of current distance)
+    var zoomTarget = maxDim * 0.04;
+    tSph.r = zoomTarget;
+
+    // After ~1.2s of zooming, fade to black and navigate
+    setTimeout(function() {
+      var overlay = document.getElementById('fade-overlay');
+      overlay.classList.add('visible');
+      setTimeout(function() {
+        window.location.href = 'experiments.html';
+      }, 650);
+    }, 1000);
+  }
+
+  // ── Enter button (desktop) ─────────────────────────────────────────────────
+  document.getElementById('enter-btn').addEventListener('click', triggerEnterTransition);
+
+  // ── Swipe up (mobile) ─────────────────────────────────────────────────────
+  var touchStartY = null;
+  var touchStartX = null;
+  var touchStartTime = null;
+  var isSwiping = false;
+
+  document.addEventListener('touchstart', function(e) {
+    touchStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+    touchStartTime = Date.now();
+    isSwiping = false;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (touchStartY === null) return;
+    var dy = touchStartX !== null ? e.changedTouches[0].clientY - touchStartY : 0;
+    var dx = touchStartX !== null ? e.changedTouches[0].clientX - touchStartX : 0;
+    var dt = Date.now() - touchStartTime;
+
+    // Swipe up: vertical movement dominant, upward, fast enough
+    var isSwipeUp = dy < -60 && Math.abs(dy) > Math.abs(dx) * 1.5 && dt < 500;
+    if (isSwipeUp && !transitioning) {
+      triggerEnterTransition();
+    }
+
+    touchStartY = null;
+    touchStartX = null;
+  }, { passive: true });
+
+  function setProgress(pct, msg) {
+    document.getElementById('loading-bar').style.width = pct + '%';
+    if(msg) document.getElementById('loading-status').textContent = msg;
+  }
+  function hideLoading() {
+    var el = document.getElementById('loading');
+    el.classList.add('hidden');
+    setTimeout(function(){ el.style.display = 'none'; }, 900);
+  }
+
+  var pathData = {};
+  var agents = [];
+  var mixers = [];
+  var characterGltf = null;
+
+  // ── Load city ──────────────────────────────────────────────────────────────
+  setProgress(5, 'loading city...');
+  var cityLoader = new THREE.GLTFLoader();
+  cityLoader.load(
+    'cityMeshFixed.glb',
+    function(gltf) {
+      setProgress(60, 'placing city...');
+      var cityMat = new THREE.MeshStandardMaterial({color: 0xc8c8c8, roughness: 0.95, metalness: 0.0});
+      gltf.scene.traverse(function(child) {
+        if(child.isMesh) { child.material = cityMat; child.castShadow = true; child.receiveShadow = true; }
+      });
+      var box = new THREE.Box3().setFromObject(gltf.scene);
+      var center = box.getCenter(new THREE.Vector3());
+      var size = box.getSize(new THREE.Vector3());
+      gltf.scene.position.sub(center);
+      scene.add(gltf.scene);
+
+      maxDim = Math.max(size.x, size.y, size.z);
+      lookTarget.set(0, -size.y * 0.22, 0);
+      tSph.r = maxDim * 0.68;
+      sph.r  = tSph.r;
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+      var dl = new THREE.DirectionalLight(0xffffff, 0.9);
+      dl.position.set(maxDim*0.6, maxDim*1.2, maxDim*0.3);
+      dl.castShadow = true;
+      dl.shadow.mapSize.set(2048, 2048);
+      dl.shadow.camera.near = 1; dl.shadow.camera.far = maxDim*4;
+      dl.shadow.camera.left = -maxDim; dl.shadow.camera.right = maxDim;
+      dl.shadow.camera.top = maxDim; dl.shadow.camera.bottom = -maxDim;
+      dl.shadow.bias = -0.001;
+      scene.add(dl);
+      var fill = new THREE.DirectionalLight(0xffffff, 0.25);
+      fill.position.set(-maxDim*0.4, maxDim*0.5, -maxDim*0.4);
+      scene.add(fill);
+
+      setProgress(70, 'loading character...');
+      loadCharacter(function() {
+        setProgress(85, 'loading paths...');
+        loadPaths(center);
+      });
+    },
+    function(xhr) {
+      if(xhr.total > 0) setProgress(Math.round((xhr.loaded/xhr.total)*55)+5, 'loading city...');
+    },
+    function(err) { console.error('city error', err); setProgress(100, 'error loading city'); }
+  );
+
+  // ── Load character ─────────────────────────────────────────────────────────
+  function loadCharacter(callback) {
+    var charLoader = new THREE.GLTFLoader();
+    charLoader.load(
+      'character.glb',
+      function(gltf) {
+        characterGltf = gltf;
+        gltf.animations.forEach(function(clip) {
+          clip.tracks.forEach(function(track) {
+            track.name = track.name.replace(/_\d+\./, '.');
+          });
+        });
+        callback();
+      },
+      null,
+      function(err) { console.error('character error', err); callback(); }
+    );
+  }
+
+  // ── Load paths ─────────────────────────────────────────────────────────────
+  function loadPaths(center) {
+    fetch('paths.csv')
+      .then(function(r){ return r.text(); })
+      .then(function(text) {
+        var lines = text.trim().split('\n').slice(1);
+        lines.forEach(function(line) {
+          var parts = line.split(',');
+          var pid = parseInt(parts[0]);
+          var idx = parseInt(parts[1]);
+          var x = parseFloat(parts[2]) - center.x;
+          var y = parseFloat(parts[3]) - center.y;
+          var z = parseFloat(parts[4]) - center.z;
+          if(!pathData[pid]) pathData[pid] = [];
+          pathData[pid][idx] = new THREE.Vector3(x, y, z);
+        });
+        setProgress(95, 'spawning agents...');
+        spawnAgents();
+        setProgress(100, 'ready');
+        setTimeout(hideLoading, 600);
+      })
+      .catch(function(err) {
+        console.error('paths error', err);
+        setTimeout(hideLoading, 600);
+      });
+  }
+
+  // ── Spawn agents ───────────────────────────────────────────────────────────
+  function spawnAgents() {
+    var count = 0;
+    Object.keys(pathData).forEach(function(pid) {
+      var pts = pathData[pid].filter(Boolean);
+      if(pts.length < 2) return;
+      var n = pts.length > 44 ? 2 : 1;
+      for(var i = 0; i < n; i++) {
+        var startIdx = Math.floor((i / n) * pts.length);
+        var agentMesh, mixer, walkAction, idleAction, lookAction, stairsAction, surprisedAction;
+        var isStairs = (parseInt(pid) === 5 || parseInt(pid) === 8);
+
+        if(characterGltf) {
+          var clone = THREE.SkeletonUtils ? THREE.SkeletonUtils.clone(characterGltf.scene) : characterGltf.scene.clone(true);
+          clone.scale.setScalar(30);
+          clone.traverse(function(child) {
+            if(child.isMesh) child.castShadow = true;
+          });
+          scene.add(clone);
+          mixer = new THREE.AnimationMixer(clone);
+          var root = clone.getObjectByName('mixamorigHips');
+          if(root) root.position.set(0, 0, 0);
+
+          walkAction     = mixer.clipAction(characterGltf.animations[0]);
+          idleAction     = characterGltf.animations[1] ? mixer.clipAction(characterGltf.animations[1]) : null;
+          lookAction     = characterGltf.animations[2] ? mixer.clipAction(characterGltf.animations[2]) : null;
+          stairsAction   = characterGltf.animations[3] ? mixer.clipAction(characterGltf.animations[3]) : null;
+          surprisedAction= characterGltf.animations[4] ? mixer.clipAction(characterGltf.animations[4]) : null;
+
+          walkAction.setEffectiveWeight(isStairs ? 0 : 1).setEffectiveTimeScale(1).play();
+          if(stairsAction) stairsAction.setEffectiveWeight(isStairs ? 1 : 0).setEffectiveTimeScale(1).play();
+          if(idleAction)     idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
+          if(lookAction)     lookAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
+          if(surprisedAction) surprisedAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
+
+          mixer.timeScale = 1;
+          mixers.push(mixer);
+          agentMesh = clone;
+        } else {
+          var geo = new THREE.CylinderGeometry(2, 2, 8, 8);
+          var mat = new THREE.MeshStandardMaterial({color: 0x333333});
+          agentMesh = new THREE.Mesh(geo, mat);
+          scene.add(agentMesh);
+        }
+
+        if(pts[startIdx]) agentMesh.position.copy(pts[startIdx]);
+
+        agents.push({
+          mesh: agentMesh,
+          isStairs: isStairs,
+          mixer: mixer || null,
+          walkAction: walkAction || null,
+          idleAction: idleAction || null,
+          lookAction: lookAction || null,
+          stairsAction: stairsAction || null,
+          surprisedAction: surprisedAction || null,
+          path: pts,
+          idx: startIdx,
+          progress: Math.random(),
+          speed: 0.004 + Math.random() * 0.001,
+          looking: false
+        });
+        count++;
+      }
+    });
+    document.getElementById('stat-agents').textContent = count;
+  }
+
+  // ── Camera controls ────────────────────────────────────────────────────────
+  var dragging = false, pm = {x:0, y:0};
+  document.addEventListener('mousedown', function(e){ if(!transitioning){ dragging=true; pm={x:e.clientX,y:e.clientY}; } });
+  window.addEventListener('mouseup', function(){
+    dragging=false;
+    agents.forEach(function(ag) {
+      if(!ag.surprisedAction) return;
+      ag.surprisedAction.setEffectiveWeight(0);
+      var baseAction = ag.isStairs && ag.stairsAction ? ag.stairsAction : ag.walkAction;
+      if(baseAction) baseAction.setEffectiveWeight(1);
+      ag.looking = false;
+    });
+  });
+  window.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.clientX-pm.x)*0.005));
+    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.clientY-pm.y)*0.005));
+    pm = {x:e.clientX, y:e.clientY};
+    agents.forEach(function(ag) {
+      if(!ag.surprisedAction || ag.looking) return;
+      var baseAction = ag.isStairs && ag.stairsAction ? ag.stairsAction : ag.walkAction;
+      if(baseAction) baseAction.setEffectiveWeight(0);
+      ag.surprisedAction.setEffectiveWeight(1);
+      ag.looking = true;
+    });
+  });
+
+  document.addEventListener('wheel', function(e){
+    if(transitioning) return;
+    // ↓ Much closer zoom limit: maxDim*0.05 instead of maxDim*0.35
+    tSph.r = Math.max(maxDim*0.05, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
+    e.preventDefault();
+  }, {passive:false});
+
+  // Touch rotation (single finger) — separate from swipe detection above
+  var lastTouch = null;
+  document.addEventListener('touchstart', function(e){
+    if(e.touches.length === 1) lastTouch = e.touches[0];
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e){
+    if(!lastTouch || e.touches.length !== 1 || transitioning) return;
+    tSph.th = Math.max(Math.PI*1.42, Math.min(Math.PI*2.08, tSph.th-(e.touches[0].clientX-lastTouch.clientX)*0.005));
+    tSph.ph = Math.max(0.9, Math.min(1.35, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.005));
+    lastTouch=e.touches[0]; e.preventDefault();
+  }, {passive:false});
+
+  // ── Render loop ────────────────────────────────────────────────────────────
+  var clock = new THREE.Clock();
+  function loop() {
+    requestAnimationFrame(loop);
+    var delta = clock.getDelta();
+
+    // During transition, use faster easing so zoom feels dramatic
+    var ease = transitioning ? 0.04 : 0.07;
+    sph.th += (tSph.th-sph.th)*ease;
+    sph.ph += (tSph.ph-sph.ph)*ease;
+    sph.r  += (tSph.r -sph.r )*ease;
+
+    cam.position.set(
+      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
+      sph.r*Math.cos(sph.ph),
+      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
+    );
+    cam.lookAt(lookTarget);
+
+    mixers.forEach(function(m){ m.update(delta); });
+
+    agents.forEach(function(ag) {
+      if(ag.looking) return;
+      if(!ag.path || ag.path.length < 2) return;
+      ag.progress += ag.speed;
+      if(ag.progress >= 1) {
+        ag.progress = 0;
+        ag.idx = (ag.idx+1) % ag.path.length;
+      }
+      var cur = ag.path[ag.idx];
+      var nxt = ag.path[(ag.idx+1) % ag.path.length];
+      if(!cur || !nxt) return;
+      ag.mesh.position.lerpVectors(cur, nxt, ag.progress);
+      var dir = nxt.clone().sub(cur);
+      if(dir.length() > 0.1) ag.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+    });
+
+    renderer.render(scene, cam);
+  }
+  loop();
+
+  window.addEventListener('resize', function() {
+    var W = window.innerWidth, H = window.innerHeight;
+    renderer.setSize(W, H);
+    cam.aspect = W / H;
+    cam.updateProjectionMatrix();
+  });
+
+})();
+</script>
+</body>
+</html>    .bottom-left { display: flex; flex-direction: column; gap: 6px; }
     .exp-label {
       font-family: 'Space Mono', monospace; font-size: 8px;
       letter-spacing: 0.14em; text-transform: uppercase;
