@@ -262,10 +262,6 @@
         if(characterGltf) {
           // Use real character
           var clone = THREE.SkeletonUtils ? THREE.SkeletonUtils.clone(characterGltf.scene) : characterGltf.scene.clone(true);
-          console.log('clone children:', clone.children.length);
-          clone.traverse(function(child) {
-            if(child.isMesh) console.log('mesh found:', child.name, child.geometry.attributes.position ? child.geometry.attributes.position.count : 'no geo');
-          });
           clone.scale.setScalar(30);
           clone.traverse(function(child) {
             if(child.isMesh) child.castShadow = true;
@@ -344,6 +340,7 @@
   });
 
   document.addEventListener('wheel', function(e){
+    
     var stairsClip = agents[0].stairsAction ? agents[0].stairsAction.getClip() : null;
     if(stairsClip) console.log('stairs first track:', stairsClip.tracks[0].name);
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
