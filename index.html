@@ -316,7 +316,7 @@
           
           idx: startIdx,
           progress: Math.random(),
-          speed: 0.004 + Math.random() * 0.001
+          speed: 0.004 + Math.random() * 0.002
         });
         count++;
       }
@@ -336,26 +336,35 @@
     pm = {x:e.clientX, y:e.clientY};
   });
   
+  var zoomTimeout = null;
+  var zoomActive = false;
   document.addEventListener('wheel', function(e){
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
-    if(agents[0] && agents[0].lookAction) {
-      var clip = agents[0].lookAction.getClip();
-      var hipsTrack = clip.tracks[0];
-      console.log('looking hips values[0..5]:', hipsTrack.values.slice(0, 6));
-      var walkClip = agents[0].walkAction.getClip();
-      var walkHipsTrack = walkClip.tracks[0];
-      console.log('walking hips values[0..5]:', walkHipsTrack.values.slice(0, 6));
-      console.log('clip name:', clip.name);
-      console.log('first track:', clip.tracks[0].name);
-      console.log('total tracks:', clip.tracks.length);
-      console.log('lookAction enabled:', agents[0].lookAction.enabled);
-      console.log('lookAction weight:', agents[0].lookAction.getEffectiveWeight());
-      console.log('walkAction weight:', agents[0].walkAction.getEffectiveWeight());
-      agents[0].walkAction.setEffectiveWeight(0);
-      agents[0].lookAction.setEffectiveWeight(1);
-      console.log('after - lookAction weight:', agents[0].lookAction.getEffectiveWeight());
+
+    if(!zoomActive) {
+      zoomActive = true;
+      agents.forEach(function(ag) {
+        if(!ag.lookAction || !ag.walkAction) return;
+        if(Math.random() > 0.4) {
+          ag.walkAction.setEffectiveWeight(0);
+          ag.lookAction.setEffectiveWeight(1);
+          ag.looking = true;
+        }
+      });
     }
+
+    clearTimeout(zoomTimeout);
+    zoomTimeout = setTimeout(function() {
+      zoomActive = false;
+      agents.forEach(function(ag) {
+        if(!ag.lookAction || !ag.walkAction) return;
+        ag.lookAction.setEffectiveWeight(0);
+        ag.walkAction.setEffectiveWeight(1);
+        ag.looking = false;
+      });
+    }, 2000);
+
   }, {passive:false});
   
   var lastTouch = null;
@@ -386,6 +395,7 @@
     mixers.forEach(function(m){ m.update(delta); });
 
     agents.forEach(function(ag) {
+      if(ag.looking) return;
       if(!ag.path || ag.path.length < 2) return;
       ag.progress += ag.speed;
       if(ag.progress >= 1) {
