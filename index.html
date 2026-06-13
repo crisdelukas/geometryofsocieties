@@ -333,6 +333,11 @@
     e.preventDefault();
     if(agents[0] && agents[0].lookAction) {
       var clip = agents[0].lookAction.getClip();
+      var hipsTrack = clip.tracks[0];
+      console.log('looking hips values[0..5]:', hipsTrack.values.slice(0, 6));
+      var walkClip = agents[0].walkAction.getClip();
+      var walkHipsTrack = walkClip.tracks[0];
+      console.log('walking hips values[0..5]:', walkHipsTrack.values.slice(0, 6));
       console.log('clip name:', clip.name);
       console.log('first track:', clip.tracks[0].name);
       console.log('total tracks:', clip.tracks.length);
