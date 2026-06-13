@@ -325,6 +325,10 @@
     tSph.r = Math.max(maxDim*0.35, Math.min(maxDim*0.9, tSph.r+e.deltaY*0.5));
     e.preventDefault();
     if(agents[0] && agents[0].lookAction) {
+      var clip = agents[0].lookAction.getClip();
+      console.log('clip name:', clip.name);
+      console.log('first track:', clip.tracks[0].name);
+      console.log('total tracks:', clip.tracks.length);
       console.log('lookAction enabled:', agents[0].lookAction.enabled);
       console.log('lookAction weight:', agents[0].lookAction.getEffectiveWeight());
       console.log('walkAction weight:', agents[0].walkAction.getEffectiveWeight());
