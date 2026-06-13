@@ -11,30 +11,378 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    .fade-in {
-      opacity: 0;
-      transform: translateY(12px);
-      animation: fadeUp 0.6s ease forwards;
-    }
-    @keyframes fadeUp {
-      to { opacity: 1; transform: translateY(0); }
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f0e0c; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; }
+    body { background: #0f0e0c; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; height: 100vh; }
 
     .band-top {
-      background: #0f0e0c;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      background: rgba(15,14,12,0.9);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
       padding: 5px 1.75rem;
-      display: flex;
-      justify-content: space-between;
+      display: flex; justify-content: space-between;
     }
-    .band-top span {
-      font-family: 'Space Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      color: #3a3830;
-    }
+    .band-top span { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #3a3830; }
     .band-top em { color: #c8e054; font-style: normal; }
+
+    header {
+      position: fixed; top: 28px; left: 0; right: 0; z-index: 20;
+      padding: 1.25rem 1.75rem;
+      background: rgba(15,14,12,0.9);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .wordmark { font-size: 11px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: #e8e8e8; }
+    .wordmark em { font-style: normal; color: #c8e054; }
+    .wordmark-sub { font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.25); letter-spacing: 0.1em; margin-top: 4px; }
+    nav { display: flex; gap: 2rem; }
+    nav a { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.25); text-decoration: none; transition: color 0.2s; }
+    nav a.active { color: #e8e8e8; }
+    nav a:hover { color: #c8e054; }
+
+    #automata-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; cursor: crosshair; }
+
+    #hint {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      font-family: 'Space Mono', monospace; font-size: 9px;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(255,255,255,0.18); z-index: 20;
+      pointer-events: none; transition: opacity 1s;
+      animation: hintPulse 3s ease-in-out 0.8s infinite;
+    }
+    @keyframes hintPulse { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
+
+    /* hover info panel */
+    .exp-info {
+      position: fixed; z-index: 40; pointer-events: none;
+      opacity: 0; transition: opacity 0.15s;
+      background: rgba(15,14,12,0.95);
+      border: 0.5px solid rgba(200,224,84,0.25);
+      padding: 14px 18px; width: 220px;
+    }
+    .exp-info.visible { opacity: 1; }
+    .exp-info-num { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.2em; color: #c8e054; margin-bottom: 6px; }
+    .exp-info-method { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.12em; color: rgba(255,255,255,0.3); margin-bottom: 8px; }
+    .exp-info-title { font-size: 12px; font-weight: 500; color: #e8e8e8; line-height: 1.4; margin-bottom: 6px; }
+    .exp-info-desc { font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.4); line-height: 1.8; }
+    .exp-info-tag { display: inline-block; margin-top: 10px; font-family: 'Space Mono', monospace; font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; }
+    .exp-info-tag.live { color: #c8e054; border: 0.5px solid rgba(200,224,84,0.4); }
+    .exp-info-tag.soon { border: 0.5px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.25); }
+
+    .band-top { opacity: 0; animation: fadeUp 0.5s ease 0.1s forwards; }
+    header    { opacity: 0; animation: fadeUp 0.5s ease 0.3s forwards; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+<canvas id="automata-canvas"></canvas>
+
+<div class="band-top">
+  <span>geometry of societies <em>—</em> v0.1 <em>—</em> 2026</span>
+  <span>session <em>001</em> &nbsp;//&nbsp; agents <em>running</em> &nbsp;//&nbsp; 52.0116°N 4.3571°E</span>
+</div>
+
+<header>
+  <div>
+    <div class="wordmark">geometry <em>of</em> societies</div>
+    <div class="wordmark-sub">// experimental social laboratory</div>
+  </div>
+  <nav>
+    <a href="#" class="active">experiments</a>
+    <a href="#">about</a>
+    <a href="#">methods</a>
+    <a href="#">writing</a>
+  </nav>
+</header>
+
+<div id="hint">click anywhere to begin</div>
+
+<div class="exp-info" id="exp-info">
+  <div class="exp-info-num"    id="info-num"></div>
+  <div class="exp-info-method" id="info-method"></div>
+  <div class="exp-info-title"  id="info-title"></div>
+  <div class="exp-info-desc"   id="info-desc"></div>
+  <span class="exp-info-tag"   id="info-tag"></span>
+</div>
+
+<script>
+(function(){
+
+  // ── Cell size: CA cells and icon cells are the SAME grid ──────────────────
+  var CELL = 9;   // px — slightly bigger than before, same for all
+  var GAP  = 1;   // px gap between cells
+
+  // ── Experiment definitions ─────────────────────────────────────────────────
+  // seed positions as fraction of screen (more scattered/asymmetric)
+  var EXPERIMENTS = [
+    {
+      num:'01', method:'ABM — three.js',
+      title:'neurotic compulsions & the vertical city',
+      desc:"horney's three drives as emergent urbanism. agents build the world they cannot escape.",
+      tag:'● live', tagClass:'live', url:'simulation.html',
+      sx: 0.18, sy: 0.58,
+      pixels:[
+        [0,0,0,1,0,0,0,0,0],
+        [0,0,0,1,0,0,0,0,0],
+        [0,0,1,1,1,0,0,0,0],
+        [0,0,1,0,1,0,0,0,0],
+        [0,1,1,0,1,1,0,0,0],
+        [0,1,0,0,0,1,0,0,0],
+        [1,1,0,0,0,1,1,0,0],
+        [1,0,0,0,0,0,1,0,0],
+        [0,0,0,0,0,0,0,0,0]
+      ]
+    },
+    {
+      num:'02', method:'RL',
+      title:'hyper-specialisation in hierarchical webs',
+      desc:'creatures that learn to climb by making others depend on them.',
+      tag:'in construction', tagClass:'soon', url:null,
+      sx: 0.52, sy: 0.68,
+      pixels:[
+        [1,0,0,0,0,0,0,0,1],
+        [1,0,1,0,0,0,0,0,1],
+        [1,0,0,0,0,1,0,0,1],
+        [1,0,0,1,0,0,0,0,1],
+        [1,0,0,0,0,0,1,0,1],
+        [1,0,1,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1]
+      ]
+    },
+    {
+      num:'03', method:'SD',
+      title:'system dynamics of desire & identity',
+      desc:'feedback loops between want, self, and other.',
+      tag:'in construction', tagClass:'soon', url:null,
+      sx: 0.80, sy: 0.45,
+      pixels:[
+        [0,0,0,0,1,0,0,0,0],
+        [0,0,0,1,1,1,0,0,0],
+        [0,0,1,0,1,0,1,0,0],
+        [0,1,0,0,1,0,0,1,0],
+        [1,0,0,0,1,0,0,0,1],
+        [0,1,0,0,0,0,0,1,0],
+        [0,0,1,0,0,0,1,0,0],
+        [0,0,0,1,0,1,0,0,0],
+        [0,0,0,0,1,0,0,0,0]
+      ]
+    }
+  ];
+
+  // ── Canvas ─────────────────────────────────────────────────────────────────
+  var canvas = document.getElementById('automata-canvas');
+  var ctx    = canvas.getContext('2d');
+  var W, H, COLS, ROWS;
+
+  // grid state: 0=dead, 1=alive-normal, 2=alive-fixed (icon pixel)
+  var grid, next, age;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    COLS = Math.ceil(W / CELL);
+    ROWS = Math.ceil(H / CELL);
+    grid = new Uint8Array(COLS * ROWS);
+    next = new Uint8Array(COLS * ROWS);
+    age  = new Uint16Array(COLS * ROWS);
+    // re-place any already-revealed icons
+    EXPERIMENTS.forEach(function(exp) {
+      if (exp.revealed) placeIcon(exp);
+    });
+  }
+
+  function I(c,r){ return r * COLS + c; }
+
+  // ── Place icon pixels as fixed cells ──────────────────────────────────────
+  function placeIcon(exp) {
+    var originC = Math.round(exp.sx * COLS) - 4;
+    var originR = Math.round(exp.sy * ROWS) - 4;
+    exp.iconOriginC = originC;
+    exp.iconOriginR = originR;
+    // no colocamos nada — los pixels se fijan en step() cuando el CA los toca
+  }
+
+  // ── Neighbor count (only non-zero cells count) ────────────────────────────
+  function neighbors(c, r) {
+    var n = 0;
+    for (var dr = -1; dr <= 1; dr++)
+      for (var dc = -1; dc <= 1; dc++) {
+        if (dr===0 && dc===0) continue;
+        var nr=r+dr, nc=c+dc;
+        if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && grid[I(nc,nr)] > 0) n++;
+      }
+    return n;
+  }
+
+  // ── Check if a cell is part of an icon zone ───────────────────────────────
+  function isIconZone(c, r) {
+    for (var i = 0; i < EXPERIMENTS.length; i++) {
+      var exp = EXPERIMENTS[i];
+      if (!exp.revealed) continue;
+      var dc = c - exp.iconOriginC, dr = r - exp.iconOriginR;
+      if (dc>=0 && dc<9 && dr>=0 && dr<9 && exp.pixels[dr] && exp.pixels[dr][dc]) return true;
+    }
+    return false;
+  }
+
+  // ── Step ──────────────────────────────────────────────────────────────────
+  function step() {
+    // Check crystallization
+    EXPERIMENTS.forEach(function(exp) {
+      if (exp.revealed) return;
+      var sc = Math.round(exp.sx * COLS);
+      var sr = Math.round(exp.sy * ROWS);
+      var count = 0;
+      for (var dr=-5; dr<=5; dr++)
+        for (var dc=-5; dc<=5; dc++) {
+          var nr=sr+dr, nc=sc+dc;
+          if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS && grid[I(nc,nr)]>0) count++;
+        }
+      if (count >= 8) {
+        exp.revealed = true;
+        placeIcon(exp);
+        setupHover(exp, EXPERIMENTS.indexOf(exp));
+      }
+    });
+
+    for (var r=0; r<ROWS; r++) {
+      for (var c=0; c<COLS; c++) {
+        var i = I(c,r);
+        // fixed icon cells never die
+        if (grid[i] === 2) { next[i]=2; age[i]=Math.min(255,age[i]+1); continue; }
+        // fix icon pixel if CA touches it
+        if (grid[i] === 1) {
+          for (var ei=0; ei<EXPERIMENTS.length; ei++) {
+            var exp = EXPERIMENTS[ei];
+            if (!exp.revealed) continue;
+            var dc2 = c - exp.iconOriginC, dr2 = r - exp.iconOriginR;
+            if (dc2>=0&&dc2<9&&dr2>=0&&dr2<9&&exp.pixels[dr2]&&exp.pixels[dr2][dc2]) {
+              next[i]=2; age[i]=150; break;
+            }
+          }
+        }
+
+        var n = neighbors(c,r);
+        var alive = grid[i]===1;
+
+        if (alive) {
+          // Game-of-Life style: survive with 2 or 3 neighbors
+          next[i] = (n===2 || n===3) ? 1 : 0;
+        } else {
+          // Born with exactly 3 neighbors (classic GoL) OR 1 neighbor with low prob (slow spread)
+          if (n===3) next[i] = 1;
+          else if (n===1 && Math.random() < 0.12) next[i] = 1;
+          else next[i] = 0;
+        }
+
+        if (next[i]>0) age[i] = Math.min(255, age[i]+1);
+        else age[i] = 0;
+      }
+    }
+    var tmp=grid; grid=next; next=tmp;
+  }
+
+  // ── Draw ──────────────────────────────────────────────────────────────────
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    for (var r=0; r<ROWS; r++) {
+      for (var c=0; c<COLS; c++) {
+        var i = I(c,r);
+        if (!grid[i]) continue;
+        if (grid[i]===2) {
+          // fixed icon cell: mismo color que CA maduro
+          ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        } else {
+          var a = Math.min(0.75, 0.15 + age[i]*0.03);
+          ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
+        }
+        ctx.fillRect(c*CELL, r*CELL, CELL-GAP, CELL-GAP);
+      }
+    }
+  }
+
+  // ── Hover ─────────────────────────────────────────────────────────────────
+  var infoEl = document.getElementById('exp-info');
+
+  function setupHover(exp, idx) {
+    // hover detection on canvas mousemove
+    exp.hoverReady = true;
+  }
+
+  canvas.addEventListener('mousemove', function(e) {
+    var mc = Math.floor(e.clientX / CELL);
+    var mr = Math.floor(e.clientY / CELL);
+    var found = null;
+    EXPERIMENTS.forEach(function(exp) {
+      if (!exp.revealed || !exp.hoverReady) return;
+      var dc = mc - exp.iconOriginC, dr = mr - exp.iconOriginR;
+      if (dc>=0 && dc<9 && dr>=0 && dr<9) found = exp;
+    });
+    if (found) {
+      document.getElementById('info-num').textContent    = '// experiment ' + found.num;
+      document.getElementById('info-method').textContent = found.method;
+      document.getElementById('info-title').textContent  = found.title;
+      document.getElementById('info-desc').textContent   = found.desc;
+      var tag = document.getElementById('info-tag');
+      tag.textContent = found.tag;
+      tag.className   = 'exp-info-tag ' + found.tagClass;
+      var x = e.clientX+24, y = e.clientY-20;
+      if (x+220>W) x = e.clientX-240;
+      if (y+200>H) y = H-210;
+      infoEl.style.left = x+'px';
+      infoEl.style.top  = y+'px';
+      infoEl.classList.add('visible');
+      canvas.style.cursor = found.url ? 'pointer' : 'default';
+    } else {
+      infoEl.classList.remove('visible');
+      canvas.style.cursor = started ? 'crosshair' : 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('click', function(e) {
+    // check icon click first
+    var mc = Math.floor(e.clientX / CELL);
+    var mr = Math.floor(e.clientY / CELL);
+    for (var i=0; i<EXPERIMENTS.length; i++) {
+      var exp = EXPERIMENTS[i];
+      if (!exp.revealed) continue;
+      var dc = mc-exp.iconOriginC, dr = mr-exp.iconOriginR;
+      if (dc>=0&&dc<9&&dr>=0&&dr<9&&exp.url) {
+        window.location.href = exp.url; return;
+      }
+    }
+    // otherwise seed CA
+    if (!started) {
+      started = true;
+      document.getElementById('hint').style.opacity='0';
+    }
+    var cc = Math.floor(e.clientX/CELL), cr = Math.floor(e.clientY/CELL);
+    for (var dr=-1; dr<=1; dr++)
+      for (var dc=-1; dc<=1; dc++) {
+        var nr=cr+dr, nc=cc+dc;
+        if (nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) { grid[I(nc,nr)]=1; age[I(nc,nr)]=1; }
+      }
+  });
+
+  // ── Loop ──────────────────────────────────────────────────────────────────
+  var started=false, lastStep=0, STEP_MS=60;
+
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    if (started && ts-lastStep > STEP_MS) { step(); lastStep=ts; }
+    draw();
+  }
+
+  resize();
+  requestAnimationFrame(loop);
+  window.addEventListener('resize', resize);
+
+})();
+</script>
+</body>
+</html>    .band-top em { color: #c8e054; font-style: normal; }
 
     header {
       padding: 2rem 1.75rem 1.75rem;
