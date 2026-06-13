@@ -267,11 +267,10 @@
           mixer = new THREE.AnimationMixer(clone);
           var root = clone.getObjectByName('mixamorigHips');
           if(root) root.position.set(0, 0, 0);
-          walkAction = mixer.clipAction(characterGltf.animations[0]);
-          idleAction = characterGltf.animations[1] ? mixer.clipAction(characterGltf.animations[1]) : null;
-          lookAction = characterGltf.animations[2] ? mixer.clipAction(characterGltf.animations[2]) : null;
-          stairsAction = characterGltf.animations[3] ? mixer.clipAction(characterGltf.animations[3]) : null;
-          surprisedAction = characterGltf.animations[4] ? mixer.clipAction(characterGltf.animations[4]) : null;
+          walkAction = mixer.clipAction(characterGltf.animations[0], clone);
+          idleAction = characterGltf.animations[1] ? mixer.clipAction(characterGltf.animations[1], clone) : null;
+          lookAction = characterGltf.animations[2] ? mixer.clipAction(characterGltf.animations[2], clone) : null;
+          stairsAction = characterGltf.animations[3] ? mixer.clipAction(characterGltf.animations[3], clone) : null;
           walkAction.setEffectiveWeight(1).setEffectiveTimeScale(1).play();
           if(idleAction) idleAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
           if(lookAction) lookAction.setEffectiveWeight(0).setEffectiveTimeScale(1).play();
