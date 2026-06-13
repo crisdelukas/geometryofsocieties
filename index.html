@@ -203,6 +203,13 @@
       'character.glb',
       function(gltf) {
         characterGltf = gltf;
+        gltf.animations.forEach(function(clip) {
+          clip.tracks.forEach(function(track) {
+            track.name = track.name.replace(/mixamorigHips_\d+/, 'mixamorigHips')
+                                   .replace(/mixamorigSpine_\d+/, 'mixamorigSpine')
+                                   .replace(/_\d+\./, '.');
+          });
+        });
         gltf.animations.forEach(function(a, i) {
           console.log(i, a.name, 'tracks:', a.tracks.length);
         });
