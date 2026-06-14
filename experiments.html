@@ -297,7 +297,7 @@
           // fixed icon cell: mismo color que CA maduro
           ctx.fillStyle = 'rgba(255,255,255,0.55)';
         } else {
-          var a = Math.min(0.75, 0.05 + age[i]*0.02);
+          var a = Math.min(0.55, 0.25 + age[i]*0.04);
           ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
         }
         ctx.fillRect(c*CELL, r*CELL, CELL-GAP, CELL-GAP);
