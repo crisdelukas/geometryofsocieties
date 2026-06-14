@@ -120,7 +120,7 @@
       title:'neurotic compulsions & the vertical city',
       desc:"horney's three drives as emergent urbanism. agents build the world they cannot escape.",
       tag:'● live', tagClass:'live', url:'simulation.html',
-      sx: 0.18, sy: 0.58,
+      sx: 0.25, sy: 0.55,
       pixels:[
         [0,0,0,1,0,0,0,0,0],
         [0,0,0,1,0,0,0,0,0],
@@ -138,7 +138,7 @@
       title:'hyper-specialisation in hierarchical webs',
       desc:'creatures that learn to climb by making others depend on them.',
       tag:'in construction', tagClass:'soon', url:null,
-      sx: 0.52, sy: 0.68,
+      sx: 0.50, sy: 0.55,
       pixels:[
         [1,0,0,0,0,0,0,0,1],
         [1,0,1,0,0,0,0,0,1],
@@ -156,7 +156,7 @@
       title:'system dynamics of desire & identity',
       desc:'feedback loops between want, self, and other.',
       tag:'in construction', tagClass:'soon', url:null,
-      sx: 0.80, sy: 0.45,
+      sx: 0.75, sy: 0.55,
       pixels:[
         [0,0,0,0,1,0,0,0,0],
         [0,0,0,1,1,1,0,0,0],
@@ -295,9 +295,9 @@
         if (!grid[i]) continue;
         if (grid[i]===2) {
           // fixed icon cell: mismo color que CA maduro
-          ctx.fillStyle = 'rgba(255,255,255,0.75)';
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
         } else {
-          var a = Math.min(0.75, 0.15 + age[i]*0.03);
+          var a = Math.min(0.75, 0.05 + age[i]*0.02);
           ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
         }
         ctx.fillRect(c*CELL, r*CELL, CELL-GAP, CELL-GAP);
