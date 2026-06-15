@@ -480,7 +480,7 @@
 
       var mesh = new THREE.Mesh(AGENT_GEO, AGENT_MATS[type]);
       var gw = gridToWorld(x,z);
-      mesh.position.set(gw.wx, (f+1)*V+V+VS*0.35, gw.wz);
+      mesh.position.set(gw.wx, f*V+V+VS*0.35, gw.wz);
       scene.add(mesh);
       agentMeshes.push(mesh);
     }
@@ -551,7 +551,7 @@
       var mesh = agentMeshes[i];
       if(mesh) {
         var gw = gridToWorld(agent.x, agent.z);
-        mesh.position.set(gw.wx, (agent.floor+2)*V+VS*0.35, gw.wz);
+        mesh.position.set(gw.wx, agent.floor*V+V+VS*0.35, gw.wz);
       }
     }
 
