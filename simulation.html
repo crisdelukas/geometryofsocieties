@@ -209,6 +209,12 @@
   var fill = new THREE.DirectionalLight(0xddeeff, 0.2);
   fill.position.set(-12,8,-12);
   scene.add(fill);
+
+  // ── Grid ──────────────────────────────────────────────────────────────────
+  var GRID = 20;
+  var V    = 0.5;
+  var VS   = V - 0.02;
+
   // Ground plane
   var groundGeo = new THREE.PlaneGeometry(GRID*V, GRID*V, GRID-1, GRID-1);
   var groundMat = new THREE.MeshLambertMaterial({color:0x111111});
@@ -222,11 +228,6 @@
   var gridHelper = new THREE.GridHelper(GRID*V, GRID, 0x222222, 0x1a1a1a);
   gridHelper.position.y = 0.001;
   scene.add(gridHelper);
-
-  // ── Grid ──────────────────────────────────────────────────────────────────
-  var GRID = 20;
-  var V    = 0.5;
-  var VS   = V - 0.02;
 
   var voxelGrid = [];
   var voxelMeshes = {};
