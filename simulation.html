@@ -267,7 +267,7 @@
       var t=1-(f/Math.max(1,count-1));
       var idx=Math.floor(t*(grayMats.length-1));
       var mesh=new THREE.Mesh(GROUND_GEO, grayMats[idx]);
-      mesh.position.set(wx, f*V-V/2, wz);
+      mesh.position.set(wx, f*V+V/2, wz);
       mesh.scale.set(0.01,0.01,0.01);
       mesh.castShadow=true;
       mesh.receiveShadow=(f===0);
@@ -362,7 +362,7 @@
     var mesh = voxelMeshes[key];
     if(!mesh) {
       mesh = new THREE.Mesh(VOXEL_GEO, state===2 ? MAT_OCCUPIED : MAT_ABANDONED);
-      mesh.position.set(gw.wx, (f+1)*V + V/2, gw.wz);
+      mesh.position.set(gw.wx, f*V + V/2, gw.wz);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       scene.add(mesh);
