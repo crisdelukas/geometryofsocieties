@@ -267,7 +267,7 @@
       var t=1-(f/Math.max(1,count-1));
       var idx=Math.floor(t*(grayMats.length-1));
       var mesh=new THREE.Mesh(GROUND_GEO, grayMats[idx]);
-      mesh.position.set(wx, f*V+V/2, wz);
+      mesh.position.set(wx, f*V-V/2, wz);
       mesh.scale.set(0.01,0.01,0.01);
       mesh.castShadow=true;
       mesh.receiveShadow=(f===0);
