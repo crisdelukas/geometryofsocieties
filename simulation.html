@@ -229,9 +229,9 @@
   var grayMats = GRAY_LEVELS.map(function(c){ return new THREE.MeshLambertMaterial({color:c}); });
   var GROUND_GEO = new THREE.BoxGeometry(VS,VS,VS);
 
-  var TYPES_G = {EMPTY:0,GROUND:1,LOW:2,MID:3,HIGH:4};
-  var VCOUNTS  = [0,1,3,7,14];
-  var CVAR     = [0,0,1,2,3];
+  var TYPES_G = {EMPTY:0,GROUND:1};
+  var VCOUNTS  = [0,1];
+  var CVAR     = [0,0];
 
   var gGrid = [];
   function initGGrid(seed) {
@@ -282,12 +282,8 @@
     var r=rng(seed*1000+x*200+z);
     var nm=gNeighborMax(x,z);
     var dist=Math.sqrt((x-GROUND_GRID/2)**2+(z-GROUND_GRID/2)**2)/(GROUND_GRID/2);
-    var w=[0,6,14,8,3];
-    w[TYPES_G.HIGH]  *= (cell.bias*3+0.1);
-    w[TYPES_G.MID]   *= (cell.bias*2+0.3);
-    w[TYPES_G.EMPTY] *= (dist>0.85?6:0.1);
-    if(nm>=TYPES_G.MID) w[TYPES_G.HIGH]*=2;
-    if(nm<=TYPES_G.LOW) { w[TYPES_G.HIGH]*=0.1; }
+    var w=[0,8];
+    w[TYPES_G.EMPTY] = (dist>0.85?6:0.1);
     var total=w.reduce(function(a,b){return a+b;},0);
     var rand=r()*total, cum=0, chosen=TYPES_G.GROUND;
     for(var t=0;t<w.length;t++){cum+=w[t];if(rand<=cum){chosen=t;break;}}
@@ -484,7 +480,7 @@
 
       var mesh = new THREE.Mesh(AGENT_GEO, AGENT_MATS[type]);
       var gw = gridToWorld(x,z);
-      mesh.position.set(gw.wx, f*V+V+VS*0.35, gw.wz);
+      mesh.position.set(gw.wx, V+VS*0.35, gw.wz);
       scene.add(mesh);
       agentMeshes.push(mesh);
     }
@@ -555,7 +551,7 @@
       var mesh = agentMeshes[i];
       if(mesh) {
         var gw = gridToWorld(agent.x, agent.z);
-        mesh.position.set(gw.wx, agent.floor*V+V+VS*0.35, gw.wz);
+        mesh.position.set(gw.wx, (agent.floor+1)*V+VS*0.35, gw.wz);
       }
     }
 
