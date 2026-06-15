@@ -209,6 +209,19 @@
   var fill = new THREE.DirectionalLight(0xddeeff, 0.2);
   fill.position.set(-12,8,-12);
   scene.add(fill);
+  // Ground plane
+  var groundGeo = new THREE.PlaneGeometry(GRID*V, GRID*V, GRID-1, GRID-1);
+  var groundMat = new THREE.MeshLambertMaterial({color:0x111111});
+  var ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = -0.01;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Grid lines on ground
+  var gridHelper = new THREE.GridHelper(GRID*V, GRID, 0x222222, 0x1a1a1a);
+  gridHelper.position.y = 0.001;
+  scene.add(gridHelper);
 
   // ── Grid ──────────────────────────────────────────────────────────────────
   var GRID = 20;
@@ -381,7 +394,7 @@
       var type = r<params.power ? 0 : r<params.power+params.attention ? 1 : 2;
       var x=Math.floor(Math.random()*GRID);
       var z=Math.floor(Math.random()*GRID);
-      var f=getFloorCount(x,z);
+      var f=0;
       agents.push({type:type, x:x, z:z, floor:f, ticksHere:0, satisfied:false, score:0});
       setVoxelState(x,z,f,2);
 
@@ -477,7 +490,6 @@
     Object.keys(voxelMeshes).forEach(function(k){ scene.remove(voxelMeshes[k]); });
     voxelMeshes={};
     initVoxelGrid();
-    placeInitialVoxels();
     spawnAgents();
     document.getElementById('kpi-sat').textContent='—';
     document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
@@ -581,7 +593,6 @@
 
   // ── Init ───────────────────────────────────────────────────────────────────
   initVoxelGrid();
-  placeInitialVoxels();
   spawnAgents();
   document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
   loop();
