@@ -440,7 +440,7 @@
         var nx=agent.x+dx, nz=agent.z+dz;
         if(nx<0||nx>=GRID||nz<0||nz>=GRID) continue;
         var colH = Math.min(maxH, getFloorCount(nx,nz)+1);
-        for(var f=0;f<colH;f++) {
+        for(var f=1;f<colH;f++) {
           if(getVoxelState(nx,nz,f)!==2) candidates.push({x:nx,z:nz,f:f});
         }
       }
