@@ -215,19 +215,102 @@
   var V    = 0.5;
   var VS   = V - 0.02;
 
-  // Ground plane
-  var groundGeo = new THREE.PlaneGeometry(GRID*V, GRID*V, GRID-1, GRID-1);
-  var groundMat = new THREE.MeshLambertMaterial({color:0x111111});
-  var ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.rotation.x = -Math.PI/2;
-  ground.position.y = -0.01;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  // ── WFC ground city ────────────────────────────────────────────────────────
+  var GROUND_GRID = 20;
+  var groundMeshes = [];
+  var groundQueue = [];
 
-  // Grid lines on ground
-  var gridHelper = new THREE.GridHelper(GRID*V, GRID, 0x222222, 0x1a1a1a);
-  gridHelper.position.y = 0.001;
-  scene.add(gridHelper);
+  function rng(s) {
+    var v = ((s % 99991) + 99991) % 99991;
+    return function() { v = (v*16807+1)%2147483647; return (v-1)/2147483646; };
+  }
+
+  var GRAY_LEVELS = [0xffffff,0xf0f0f0,0xe0e0e0,0xd0d0d0,0xc0c0c0,0xb0b0b0,0xa0a0a0,0x909090];
+  var grayMats = GRAY_LEVELS.map(function(c){ return new THREE.MeshLambertMaterial({color:c}); });
+  var GROUND_GEO = new THREE.BoxGeometry(VS,VS,VS);
+
+  var TYPES_G = {EMPTY:0,GROUND:1,LOW:2,MID:3,HIGH:4};
+  var VCOUNTS  = [0,1,3,7,14];
+  var CVAR     = [0,0,1,2,3];
+
+  var gGrid = [];
+  function initGGrid(seed) {
+    var r = rng(seed);
+    gGrid = [];
+    for(var x=0;x<GROUND_GRID;x++){
+      gGrid[x]=[];
+      for(var z=0;z<GROUND_GRID;z++){
+        var cx=x-GROUND_GRID/2, cz=z-GROUND_GRID/2;
+        var dist=Math.sqrt(cx*cx+cz*cz)/(GROUND_GRID/2);
+        var bias=Math.pow(Math.max(0,1-dist*1.05),1.6);
+        gGrid[x][z]={collapsed:false,type:-1,bias:bias,rh:r()};
+      }
+    }
+  }
+
+  function gNeighborMax(x,z){
+    var m=0;
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(function(d){
+      var nx=x+d[0],nz=z+d[1];
+      if(nx>=0&&nx<GROUND_GRID&&nz>=0&&nz<GROUND_GRID&&gGrid[nx][nz].collapsed)
+        m=Math.max(m,gGrid[nx][nz].type);
+    });
+    return m;
+  }
+
+  function spawnGroundColumn(x,z,type,rh) {
+    if(type===TYPES_G.EMPTY) return;
+    var wx=(x-GROUND_GRID/2)*V+V/2;
+    var wz=(z-GROUND_GRID/2)*V+V/2;
+    var count=VCOUNTS[type]+Math.floor(rh*CVAR[type]);
+    for(var f=0;f<count;f++){
+      var t=1-(f/Math.max(1,count-1));
+      var idx=Math.floor(t*(grayMats.length-1));
+      var mesh=new THREE.Mesh(GROUND_GEO, grayMats[idx]);
+      mesh.position.set(wx, f*V+V/2, wz);
+      mesh.scale.set(0.01,0.01,0.01);
+      mesh.castShadow=true;
+      mesh.receiveShadow=(f===0);
+      scene.add(mesh);
+      groundMeshes.push(mesh);
+    }
+  }
+
+  function collapseGCell(x,z,seed){
+    var cell=gGrid[x][z];
+    if(cell.collapsed) return;
+    var r=rng(seed*1000+x*200+z);
+    var nm=gNeighborMax(x,z);
+    var dist=Math.sqrt((x-GROUND_GRID/2)**2+(z-GROUND_GRID/2)**2)/(GROUND_GRID/2);
+    var w=[0,6,14,8,3];
+    w[TYPES_G.HIGH]  *= (cell.bias*3+0.1);
+    w[TYPES_G.MID]   *= (cell.bias*2+0.3);
+    w[TYPES_G.EMPTY] *= (dist>0.85?6:0.1);
+    if(nm>=TYPES_G.MID) w[TYPES_G.HIGH]*=2;
+    if(nm<=TYPES_G.LOW) { w[TYPES_G.HIGH]*=0.1; }
+    var total=w.reduce(function(a,b){return a+b;},0);
+    var rand=r()*total, cum=0, chosen=TYPES_G.GROUND;
+    for(var t=0;t<w.length;t++){cum+=w[t];if(rand<=cum){chosen=t;break;}}
+    cell.collapsed=true; cell.type=chosen;
+    spawnGroundColumn(x,z,chosen,cell.rh);
+  }
+
+  function buildGround(seed){
+    groundMeshes.forEach(function(m){scene.remove(m);}); groundMeshes=[];
+    initGGrid(seed);
+    var order=[];
+    for(var x=0;x<GROUND_GRID;x++) for(var z=0;z<GROUND_GRID;z++) order.push([x,z]);
+    var jr=rng(seed+1);
+    order.sort(function(a,b){
+      var da=Math.sqrt((a[0]-GROUND_GRID/2)**2+(a[1]-GROUND_GRID/2)**2);
+      var db=Math.sqrt((b[0]-GROUND_GRID/2)**2+(b[1]-GROUND_GRID/2)**2);
+      return da-db+(jr()-0.5)*2;
+    });
+    groundQueue=order.map(function(pos,i){return {pos:pos,delay:i*5,seed:seed};});
+    groundQueue.startTime=performance.now();
+  }
+
+  buildGround(42);
 
   var voxelGrid = [];
   var voxelMeshes = {};
@@ -589,6 +672,23 @@
       sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
     );
     cam.lookAt(0,3,0);
+    // animate ground spawn
+    if(groundQueue.length>0){
+      var elapsed=performance.now()-groundQueue.startTime;
+      var p=0;
+      while(groundQueue.length>0&&groundQueue[0].delay<elapsed&&p<10){
+        var item=groundQueue.shift();
+        collapseGCell(item.pos[0],item.pos[1],item.seed);
+        p++;
+      }
+    }
+    groundMeshes.forEach(function(m){
+      if(m.scale.x<1){
+        m.scale.x=Math.min(1,m.scale.x+0.14);
+        m.scale.y=Math.min(1,m.scale.y+0.10);
+        m.scale.z=Math.min(1,m.scale.z+0.14);
+      }
+    });
     renderer.render(scene,cam);
   }
 
