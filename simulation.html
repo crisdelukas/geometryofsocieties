@@ -14,8 +14,6 @@
     body { background: #000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
     #canvas-container { position: fixed; inset: 0; }
     canvas { display: block; width: 100%; height: 100%; }
-
-    /* ── top band ── */
     .ui-band {
       position: fixed; top: 0; left: 0; right: 0; z-index: 10;
       padding: 8px 1.5rem;
@@ -31,8 +29,6 @@
     .ui-stats { display: flex; gap: 1.5rem; }
     .stat { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); }
     .stat em { color: #c8e054; font-style: normal; }
-
-    /* ── side panel ── */
     .side-panel {
       position: fixed; right: 0; top: 0; bottom: 0; z-index: 10;
       width: 220px;
@@ -51,82 +47,37 @@
       padding-bottom: 4px; margin-bottom: 2px;
     }
     .slider-row { display: flex; flex-direction: column; gap: 3px; }
-    .slider-label {
-      display: flex; justify-content: space-between;
-      font-family: 'Space Mono', monospace; font-size: 8px;
-      color: rgba(255,255,255,0.35); letter-spacing: 0.08em;
-    }
+    .slider-label { display: flex; justify-content: space-between; font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; }
     .slider-label em { color: #c8e054; font-style: normal; }
-    input[type=range] {
-      width: 100%; height: 2px; cursor: pointer;
-      -webkit-appearance: none; background: rgba(255,255,255,0.1);
-      border-radius: 1px; outline: none;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 8px; height: 8px;
-      border-radius: 50%; background: #c8e054; cursor: pointer;
-    }
-
-    /* type bars */
-    .type-bars { display: flex; flex-direction: column; gap: 4px; }
+    input[type=range] { width: 100%; height: 2px; cursor: pointer; -webkit-appearance: none; background: rgba(255,255,255,0.1); border-radius: 1px; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 8px; border-radius: 50%; background: #c8e054; cursor: pointer; }
+    .type-bars { display: flex; flex-direction: column; gap: 6px; }
     .type-bar-row { display: flex; align-items: center; gap: 6px; }
     .type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-    .type-dot.power    { background: #ff6b6b; }
+    .type-dot.power { background: #ff6b6b; }
     .type-dot.attention { background: #c8e054; }
-    .type-dot.freedom  { background: #6bb5ff; }
+    .type-dot.freedom { background: #6bb5ff; }
     .type-bar-label { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.3); flex: 1; letter-spacing: 0.08em; }
-    .type-bar-val { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.4); width: 24px; text-align: right; }
-
-    /* toggles */
+    .type-bar-val { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.4); width: 28px; text-align: right; }
     .toggle-row { display: flex; justify-content: space-between; align-items: center; }
     .toggle-label { font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; }
-    .toggle {
-      position: relative; width: 28px; height: 14px; cursor: pointer;
-      background: rgba(255,255,255,0.1); border-radius: 7px;
-      transition: background 0.2s; flex-shrink: 0;
-    }
+    .toggle { position: relative; width: 28px; height: 14px; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 7px; transition: background 0.2s; flex-shrink: 0; }
     .toggle.on { background: rgba(200,224,84,0.4); }
-    .toggle::after {
-      content: ''; position: absolute; top: 2px; left: 2px;
-      width: 10px; height: 10px; border-radius: 50%;
-      background: rgba(255,255,255,0.4); transition: transform 0.2s, background 0.2s;
-    }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.4); transition: transform 0.2s, background 0.2s; }
     .toggle.on::after { transform: translateX(14px); background: #c8e054; }
-
-    /* KPIs */
     .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .kpi { background: rgba(255,255,255,0.03); padding: 8px; border: 0.5px solid rgba(255,255,255,0.06); }
     .kpi-val { font-family: 'Space Mono', monospace; font-size: 16px; color: #c8e054; line-height: 1; }
     .kpi-name { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.25); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase; }
-
-    /* buttons */
     .btn-row { display: flex; gap: 6px; }
-    .sim-btn {
-      flex: 1; background: transparent;
-      border: 0.5px solid rgba(200,224,84,0.3);
-      padding: 6px 8px;
-      font-family: 'Space Mono', monospace; font-size: 7px;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      color: rgba(200,224,84,0.6); cursor: pointer;
-      transition: all 0.2s;
-    }
+    .sim-btn { flex: 1; background: transparent; border: 0.5px solid rgba(200,224,84,0.3); padding: 6px 8px; font-family: 'Space Mono', monospace; font-size: 7px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(200,224,84,0.6); cursor: pointer; transition: all 0.2s; }
     .sim-btn:hover { border-color: #c8e054; color: #c8e054; }
     .sim-btn.active { background: rgba(200,224,84,0.15); border-color: #c8e054; color: #c8e054; }
-
-    /* legend */
     .legend { display: flex; flex-direction: column; gap: 4px; }
     .legend-row { display: flex; align-items: center; gap: 6px; }
     .legend-swatch { width: 10px; height: 10px; flex-shrink: 0; }
     .legend-text { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.25); letter-spacing: 0.06em; }
-
-    /* bottom */
-    .ui-bottom {
-      position: fixed; bottom: 0; left: 0; right: 220px; z-index: 10;
-      padding: 8px 1.5rem;
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(0,0,0,0.5);
-      border-top: 0.5px solid rgba(255,255,255,0.06);
-    }
+    .ui-bottom { position: fixed; bottom: 0; left: 0; right: 220px; z-index: 10; padding: 8px 1.5rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); border-top: 0.5px solid rgba(255,255,255,0.06); }
     .hint { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: rgba(255,255,255,0.12); }
   </style>
 </head>
@@ -147,7 +98,6 @@
 </div>
 
 <div class="side-panel">
-
   <div class="panel-section">
     <div class="panel-label">distribution</div>
     <div class="type-bars">
@@ -171,7 +121,6 @@
       </div>
     </div>
   </div>
-
   <div class="panel-section">
     <div class="panel-label">initial conditions</div>
     <div class="slider-row">
@@ -187,7 +136,6 @@
       <input type="range" id="sl-agents" min="5" max="80" value="20">
     </div>
   </div>
-
   <div class="panel-section">
     <div class="panel-label">behaviour</div>
     <div class="toggle-row">
@@ -199,7 +147,6 @@
       <div class="toggle" id="tog-reltol"></div>
     </div>
   </div>
-
   <div class="panel-section">
     <div class="panel-label">metrics</div>
     <div class="kpi-grid">
@@ -207,25 +154,22 @@
       <div class="kpi"><div class="kpi-val" id="kpi-tol">—</div><div class="kpi-name">tolerance</div></div>
     </div>
   </div>
-
   <div class="panel-section">
     <div class="panel-label">legend</div>
     <div class="legend">
       <div class="legend-row"><div class="legend-swatch" style="background:#ffffff"></div><span class="legend-text">occupied (agent)</span></div>
-      <div class="legend-row"><div class="legend-swatch" style="background:#555"></div><span class="legend-text">abandoned</span></div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#444"></div><span class="legend-text">abandoned</span></div>
       <div class="legend-row"><div class="legend-swatch" style="background:#ff6b6b"></div><span class="legend-text">power agent</span></div>
       <div class="legend-row"><div class="legend-swatch" style="background:#c8e054"></div><span class="legend-text">attention agent</span></div>
       <div class="legend-row"><div class="legend-swatch" style="background:#6bb5ff"></div><span class="legend-text">freedom agent</span></div>
     </div>
   </div>
-
   <div class="panel-section">
     <div class="btn-row">
       <button class="sim-btn active" id="btn-run">⏸ pause</button>
       <button class="sim-btn" id="btn-reset">↺ reset</button>
     </div>
   </div>
-
 </div>
 
 <div class="ui-bottom">
@@ -234,60 +178,54 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 (function(){
 
-  // ── Renderer ───────────────────────────────────────────────────────────────
-  const cv = document.getElementById('cv');
+  var cv = document.getElementById('cv');
   cv.width = window.innerWidth; cv.height = window.innerHeight;
-  const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
+  var renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
   renderer.setClearColor(0x000000,1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.7;
 
-  // ── Scene ──────────────────────────────────────────────────────────────────
-  const scene = new THREE.Scene();
+  var scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x000000, 40, 90);
 
-  const cam = new THREE.PerspectiveCamera(52, cv.width/cv.height, 0.1, 200);
-  let sph = {th:Math.PI*0.28, ph:0.88, r:22};
-  let tSph = {...sph};
+  var cam = new THREE.PerspectiveCamera(52, cv.width/cv.height, 0.1, 200);
+  var sph = {th:Math.PI*0.28, ph:0.88, r:22};
+  var tSph = {th:sph.th, ph:sph.ph, r:sph.r};
 
-  // Lights
   scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-  const dl = new THREE.DirectionalLight(0xffffff, 1.0);
-  dl.position.set(15,40,10); dl.castShadow=true;
+  var dl = new THREE.DirectionalLight(0xffffff, 1.0);
+  dl.position.set(15,40,10);
+  dl.castShadow = true;
   dl.shadow.mapSize.set(2048,2048);
   dl.shadow.camera.left=-30; dl.shadow.camera.right=30;
   dl.shadow.camera.top=30; dl.shadow.camera.bottom=-30;
   dl.shadow.camera.far=120; dl.shadow.bias=-0.001;
   scene.add(dl);
-  scene.add(Object.assign(new THREE.DirectionalLight(0xddeeff,0.2), {position: new THREE.Vector3(-12,8,-12)}));
+  var fill = new THREE.DirectionalLight(0xddeeff, 0.2);
+  fill.position.set(-12,8,-12);
+  scene.add(fill);
 
-  // ── Grid config ────────────────────────────────────────────────────────────
-  const GRID = 20;   // NxN grid of columns
-  const V    = 0.5;  // voxel size
-  const GAP  = 0.02;
-  const VS   = V - GAP;
+  // ── Grid ──────────────────────────────────────────────────────────────────
+  var GRID = 20;
+  var V    = 0.5;
+  var VS   = V - 0.02;
 
-  // Voxel state: 0=empty, 1=abandoned(grey), 2=occupied(white)
-  // voxelGrid[x][z] = array of states per floor
-  let voxelGrid = [];
-  let voxelMeshes = {}; // key: "x,z,f" → mesh
+  var voxelGrid = [];
+  var voxelMeshes = {};
 
-  // Materials
-  const MAT_OCCUPIED  = new THREE.MeshLambertMaterial({color:0xffffff});
-  const MAT_ABANDONED = new THREE.MeshLambertMaterial({color:0x444444});
-  const MAT_POWER     = new THREE.MeshLambertMaterial({color:0xff6b6b});
-  const MAT_ATTENTION = new THREE.MeshLambertMaterial({color:0xc8e054});
-  const MAT_FREEDOM   = new THREE.MeshLambertMaterial({color:0x6bb5ff});
-  const VOXEL_GEO     = new THREE.BoxGeometry(VS,VS,VS);
+  var MAT_OCCUPIED  = new THREE.MeshLambertMaterial({color:0xffffff});
+  var MAT_ABANDONED = new THREE.MeshLambertMaterial({color:0x444444});
+  var MAT_POWER     = new THREE.MeshLambertMaterial({color:0xff6b6b});
+  var MAT_ATTENTION = new THREE.MeshLambertMaterial({color:0xc8e054});
+  var MAT_FREEDOM   = new THREE.MeshLambertMaterial({color:0x6bb5ff});
+  var VOXEL_GEO     = new THREE.BoxGeometry(VS,VS,VS);
+  var AGENT_GEO     = new THREE.BoxGeometry(VS*0.35, VS*0.7, VS*0.35);
+  var AGENT_MATS    = [MAT_POWER, MAT_ATTENTION, MAT_FREEDOM];
 
   function gridToWorld(x,z) {
     return {
@@ -298,18 +236,20 @@
 
   function initVoxelGrid() {
     voxelGrid = [];
-    for(let x=0;x<GRID;x++){
+    for(var x=0;x<GRID;x++){
       voxelGrid[x]=[];
-      for(let z=0;z<GRID;z++) voxelGrid[x][z]=[];
+      for(var z=0;z<GRID;z++) voxelGrid[x][z]=[];
     }
   }
 
   function getFloorCount(x,z) {
-    return voxelGrid[x]?.[z]?.length || 0;
+    if(x<0||x>=GRID||z<0||z>=GRID) return 0;
+    return voxelGrid[x][z].length;
   }
 
   function getVoxelState(x,z,f) {
-    return voxelGrid[x]?.[z]?.[f] ?? 0;
+    if(x<0||x>=GRID||z<0||z>=GRID) return 0;
+    return voxelGrid[x][z][f] || 0;
   }
 
   function setVoxelState(x,z,f,state) {
@@ -320,83 +260,74 @@
   }
 
   function updateVoxelMesh(x,z,f,state) {
-    const key = `${x},${z},${f}`;
+    var key = x+','+z+','+f;
     if(state===0) {
       if(voxelMeshes[key]) { scene.remove(voxelMeshes[key]); delete voxelMeshes[key]; }
       return;
     }
-    const {wx,wz} = gridToWorld(x,z);
-    let mesh = voxelMeshes[key];
+    var gw = gridToWorld(x,z);
+    var mesh = voxelMeshes[key];
     if(!mesh) {
       mesh = new THREE.Mesh(VOXEL_GEO, state===2 ? MAT_OCCUPIED : MAT_ABANDONED);
-      mesh.position.set(wx, f*V + V/2, wz);
-      mesh.castShadow=true; mesh.receiveShadow=true;
+      mesh.position.set(gw.wx, f*V + V/2, gw.wz);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       scene.add(mesh);
-      voxelMeshes[key]=mesh;
+      voxelMeshes[key] = mesh;
     } else {
       mesh.material = state===2 ? MAT_OCCUPIED : MAT_ABANDONED;
     }
   }
 
-  // ── Simulation params ──────────────────────────────────────────────────────
-  let params = {
-    power: 0.33, attention: 0.33, freedom: 0.34,
-    density: 12, tolerance: 0.6, agentCount: 20,
-    socialComparison: false, relativeTolerance: false
+  // ── Params ─────────────────────────────────────────────────────────────────
+  var params = {
+    power:0.33, attention:0.33, freedom:0.34,
+    density:12, tolerance:0.6, agentCount:20,
+    socialComparison:false, relativeTolerance:false
   };
+  var currentTolerance = 0.6;
+  var running = true;
+  var tick = 0;
+  var agents = [];
+  var agentMeshes = [];
 
-  let currentTolerance = 0.6;
-  let running = true;
-  let tick = 0;
-  let agents = [];
-  let characterGltf = null;
-  let agentMeshes = [];
-  let mixers = [];
+  var EXPLORE_RADIUS = 4;
+  var MAX_HEIGHT_BASE = 8;
+  var TICKS_PER_MOVE = 8;
 
-  // ── Agent definition ───────────────────────────────────────────────────────
-  // type: 0=power, 1=attention, 2=freedom
-  // x,z,floor: current position in grid
-  // ticksHere: how many ticks at current position
-  // satisfied: bool
-  // satisfactionScore: 0..1
-
-  const AGENT_COLORS = [MAT_POWER, MAT_ATTENTION, MAT_FREEDOM];
-  const EXPLORE_RADIUS = 4; // base exploration radius in cells
-  const MAX_HEIGHT_BASE = 8; // base max floor
-  const TICKS_PER_MOVE = 8;  // ticks before re-evaluating
-
+  // ── Score ──────────────────────────────────────────────────────────────────
   function scorePosition(agent, x, z, f) {
     if(x<0||x>=GRID||z<0||z>=GRID) return 0;
-    let score = 0;
+    var score = 0;
+    var dx, dz, nx, nz, bf;
     if(agent.type===0) {
-      // POWER: count white voxels below
-      let below = 0;
-      for(let bf=0;bf<f;bf++) if(getVoxelState(x,z,bf)===2) below++;
-      // also count adjacent columns' voxels below this height
-      for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) {
+      // POWER: white voxels below
+      var below = 0;
+      for(bf=0;bf<f;bf++) if(getVoxelState(x,z,bf)===2) below++;
+      for(dx=-1;dx<=1;dx++) for(dz=-1;dz<=1;dz++) {
         if(dx===0&&dz===0) continue;
-        const nx=x+dx,nz=z+dz;
-        for(let bf=0;bf<f;bf++) if(getVoxelState(nx,nz,bf)===2) below+=0.3;
+        nx=x+dx; nz=z+dz;
+        for(bf=0;bf<f;bf++) if(getVoxelState(nx,nz,bf)===2) below+=0.3;
       }
       score = Math.min(1, below/8);
     } else if(agent.type===1) {
-      // ATTENTION: count white voxels laterally (same floor ±1)
-      let lateral = 0;
-      for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++) {
+      // ATTENTION: white voxels laterally
+      var lateral = 0;
+      for(dx=-2;dx<=2;dx++) for(dz=-2;dz<=2;dz++) {
         if(dx===0&&dz===0) continue;
-        const nx=x+dx,nz=z+dz;
-        const dist=Math.sqrt(dx*dx+dz*dz);
-        for(let df=-1;df<=1;df++) if(getVoxelState(nx,nz,f+df)===2) lateral+=1/dist;
+        nx=x+dx; nz=z+dz;
+        var dist=Math.sqrt(dx*dx+dz*dz);
+        for(var df=-1;df<=1;df++) if(getVoxelState(nx,nz,f+df)===2) lateral+=1/dist;
       }
       score = Math.min(1, lateral/6);
     } else {
-      // FREEDOM: minimize all nearby white voxels
-      let nearby = 0;
-      for(let dx=-3;dx<=3;dx++) for(let dz=-3;dz<=3;dz++) {
+      // FREEDOM: minimize nearby white voxels
+      var nearby = 0;
+      for(dx=-3;dx<=3;dx++) for(dz=-3;dz<=3;dz++) {
         if(dx===0&&dz===0) continue;
-        const nx=x+dx,nz=z+dz;
-        const h=getFloorCount(nx,nz);
-        for(let bf=0;bf<h;bf++) if(getVoxelState(nx,nz,bf)===2) nearby++;
+        nx=x+dx; nz=z+dz;
+        var h=getFloorCount(nx,nz);
+        for(bf=0;bf<h;bf++) if(getVoxelState(nx,nz,bf)===2) nearby++;
       }
       score = Math.max(0, 1 - nearby/10);
     }
@@ -404,158 +335,136 @@
   }
 
   function findBestPosition(agent) {
-    const tol = currentTolerance;
-    const radius = Math.round(EXPLORE_RADIUS * (0.5 + tol * 0.5));
-    const maxH   = Math.round(MAX_HEIGHT_BASE * (0.3 + tol * 0.7));
-    const threshold = 1 - tol; // low tolerance = high threshold
+    var tol = currentTolerance;
+    var radius = Math.round(EXPLORE_RADIUS * (0.5 + tol*0.5));
+    var maxH   = Math.round(MAX_HEIGHT_BASE * (0.3 + tol*0.7));
+    var threshold = 1 - tol;
 
-    let bestScore = -1, bestX=agent.x, bestZ=agent.z, bestF=agent.floor;
-
-    // Shuffle candidates for non-deterministic exploration
-    const candidates = [];
-    for(let dx=-radius;dx<=radius;dx++) {
-      for(let dz=-radius;dz<=radius;dz++) {
+    var candidates = [];
+    for(var dx=-radius;dx<=radius;dx++) {
+      for(var dz=-radius;dz<=radius;dz++) {
         if(Math.sqrt(dx*dx+dz*dz)>radius) continue;
-        const nx=agent.x+dx, nz=agent.z+dz;
+        var nx=agent.x+dx, nz=agent.z+dz;
         if(nx<0||nx>=GRID||nz<0||nz>=GRID) continue;
-        const colH = Math.min(maxH, getFloorCount(nx,nz)+1);
-        for(let f=0;f<colH;f++) {
-          if(getVoxelState(nx,nz,f)!==2) // not already occupied by another
-            candidates.push({x:nx,z:nz,f});
+        var colH = Math.min(maxH, getFloorCount(nx,nz)+1);
+        for(var f=0;f<colH;f++) {
+          if(getVoxelState(nx,nz,f)!==2) candidates.push({x:nx,z:nz,f:f});
         }
       }
     }
     // shuffle
-    for(let i=candidates.length-1;i>0;i--) {
-      const j=Math.floor(Math.random()*(i+1));
-      [candidates[i],candidates[j]]=[candidates[j],candidates[i]];
+    for(var i=candidates.length-1;i>0;i--) {
+      var j=Math.floor(Math.random()*(i+1));
+      var tmp=candidates[i]; candidates[i]=candidates[j]; candidates[j]=tmp;
     }
 
-    for(const c of candidates) {
-      const s = scorePosition(agent,c.x,c.z,c.f);
-      if(s >= threshold && s > bestScore) {
+    var bestScore=-1, bestX=agent.x, bestZ=agent.z, bestF=agent.floor;
+    for(var ci=0;ci<candidates.length;ci++) {
+      var c=candidates[ci];
+      var s=scorePosition(agent,c.x,c.z,c.f);
+      if(s>=threshold && s>bestScore) {
         bestScore=s; bestX=c.x; bestZ=c.z; bestF=c.f;
-        break; // take first that satisfies threshold
+        break;
       }
     }
-    return {x:bestX, z:bestZ, f:bestF, score:bestScore};
+    return {x:bestX, z:bestZ, f:bestF, score:Math.max(0,bestScore)};
   }
 
+  // ── Spawn ──────────────────────────────────────────────────────────────────
   function spawnAgents() {
-    // Remove old agent meshes
-    agentMeshes.forEach(m=>scene.remove(m));
-    agentMeshes=[]; mixers=[]; agents=[];
+    agentMeshes.forEach(function(m){ scene.remove(m); });
+    agentMeshes=[]; agents=[];
 
-    const types = [];
-    const n = params.agentCount;
-    for(let i=0;i<n;i++) {
-      const r=Math.random();
-      if(r<params.power) types.push(0);
-      else if(r<params.power+params.attention) types.push(1);
-      else types.push(2);
-    }
-
-    types.forEach((type,i)=>{
-      const x=Math.floor(Math.random()*GRID);
-      const z=Math.floor(Math.random()*GRID);
-      const f=getFloorCount(x,z);
-      const agent={type,x,z,floor:f,ticksHere:0,satisfied:false,score:0};
-      agents.push(agent);
+    var n = params.agentCount;
+    for(var i=0;i<n;i++) {
+      var r=Math.random();
+      var type = r<params.power ? 0 : r<params.power+params.attention ? 1 : 2;
+      var x=Math.floor(Math.random()*GRID);
+      var z=Math.floor(Math.random()*GRID);
+      var f=getFloorCount(x,z);
+      agents.push({type:type, x:x, z:z, floor:f, ticksHere:0, satisfied:false, score:0});
       setVoxelState(x,z,f,2);
 
-      // Visual: colored box per agent (Mixamo loaded separately below)
-      const mat = AGENT_COLORS[type];
-      const geo = new THREE.BoxGeometry(VS*0.4,VS*0.8,VS*0.4);
-      const mesh = new THREE.Mesh(geo,mat);
-      const {wx,wz}=gridToWorld(x,z);
-      mesh.position.set(wx, f*V+V+VS*0.4, wz);
+      var mesh = new THREE.Mesh(AGENT_GEO, AGENT_MATS[type]);
+      var gw = gridToWorld(x,z);
+      mesh.position.set(gw.wx, f*V+V+VS*0.35, gw.wz);
       scene.add(mesh);
       agentMeshes.push(mesh);
-    });
-    document.getElementById('stat-agents').textContent=agents.length;
+    }
+    document.getElementById('stat-agents').textContent = agents.length;
   }
 
   function placeInitialVoxels() {
-    const n = params.density;
-    for(let i=0;i<n;i++) {
-      const x=Math.floor(Math.random()*GRID);
-      const z=Math.floor(Math.random()*GRID);
-      setVoxelState(x,z,0,1); // abandoned, grey
+    var n = params.density;
+    for(var i=0;i<n;i++) {
+      var x=Math.floor(Math.random()*GRID);
+      var z=Math.floor(Math.random()*GRID);
+      setVoxelState(x,z,0,1);
     }
   }
 
+  // ── Step ──────────────────────────────────────────────────────────────────
   function stepSimulation() {
     tick++;
-    document.getElementById('stat-tick').textContent=tick;
+    document.getElementById('stat-tick').textContent = tick;
 
-    // Update tolerance if relative mode
     if(params.relativeTolerance) {
-      const sat = agents.filter(a=>a.satisfied).length/agents.length;
-      // tolerance drifts toward sat slowly
-      currentTolerance += (sat - currentTolerance)*0.05;
+      var sat = 0;
+      for(var ai=0;ai<agents.length;ai++) if(agents[ai].satisfied) sat++;
+      var satRatio = sat/agents.length;
+      currentTolerance += (satRatio - currentTolerance)*0.05;
       currentTolerance = Math.max(0.05, Math.min(0.99, currentTolerance));
     }
 
-    agents.forEach((agent,i)=>{
+    for(var i=0;i<agents.length;i++) {
+      var agent = agents[i];
       agent.ticksHere++;
-      // Re-evaluate every TICKS_PER_MOVE ticks
-      if(agent.ticksHere < TICKS_PER_MOVE) return;
-      agent.ticksHere=0;
+      if(agent.ticksHere < TICKS_PER_MOVE) continue;
+      agent.ticksHere = 0;
 
-      // Current score
-      const curScore = scorePosition(agent,agent.x,agent.z,agent.floor);
+      var curScore = scorePosition(agent, agent.x, agent.z, agent.floor);
+      var agentTol = currentTolerance;
 
-      // Social comparison: adjust threshold
-      let agentTolerance = currentTolerance;
       if(params.socialComparison) {
-        const radius=Math.round(EXPLORE_RADIUS*(0.5+currentTolerance*0.5));
-        let neighborScores=[], count=0;
-        agents.forEach((other,j)=>{
-          if(j===i) return;
-          const dx=other.x-agent.x, dz=other.z-agent.z;
-          if(Math.abs(dx)<=radius&&Math.abs(dz)<=radius) {
-            neighborScores.push(other.score); count++;
-          }
-        });
+        var radius = Math.round(EXPLORE_RADIUS*(0.5+currentTolerance*0.5));
+        var nScores=[], count=0;
+        for(var j=0;j<agents.length;j++) {
+          if(j===i) continue;
+          var ddx=agents[j].x-agent.x, ddz=agents[j].z-agent.z;
+          if(Math.abs(ddx)<=radius&&Math.abs(ddz)<=radius) { nScores.push(agents[j].score); count++; }
+        }
         if(count>0) {
-          const avgNeighbor=neighborScores.reduce((a,b)=>a+b,0)/count;
-          // neighbors doing better → desperate (tolerance drops)
-          // neighbors doing worse → relaxed (tolerance rises)
-          agentTolerance += (curScore - avgNeighbor)*0.3;
-          agentTolerance = Math.max(0.05,Math.min(0.99,agentTolerance));
+          var avg=0; for(var k=0;k<nScores.length;k++) avg+=nScores[k]; avg/=count;
+          agentTol += (curScore - avg)*0.3;
+          agentTol = Math.max(0.05, Math.min(0.99, agentTol));
         }
       }
 
-      const threshold = 1 - agentTolerance;
+      var threshold = 1 - agentTol;
       agent.satisfied = curScore >= threshold;
       agent.score = curScore;
 
       if(!agent.satisfied) {
-        // Abandon current voxel → grey
-        setVoxelState(agent.x,agent.z,agent.floor,1);
-        // Find new position
-        const best=findBestPosition(agent);
+        setVoxelState(agent.x, agent.z, agent.floor, 1);
+        var best = findBestPosition(agent);
         agent.x=best.x; agent.z=best.z; agent.floor=best.f;
-        agent.score=Math.max(0,best.score);
-        agent.satisfied=best.score>=(1-agentTolerance);
-        // Occupy new voxel
-        setVoxelState(agent.x,agent.z,agent.floor,2);
+        agent.score=best.score;
+        agent.satisfied=best.score>=threshold;
+        setVoxelState(agent.x, agent.z, agent.floor, 2);
       }
 
-      // Update agent mesh position
-      const mesh=agentMeshes[i];
+      var mesh = agentMeshes[i];
       if(mesh) {
-        const {wx,wz}=gridToWorld(agent.x,agent.z);
-        mesh.position.set(wx, agent.floor*V+V+VS*0.4, wz);
+        var gw = gridToWorld(agent.x, agent.z);
+        mesh.position.set(gw.wx, agent.floor*V+V+VS*0.35, gw.wz);
       }
-    });
+    }
 
-    // Update KPIs every 5 ticks
     if(tick%5===0) {
-      const sat=agents.filter(a=>a.satisfied).length;
-      document.getElementById('kpi-sat').textContent=Math.round(sat/agents.length*100)+'%';
-      document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
-      document.getElementById('stat-voxels').textContent=Object.keys(voxelMeshes).length;
+      var s=0; for(var si=0;si<agents.length;si++) if(agents[si].satisfied) s++;
+      document.getElementById('kpi-sat').textContent = Math.round(s/agents.length*100)+'%';
+      document.getElementById('kpi-tol').textContent = currentTolerance.toFixed(2);
+      document.getElementById('stat-voxels').textContent = Object.keys(voxelMeshes).length;
     }
   }
 
@@ -563,102 +472,99 @@
   function reset() {
     tick=0;
     currentTolerance=params.tolerance;
-    // Clear all voxels
-    Object.keys(voxelMeshes).forEach(k=>{
-      scene.remove(voxelMeshes[k]); delete voxelMeshes[k];
-    });
+    Object.keys(voxelMeshes).forEach(function(k){ scene.remove(voxelMeshes[k]); });
+    voxelMeshes={};
     initVoxelGrid();
     placeInitialVoxels();
     spawnAgents();
     document.getElementById('kpi-sat').textContent='—';
     document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
+    document.getElementById('stat-tick').textContent='0';
   }
 
   // ── Camera ─────────────────────────────────────────────────────────────────
-  let dragging=false, pm={x:0,y:0};
-  document.addEventListener('mousedown',e=>{dragging=true;pm={x:e.clientX,y:e.clientY};});
-  window.addEventListener('mouseup',()=>dragging=false);
-  window.addEventListener('mousemove',e=>{
-    if(!dragging)return;
-    tSph.th-=(e.clientX-pm.x)*0.007;
-    tSph.ph=Math.max(0.15,Math.min(1.45,tSph.ph+(e.clientY-pm.y)*0.007));
+  var dragging=false, pm={x:0,y:0};
+  document.addEventListener('mousedown', function(e){
+    if(e.target.closest('.side-panel')||e.target.closest('.ui-band')||e.target.closest('.ui-bottom')) return;
+    dragging=true; pm={x:e.clientX,y:e.clientY};
+  });
+  window.addEventListener('mouseup', function(){ dragging=false; });
+  window.addEventListener('mousemove', function(e){
+    if(!dragging) return;
+    tSph.th -= (e.clientX-pm.x)*0.007;
+    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.clientY-pm.y)*0.007));
     pm={x:e.clientX,y:e.clientY};
   });
-  document.addEventListener('wheel',e=>{
-    tSph.r=Math.max(5,Math.min(60,tSph.r+e.deltaY*0.04));
+  document.addEventListener('wheel', function(e){
+    if(e.target.closest('.side-panel')) return;
+    tSph.r = Math.max(5, Math.min(60, tSph.r+e.deltaY*0.04));
     e.preventDefault();
   },{passive:false});
-  let lastTouch=null;
-  document.addEventListener('touchstart',e=>{lastTouch=e.touches[0];},{passive:false});
-  document.addEventListener('touchmove',e=>{
-    if(!lastTouch)return;
-    tSph.th-=(e.touches[0].clientX-lastTouch.clientX)*0.007;
-    tSph.ph=Math.max(0.15,Math.min(1.45,tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.007));
+  var lastTouch=null;
+  document.addEventListener('touchstart', function(e){ lastTouch=e.touches[0]; },{passive:false});
+  document.addEventListener('touchmove', function(e){
+    if(!lastTouch) return;
+    tSph.th -= (e.touches[0].clientX-lastTouch.clientX)*0.007;
+    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.007));
     lastTouch=e.touches[0]; e.preventDefault();
   },{passive:false});
 
   // ── UI wiring ──────────────────────────────────────────────────────────────
   function updateDistribution() {
-    const p=parseInt(document.getElementById('sl-power').value);
-    const a=parseInt(document.getElementById('sl-attention').value);
-    const f=Math.max(0,100-p-a);
+    var p=parseInt(document.getElementById('sl-power').value);
+    var a=parseInt(document.getElementById('sl-attention').value);
+    var f=Math.max(0,100-p-a);
     params.power=p/100; params.attention=a/100; params.freedom=f/100;
     document.getElementById('val-power').textContent=p+'%';
     document.getElementById('val-attention').textContent=a+'%';
     document.getElementById('val-freedom').textContent=f+'%';
     document.getElementById('val-freedom-display').value=f;
   }
-  document.getElementById('sl-power').addEventListener('input',updateDistribution);
-  document.getElementById('sl-attention').addEventListener('input',updateDistribution);
-
-  document.getElementById('sl-density').addEventListener('input',e=>{
+  document.getElementById('sl-power').addEventListener('input', updateDistribution);
+  document.getElementById('sl-attention').addEventListener('input', updateDistribution);
+  document.getElementById('sl-density').addEventListener('input', function(e){
     params.density=parseInt(e.target.value);
     document.getElementById('val-density').textContent=params.density;
   });
-  document.getElementById('sl-tolerance').addEventListener('input',e=>{
+  document.getElementById('sl-tolerance').addEventListener('input', function(e){
     params.tolerance=parseInt(e.target.value)/100;
     currentTolerance=params.tolerance;
     document.getElementById('val-tolerance').textContent=params.tolerance.toFixed(2);
     document.getElementById('kpi-tol').textContent=params.tolerance.toFixed(2);
   });
-  document.getElementById('sl-agents').addEventListener('input',e=>{
+  document.getElementById('sl-agents').addEventListener('input', function(e){
     params.agentCount=parseInt(e.target.value);
     document.getElementById('val-agents').textContent=params.agentCount;
   });
 
   function wireToggle(id, key) {
-    const el=document.getElementById(id);
-    el.addEventListener('click',()=>{
+    document.getElementById(id).addEventListener('click', function(){
       params[key]=!params[key];
-      el.classList.toggle('on',params[key]);
+      document.getElementById(id).classList.toggle('on', params[key]);
     });
   }
   wireToggle('tog-social','socialComparison');
   wireToggle('tog-reltol','relativeTolerance');
 
-  document.getElementById('btn-run').addEventListener('click',()=>{
+  document.getElementById('btn-run').addEventListener('click', function(){
     running=!running;
     document.getElementById('btn-run').textContent=running?'⏸ pause':'▶ run';
     document.getElementById('btn-run').classList.toggle('active',running);
   });
-  document.getElementById('btn-reset').addEventListener('click',reset);
+  document.getElementById('btn-reset').addEventListener('click', reset);
 
   // ── Loop ───────────────────────────────────────────────────────────────────
-  const clock = new THREE.Clock();
-  let simAccum=0;
-  const SIM_INTERVAL=0.4; // seconds per tick
+  var clock = new THREE.Clock();
+  var simAccum=0;
+  var SIM_INTERVAL=0.4;
 
   function loop() {
     requestAnimationFrame(loop);
-    const delta=clock.getDelta();
-
+    var delta=clock.getDelta();
     if(running) {
       simAccum+=delta;
-      if(simAccum>=SIM_INTERVAL) { stepSimulation(); simAccum=0; }
+      if(simAccum>=SIM_INTERVAL){ stepSimulation(); simAccum=0; }
     }
-
-    mixers.forEach(m=>m.update(delta));
-
     sph.th+=(tSph.th-sph.th)*0.07;
     sph.ph+=(tSph.ph-sph.ph)*0.07;
     sph.r +=(tSph.r -sph.r )*0.07;
@@ -678,339 +584,11 @@
   document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
   loop();
 
-  window.addEventListener('resize',()=>{
-    const W=window.innerWidth,H=window.innerHeight;
+  window.addEventListener('resize', function(){
+    var W=window.innerWidth, H=window.innerHeight;
     renderer.setSize(W,H); cam.aspect=W/H; cam.updateProjectionMatrix();
   });
 
-})();
-</script>
-</body>
-</html>    .ui-bottom {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      padding: 12px 1.5rem;
-      display: flex; justify-content: space-between; align-items: center;
-      background: rgba(0,0,0,0.5);
-      border-top: 0.5px solid rgba(255,255,255,0.06);
-      z-index: 10;
-    }
-    .regen-btn {
-      background: transparent;
-      border: 0.5px solid rgba(200,224,84,0.3);
-      padding: 6px 16px;
-      font-family: 'Space Mono', monospace; font-size: 8px;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: rgba(200,224,84,0.6); cursor: pointer;
-    }
-    .regen-btn:hover { border-color: #c8e054; color: #c8e054; }
-    .hint { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: rgba(255,255,255,0.15); }
-  </style>
-</head>
-<body>
-<div id="canvas-container"><canvas id="cv"></canvas></div>
-
-<div class="ui-band">
-  <div class="ui-band-left">
-    <a href="index.html" class="back-link">← back</a>
-    <span class="exp-id">// 01 — ABM</span>
-    <span class="exp-title">neurotic compulsions & the vertical city</span>
-  </div>
-  <div class="ui-stats">
-    <span class="stat">voxels: <em id="stat-voxels">0</em></span>
-    <span class="stat">status: <em id="stat-status">collapsing</em></span>
-  </div>
-</div>
-
-<div class="ui-bottom">
-  <span class="hint">drag · scroll</span>
-  <button class="regen-btn" id="regen-btn">↺ regenerate</button>
-  <span class="hint">geometry of societies // 01</span>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-<script>
-(function(){
-  const cv = document.getElementById('cv');
-  const W = window.innerWidth, H = window.innerHeight;
-  cv.width = W; cv.height = H;
-
-  const renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setClearColor(0x000000, 1);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x000000, 50, 105);
-
-  const cam = new THREE.PerspectiveCamera(52, W/H, 0.1, 200);
-  cam.position.set(14, 10, 14);
-  cam.lookAt(0, 6, 0);
-
-  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-  const dl = new THREE.DirectionalLight(0xffffff, 1.1);
-  dl.position.set(15, 40, 10);
-  dl.castShadow = true;
-  dl.shadow.mapSize.set(2048, 2048);
-  dl.shadow.camera.left = -35;
-  dl.shadow.camera.right = 35;
-  dl.shadow.camera.top = 35;
-  dl.shadow.camera.bottom = -35;
-  dl.shadow.camera.far = 120;
-  scene.add(dl);
-  const dl2 = new THREE.DirectionalLight(0xddddff, 0.2);
-  dl2.position.set(-12, 8, -12);
-  scene.add(dl2);
-
-  // --- VOXEL CONFIG ---
-  // Every voxel is a perfect cube of this size
-  const V = 0.42;
-  const GAP = 0.01; // tiny gap between voxels so edges are visible
-  const VOXEL_SIZE = V - GAP;
-
-  // Grid of columns
-  const GRID = 32;
-  const CELL = V; // one voxel per cell in XZ
-
-  // How many voxels tall each type gets
-  const TYPES = { EMPTY: 0, GROUND: 1, LOW: 2, MID: 3, HIGH: 4, TOWER: 5, SPIRE: 6 };
-  const VOXEL_COUNTS = [0, 1, 4, 10, 22, 40, 65]; // number of voxels stacked
-  const COUNT_VAR    = [0, 0, 1, 2,  4,  6,  8]; // random variation
-
-  function rng(s) {
-    let v = ((s % 99991) + 99991) % 99991;
-    return () => { v = (v * 16807 + 1) % 2147483647; return (v-1)/2147483646; };
-  }
-
-  // Shared geometry — one cube, reused for all voxels
-  const VOXEL_GEO = new THREE.BoxGeometry(VOXEL_SIZE, VOXEL_SIZE, VOXEL_SIZE);
-
-  // Gray palette — light at top, darker at bottom
-  const GRAY_LEVELS = [
-    0xffffff, 0xf5f5f5, 0xebebeb, 0xe0e0e0,
-    0xd4d4d4, 0xc8c8c8, 0xbbbbbb, 0xaeaeae,
-    0xa0a0a0, 0x929292
-  ];
-  const grayMats = GRAY_LEVELS.map(c => new THREE.MeshLambertMaterial({color: c}));
-  const accMat   = new THREE.MeshLambertMaterial({color: 0xc8e054});
-  const darkMat  = new THREE.MeshLambertMaterial({color: 0x060606});
-
-  function voxelMat(floorIndex, totalFloors) {
-    // Top voxels are brightest, bottom darkest
-    const t = 1 - (floorIndex / Math.max(1, totalFloors - 1));
-    const idx = Math.floor(t * (grayMats.length - 1));
-    return grayMats[Math.max(0, Math.min(grayMats.length-1, idx))];
-  }
-
-  let grid = [], meshes = [], buildQueue = [], isBuilding = false;
-  let totalVoxels = 0;
-
-  function initGrid(seed) {
-    const r = rng(seed);
-    grid = [];
-    for (let x = 0; x < GRID; x++) {
-      grid[x] = [];
-      for (let z = 0; z < GRID; z++) {
-        const cx = x - GRID/2, cz = z - GRID/2;
-        const dist = Math.sqrt(cx*cx + cz*cz) / (GRID/2);
-        const bias = Math.pow(Math.max(0, 1 - dist * 1.05), 1.6);
-        grid[x][z] = { collapsed: false, type: -1, bias, rh: r() };
-      }
-    }
-  }
-
-  function neighborMax(x, z) {
-    let m = 0;
-    [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,1],[-1,1],[1,-1]].forEach(([dx,dz]) => {
-      const nx=x+dx, nz=z+dz;
-      if (nx>=0&&nx<GRID&&nz>=0&&nz<GRID&&grid[nx][nz].collapsed)
-        m = Math.max(m, grid[nx][nz].type);
-    });
-    return m;
-  }
-
-  function spawnColumn(x, z, type, rh, r) {
-    if (type === TYPES.EMPTY) return;
-    const wx = (x - GRID/2) * CELL + CELL/2;
-    const wz = (z - GRID/2) * CELL + CELL/2;
-
-    const count = VOXEL_COUNTS[type] + Math.floor(rh * COUNT_VAR[type]);
-
-    for (let f = 0; f < count; f++) {
-      const mat = voxelMat(f, count);
-      const mesh = new THREE.Mesh(VOXEL_GEO, mat);
-      // Each voxel sits exactly on top of the previous
-      mesh.position.set(wx, f * V + V/2, wz);
-      mesh.castShadow = true;
-      mesh.receiveShadow = (f === 0);
-      mesh.scale.set(0.01, 0.01, 0.01);
-      scene.add(mesh);
-      meshes.push(mesh);
-      totalVoxels++;
-    }
-
-    // Accent voxel on very top of towers/spires (rare)
-    if (type >= TYPES.TOWER && r() > 0.65) {
-      const top = count;
-      const acc = new THREE.Mesh(VOXEL_GEO, accMat);
-      acc.position.set(wx, top * V + V/2, wz);
-      acc.scale.set(0.01, 0.01, 0.01);
-      scene.add(acc);
-      meshes.push(acc);
-    }
-
-    // Dark window voxels on facade (very sparse, only mid+)
-    if (type >= TYPES.MID) {
-      const winCount = Math.floor(r() * 3);
-      for (let w = 0; w < winCount; w++) {
-        const wf = 1 + Math.floor(r() * (count - 2));
-        const side = Math.floor(r() * 4);
-        const offsets = [[V, 0], [-V, 0], [0, V], [0, -V]];
-        const [ox, oz] = offsets[side];
-        const wm = new THREE.Mesh(VOXEL_GEO, r() < 0.15 ? accMat : darkMat);
-        wm.position.set(wx + ox * 0.5, wf * V + V/2, wz + oz * 0.5);
-        wm.scale.set(0.3, 0.3, 0.3);
-        scene.add(wm);
-        meshes.push(wm);
-      }
-    }
-  }
-
-  const WEIGHTS = [0, 6, 14, 10, 6, 3, 1];
-
-  function collapseCell(x, z, seed) {
-    const cell = grid[x][z];
-    if (cell.collapsed) return;
-    const r = rng(seed * 1000 + x * 200 + z);
-    const nm = neighborMax(x, z);
-    const dist = Math.sqrt((x-GRID/2)**2 + (z-GRID/2)**2) / (GRID/2);
-
-    let w = [...WEIGHTS];
-    w[TYPES.SPIRE]  *= (cell.bias * 5 + 0.05);
-    w[TYPES.TOWER]  *= (cell.bias * 4 + 0.1);
-    w[TYPES.HIGH]   *= (cell.bias * 2.5 + 0.3);
-    w[TYPES.MID]    *= (cell.bias * 1.5 + 0.5);
-    w[TYPES.EMPTY]  *= (dist > 0.8 ? 5 : 0.1);
-    w[TYPES.GROUND] *= (dist > 0.7 ? 1.5 : 0.5);
-    if (nm >= TYPES.HIGH)  { w[TYPES.TOWER] *= 2.5; w[TYPES.SPIRE] *= 3; }
-    if (nm >= TYPES.TOWER) { w[TYPES.SPIRE] *= 4; }
-    if (nm <= TYPES.LOW)   { w[TYPES.HIGH] *= 0.2; w[TYPES.TOWER] *= 0.05; w[TYPES.SPIRE] *= 0.01; }
-
-    const total = w.reduce((a,b) => a+b, 0);
-    let rand = r() * total, cum = 0, chosen = TYPES.GROUND;
-    for (let t = 0; t < w.length; t++) { cum += w[t]; if (rand <= cum) { chosen = t; break; } }
-
-    cell.collapsed = true;
-    cell.type = chosen;
-    spawnColumn(x, z, chosen, cell.rh, r);
-  }
-
-  function buildWFC(seed) {
-    meshes.forEach(m => scene.remove(m));
-    meshes = [];
-    buildQueue = [];
-    totalVoxels = 0;
-    initGrid(seed);
-
-    const order = [];
-    for (let x = 0; x < GRID; x++)
-      for (let z = 0; z < GRID; z++)
-        order.push([x, z]);
-
-    const jr = rng(seed + 1);
-    order.sort((a, b) => {
-      const da = Math.sqrt((a[0]-GRID/2)**2 + (a[1]-GRID/2)**2);
-      const db = Math.sqrt((b[0]-GRID/2)**2 + (b[1]-GRID/2)**2);
-      return da - db + (jr()-0.5) * 2.5;
-    });
-
-    buildQueue = order.map((pos, i) => ({ pos, delay: i * 5, seed }));
-    isBuilding = true;
-    buildQueue.startTime = performance.now();
-    document.getElementById('stat-status').textContent = 'collapsing';
-  }
-
-  function processQueue() {
-    const elapsed = performance.now() - buildQueue.startTime;
-    let p = 0;
-    while (buildQueue.length > 0 && buildQueue[0].delay < elapsed && p < 10) {
-      const { pos, seed } = buildQueue.shift();
-      collapseCell(pos[0], pos[1], seed);
-      p++;
-    }
-    if (buildQueue.length === 0) {
-      isBuilding = false;
-      document.getElementById('stat-status').textContent = 'resolved';
-    }
-  }
-
-  function animateSpawn() {
-    meshes.forEach(m => {
-      if (m.scale.x < 1) {
-        m.scale.x = Math.min(1, m.scale.x + 0.14);
-        m.scale.y = Math.min(1, m.scale.y + 0.10);
-        m.scale.z = Math.min(1, m.scale.z + 0.14);
-      }
-    });
-  }
-
-  let dragging = false, pm = {x:0, y:0};
-  let sph = {th: Math.PI*0.28, ph: 0.88, r: 24};
-  let tSph = {...sph};
-
-  document.addEventListener('mousedown', e => { dragging=true; pm={x:e.clientX, y:e.clientY}; });
-  window.addEventListener('mouseup', () => dragging=false);
-  window.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    tSph.th -= (e.clientX-pm.x)*0.007;
-    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.clientY-pm.y)*0.007));
-    pm = {x:e.clientX, y:e.clientY};
-  });
-  document.addEventListener('wheel', e => {
-    tSph.r = Math.max(8, Math.min(80, tSph.r+e.deltaY*0.05));
-    e.preventDefault();
-  }, {passive:false});
-
-  let lastTouch = null;
-  document.addEventListener('touchstart', e => { lastTouch=e.touches[0]; });
-  document.addEventListener('touchmove', e => {
-    if (!lastTouch) return;
-    tSph.th -= (e.touches[0].clientX-lastTouch.clientX)*0.007;
-    tSph.ph = Math.max(0.15, Math.min(1.45, tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.007));
-    lastTouch=e.touches[0];
-    e.preventDefault();
-  }, {passive:false});
-
-  document.getElementById('regen-btn').addEventListener('click', () => {
-    buildWFC(Math.floor(Math.random()*99999));
-  });
-
-  buildWFC(42);
-
-  let frame = 0;
-  function loop() {
-    requestAnimationFrame(loop);
-    frame++;
-    if (isBuilding || buildQueue.length > 0) processQueue();
-    animateSpawn();
-
-    sph.th += (tSph.th-sph.th)*0.07;
-    sph.ph += (tSph.ph-sph.ph)*0.07;
-    sph.r  += (tSph.r -sph.r )*0.07;
-    cam.position.set(
-      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
-      sph.r*Math.cos(sph.ph)+4,
-      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
-    );
-    cam.lookAt(0, 6, 0);
-
-    if (frame%15===0)
-      document.getElementById('stat-voxels').textContent = totalVoxels;
-
-    renderer.render(scene, cam);
-  }
-  loop();
 })();
 </script>
 </body>
