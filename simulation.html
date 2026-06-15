@@ -293,7 +293,7 @@
 
   var EXPLORE_RADIUS = 4;
   var MAX_HEIGHT_BASE = 8;
-  var TICKS_PER_MOVE = 8;
+  var TICKS_PER_MOVE = 3;
 
   // ── Score ──────────────────────────────────────────────────────────────────
   function scorePosition(agent, x, z, f) {
@@ -444,7 +444,9 @@
       agent.satisfied = curScore >= threshold;
       agent.score = curScore;
 
-      if(!agent.satisfied) {
+      
+      var shouldMove = !agent.satisfied || Math.random() < 0.15;
+      if(shouldMove) {
         setVoxelState(agent.x, agent.z, agent.floor, 1);
         var best = findBestPosition(agent);
         agent.x=best.x; agent.z=best.z; agent.floor=best.f;
