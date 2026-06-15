@@ -11,30 +11,682 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #000000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
-    #canvas-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+    body { background: #000; font-family: 'Space Grotesk', sans-serif; color: #e8e8e8; overflow: hidden; }
+    #canvas-container { position: fixed; inset: 0; }
     canvas { display: block; width: 100%; height: 100%; }
+
+    /* ── top band ── */
     .ui-band {
-      position: fixed; top: 0; left: 0; right: 0;
-      padding: 10px 1.5rem;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+      padding: 8px 1.5rem;
       display: flex; justify-content: space-between; align-items: center;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.65);
       border-bottom: 0.5px solid rgba(255,255,255,0.06);
-      z-index: 10;
     }
     .ui-band-left { display: flex; align-items: center; gap: 1.5rem; }
-    .back-link {
-      font-family: 'Space Mono', monospace; font-size: 9px;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: rgba(255,255,255,0.3); text-decoration: none;
-    }
+    .back-link { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.3); text-decoration: none; }
     .back-link:hover { color: #c8e054; }
     .exp-id { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: rgba(255,255,255,0.2); }
-    .exp-title { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); letter-spacing: 0.04em; }
+    .exp-title { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.5); }
     .ui-stats { display: flex; gap: 1.5rem; }
     .stat { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: rgba(255,255,255,0.2); }
     .stat em { color: #c8e054; font-style: normal; }
+
+    /* ── side panel ── */
+    .side-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; z-index: 10;
+      width: 220px;
+      background: rgba(0,0,0,0.75);
+      border-left: 0.5px solid rgba(255,255,255,0.06);
+      padding: 52px 1.25rem 1.25rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+      overflow-y: auto;
+    }
+    .panel-section { display: flex; flex-direction: column; gap: 0.6rem; }
+    .panel-label {
+      font-family: 'Space Mono', monospace; font-size: 7px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.25);
+      border-bottom: 0.5px solid rgba(255,255,255,0.06);
+      padding-bottom: 4px; margin-bottom: 2px;
+    }
+    .slider-row { display: flex; flex-direction: column; gap: 3px; }
+    .slider-label {
+      display: flex; justify-content: space-between;
+      font-family: 'Space Mono', monospace; font-size: 8px;
+      color: rgba(255,255,255,0.35); letter-spacing: 0.08em;
+    }
+    .slider-label em { color: #c8e054; font-style: normal; }
+    input[type=range] {
+      width: 100%; height: 2px; cursor: pointer;
+      -webkit-appearance: none; background: rgba(255,255,255,0.1);
+      border-radius: 1px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 8px; height: 8px;
+      border-radius: 50%; background: #c8e054; cursor: pointer;
+    }
+
+    /* type bars */
+    .type-bars { display: flex; flex-direction: column; gap: 4px; }
+    .type-bar-row { display: flex; align-items: center; gap: 6px; }
+    .type-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .type-dot.power    { background: #ff6b6b; }
+    .type-dot.attention { background: #c8e054; }
+    .type-dot.freedom  { background: #6bb5ff; }
+    .type-bar-label { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.3); flex: 1; letter-spacing: 0.08em; }
+    .type-bar-val { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.4); width: 24px; text-align: right; }
+
+    /* toggles */
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; }
+    .toggle-label { font-family: 'Space Mono', monospace; font-size: 8px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; }
+    .toggle {
+      position: relative; width: 28px; height: 14px; cursor: pointer;
+      background: rgba(255,255,255,0.1); border-radius: 7px;
+      transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: rgba(200,224,84,0.4); }
+    .toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(255,255,255,0.4); transition: transform 0.2s, background 0.2s;
+    }
+    .toggle.on::after { transform: translateX(14px); background: #c8e054; }
+
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .kpi { background: rgba(255,255,255,0.03); padding: 8px; border: 0.5px solid rgba(255,255,255,0.06); }
+    .kpi-val { font-family: 'Space Mono', monospace; font-size: 16px; color: #c8e054; line-height: 1; }
+    .kpi-name { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.25); margin-top: 4px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* buttons */
+    .btn-row { display: flex; gap: 6px; }
+    .sim-btn {
+      flex: 1; background: transparent;
+      border: 0.5px solid rgba(200,224,84,0.3);
+      padding: 6px 8px;
+      font-family: 'Space Mono', monospace; font-size: 7px;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(200,224,84,0.6); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sim-btn:hover { border-color: #c8e054; color: #c8e054; }
+    .sim-btn.active { background: rgba(200,224,84,0.15); border-color: #c8e054; color: #c8e054; }
+
+    /* legend */
+    .legend { display: flex; flex-direction: column; gap: 4px; }
+    .legend-row { display: flex; align-items: center; gap: 6px; }
+    .legend-swatch { width: 10px; height: 10px; flex-shrink: 0; }
+    .legend-text { font-family: 'Space Mono', monospace; font-size: 7px; color: rgba(255,255,255,0.25); letter-spacing: 0.06em; }
+
+    /* bottom */
     .ui-bottom {
+      position: fixed; bottom: 0; left: 0; right: 220px; z-index: 10;
+      padding: 8px 1.5rem;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(0,0,0,0.5);
+      border-top: 0.5px solid rgba(255,255,255,0.06);
+    }
+    .hint { font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: rgba(255,255,255,0.12); }
+  </style>
+</head>
+<body>
+<div id="canvas-container"><canvas id="cv"></canvas></div>
+
+<div class="ui-band">
+  <div class="ui-band-left">
+    <a href="experiments.html" class="back-link">← back</a>
+    <span class="exp-id">// 01 — ABM</span>
+    <span class="exp-title">neurotic compulsions & the vertical city</span>
+  </div>
+  <div class="ui-stats">
+    <span class="stat">tick: <em id="stat-tick">0</em></span>
+    <span class="stat">agents: <em id="stat-agents">0</em></span>
+    <span class="stat">voxels: <em id="stat-voxels">0</em></span>
+  </div>
+</div>
+
+<div class="side-panel">
+
+  <div class="panel-section">
+    <div class="panel-label">distribution</div>
+    <div class="type-bars">
+      <div class="type-bar-row">
+        <div class="type-dot power"></div>
+        <span class="type-bar-label">power</span>
+        <input type="range" id="sl-power" min="0" max="100" value="33" style="flex:2">
+        <span class="type-bar-val" id="val-power">33%</span>
+      </div>
+      <div class="type-bar-row">
+        <div class="type-dot attention"></div>
+        <span class="type-bar-label">attention</span>
+        <input type="range" id="sl-attention" min="0" max="100" value="33" style="flex:2">
+        <span class="type-bar-val" id="val-attention">33%</span>
+      </div>
+      <div class="type-bar-row">
+        <div class="type-dot freedom"></div>
+        <span class="type-bar-label">freedom</span>
+        <input type="range" id="val-freedom-display" min="0" max="100" value="34" disabled style="flex:2;opacity:0.4">
+        <span class="type-bar-val" id="val-freedom">34%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">initial conditions</div>
+    <div class="slider-row">
+      <div class="slider-label"><span>initial density</span><em id="val-density">12</em></div>
+      <input type="range" id="sl-density" min="1" max="60" value="12">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>initial tolerance</span><em id="val-tolerance">0.60</em></div>
+      <input type="range" id="sl-tolerance" min="0" max="100" value="60">
+    </div>
+    <div class="slider-row">
+      <div class="slider-label"><span>agent count</span><em id="val-agents">20</em></div>
+      <input type="range" id="sl-agents" min="5" max="80" value="20">
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">behaviour</div>
+    <div class="toggle-row">
+      <span class="toggle-label">social comparison</span>
+      <div class="toggle" id="tog-social"></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">relative tolerance</span>
+      <div class="toggle" id="tog-reltol"></div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">metrics</div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-val" id="kpi-sat">—</div><div class="kpi-name">satisfaction</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpi-tol">—</div><div class="kpi-name">tolerance</div></div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">legend</div>
+    <div class="legend">
+      <div class="legend-row"><div class="legend-swatch" style="background:#ffffff"></div><span class="legend-text">occupied (agent)</span></div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#555"></div><span class="legend-text">abandoned</span></div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#ff6b6b"></div><span class="legend-text">power agent</span></div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#c8e054"></div><span class="legend-text">attention agent</span></div>
+      <div class="legend-row"><div class="legend-swatch" style="background:#6bb5ff"></div><span class="legend-text">freedom agent</span></div>
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="btn-row">
+      <button class="sim-btn active" id="btn-run">⏸ pause</button>
+      <button class="sim-btn" id="btn-reset">↺ reset</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="ui-bottom">
+  <span class="hint">drag · scroll</span>
+  <span class="hint">geometry of societies // 01</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/utils/SkeletonUtils.js"></script>
+<script>
+(function(){
+
+  // ── Renderer ───────────────────────────────────────────────────────────────
+  const cv = document.getElementById('cv');
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setClearColor(0x000000,1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.7;
+
+  // ── Scene ──────────────────────────────────────────────────────────────────
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x000000, 40, 90);
+
+  const cam = new THREE.PerspectiveCamera(52, cv.width/cv.height, 0.1, 200);
+  let sph = {th:Math.PI*0.28, ph:0.88, r:22};
+  let tSph = {...sph};
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const dl = new THREE.DirectionalLight(0xffffff, 1.0);
+  dl.position.set(15,40,10); dl.castShadow=true;
+  dl.shadow.mapSize.set(2048,2048);
+  dl.shadow.camera.left=-30; dl.shadow.camera.right=30;
+  dl.shadow.camera.top=30; dl.shadow.camera.bottom=-30;
+  dl.shadow.camera.far=120; dl.shadow.bias=-0.001;
+  scene.add(dl);
+  scene.add(Object.assign(new THREE.DirectionalLight(0xddeeff,0.2), {position: new THREE.Vector3(-12,8,-12)}));
+
+  // ── Grid config ────────────────────────────────────────────────────────────
+  const GRID = 20;   // NxN grid of columns
+  const V    = 0.5;  // voxel size
+  const GAP  = 0.02;
+  const VS   = V - GAP;
+
+  // Voxel state: 0=empty, 1=abandoned(grey), 2=occupied(white)
+  // voxelGrid[x][z] = array of states per floor
+  let voxelGrid = [];
+  let voxelMeshes = {}; // key: "x,z,f" → mesh
+
+  // Materials
+  const MAT_OCCUPIED  = new THREE.MeshLambertMaterial({color:0xffffff});
+  const MAT_ABANDONED = new THREE.MeshLambertMaterial({color:0x444444});
+  const MAT_POWER     = new THREE.MeshLambertMaterial({color:0xff6b6b});
+  const MAT_ATTENTION = new THREE.MeshLambertMaterial({color:0xc8e054});
+  const MAT_FREEDOM   = new THREE.MeshLambertMaterial({color:0x6bb5ff});
+  const VOXEL_GEO     = new THREE.BoxGeometry(VS,VS,VS);
+
+  function gridToWorld(x,z) {
+    return {
+      wx: (x - GRID/2) * V + V/2,
+      wz: (z - GRID/2) * V + V/2
+    };
+  }
+
+  function initVoxelGrid() {
+    voxelGrid = [];
+    for(let x=0;x<GRID;x++){
+      voxelGrid[x]=[];
+      for(let z=0;z<GRID;z++) voxelGrid[x][z]=[];
+    }
+  }
+
+  function getFloorCount(x,z) {
+    return voxelGrid[x]?.[z]?.length || 0;
+  }
+
+  function getVoxelState(x,z,f) {
+    return voxelGrid[x]?.[z]?.[f] ?? 0;
+  }
+
+  function setVoxelState(x,z,f,state) {
+    if(x<0||x>=GRID||z<0||z>=GRID) return;
+    while(voxelGrid[x][z].length <= f) voxelGrid[x][z].push(0);
+    voxelGrid[x][z][f] = state;
+    updateVoxelMesh(x,z,f,state);
+  }
+
+  function updateVoxelMesh(x,z,f,state) {
+    const key = `${x},${z},${f}`;
+    if(state===0) {
+      if(voxelMeshes[key]) { scene.remove(voxelMeshes[key]); delete voxelMeshes[key]; }
+      return;
+    }
+    const {wx,wz} = gridToWorld(x,z);
+    let mesh = voxelMeshes[key];
+    if(!mesh) {
+      mesh = new THREE.Mesh(VOXEL_GEO, state===2 ? MAT_OCCUPIED : MAT_ABANDONED);
+      mesh.position.set(wx, f*V + V/2, wz);
+      mesh.castShadow=true; mesh.receiveShadow=true;
+      scene.add(mesh);
+      voxelMeshes[key]=mesh;
+    } else {
+      mesh.material = state===2 ? MAT_OCCUPIED : MAT_ABANDONED;
+    }
+  }
+
+  // ── Simulation params ──────────────────────────────────────────────────────
+  let params = {
+    power: 0.33, attention: 0.33, freedom: 0.34,
+    density: 12, tolerance: 0.6, agentCount: 20,
+    socialComparison: false, relativeTolerance: false
+  };
+
+  let currentTolerance = 0.6;
+  let running = true;
+  let tick = 0;
+  let agents = [];
+  let characterGltf = null;
+  let agentMeshes = [];
+  let mixers = [];
+
+  // ── Agent definition ───────────────────────────────────────────────────────
+  // type: 0=power, 1=attention, 2=freedom
+  // x,z,floor: current position in grid
+  // ticksHere: how many ticks at current position
+  // satisfied: bool
+  // satisfactionScore: 0..1
+
+  const AGENT_COLORS = [MAT_POWER, MAT_ATTENTION, MAT_FREEDOM];
+  const EXPLORE_RADIUS = 4; // base exploration radius in cells
+  const MAX_HEIGHT_BASE = 8; // base max floor
+  const TICKS_PER_MOVE = 8;  // ticks before re-evaluating
+
+  function scorePosition(agent, x, z, f) {
+    if(x<0||x>=GRID||z<0||z>=GRID) return 0;
+    let score = 0;
+    if(agent.type===0) {
+      // POWER: count white voxels below
+      let below = 0;
+      for(let bf=0;bf<f;bf++) if(getVoxelState(x,z,bf)===2) below++;
+      // also count adjacent columns' voxels below this height
+      for(let dx=-1;dx<=1;dx++) for(let dz=-1;dz<=1;dz++) {
+        if(dx===0&&dz===0) continue;
+        const nx=x+dx,nz=z+dz;
+        for(let bf=0;bf<f;bf++) if(getVoxelState(nx,nz,bf)===2) below+=0.3;
+      }
+      score = Math.min(1, below/8);
+    } else if(agent.type===1) {
+      // ATTENTION: count white voxels laterally (same floor ±1)
+      let lateral = 0;
+      for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++) {
+        if(dx===0&&dz===0) continue;
+        const nx=x+dx,nz=z+dz;
+        const dist=Math.sqrt(dx*dx+dz*dz);
+        for(let df=-1;df<=1;df++) if(getVoxelState(nx,nz,f+df)===2) lateral+=1/dist;
+      }
+      score = Math.min(1, lateral/6);
+    } else {
+      // FREEDOM: minimize all nearby white voxels
+      let nearby = 0;
+      for(let dx=-3;dx<=3;dx++) for(let dz=-3;dz<=3;dz++) {
+        if(dx===0&&dz===0) continue;
+        const nx=x+dx,nz=z+dz;
+        const h=getFloorCount(nx,nz);
+        for(let bf=0;bf<h;bf++) if(getVoxelState(nx,nz,bf)===2) nearby++;
+      }
+      score = Math.max(0, 1 - nearby/10);
+    }
+    return score;
+  }
+
+  function findBestPosition(agent) {
+    const tol = currentTolerance;
+    const radius = Math.round(EXPLORE_RADIUS * (0.5 + tol * 0.5));
+    const maxH   = Math.round(MAX_HEIGHT_BASE * (0.3 + tol * 0.7));
+    const threshold = 1 - tol; // low tolerance = high threshold
+
+    let bestScore = -1, bestX=agent.x, bestZ=agent.z, bestF=agent.floor;
+
+    // Shuffle candidates for non-deterministic exploration
+    const candidates = [];
+    for(let dx=-radius;dx<=radius;dx++) {
+      for(let dz=-radius;dz<=radius;dz++) {
+        if(Math.sqrt(dx*dx+dz*dz)>radius) continue;
+        const nx=agent.x+dx, nz=agent.z+dz;
+        if(nx<0||nx>=GRID||nz<0||nz>=GRID) continue;
+        const colH = Math.min(maxH, getFloorCount(nx,nz)+1);
+        for(let f=0;f<colH;f++) {
+          if(getVoxelState(nx,nz,f)!==2) // not already occupied by another
+            candidates.push({x:nx,z:nz,f});
+        }
+      }
+    }
+    // shuffle
+    for(let i=candidates.length-1;i>0;i--) {
+      const j=Math.floor(Math.random()*(i+1));
+      [candidates[i],candidates[j]]=[candidates[j],candidates[i]];
+    }
+
+    for(const c of candidates) {
+      const s = scorePosition(agent,c.x,c.z,c.f);
+      if(s >= threshold && s > bestScore) {
+        bestScore=s; bestX=c.x; bestZ=c.z; bestF=c.f;
+        break; // take first that satisfies threshold
+      }
+    }
+    return {x:bestX, z:bestZ, f:bestF, score:bestScore};
+  }
+
+  function spawnAgents() {
+    // Remove old agent meshes
+    agentMeshes.forEach(m=>scene.remove(m));
+    agentMeshes=[]; mixers=[]; agents=[];
+
+    const types = [];
+    const n = params.agentCount;
+    for(let i=0;i<n;i++) {
+      const r=Math.random();
+      if(r<params.power) types.push(0);
+      else if(r<params.power+params.attention) types.push(1);
+      else types.push(2);
+    }
+
+    types.forEach((type,i)=>{
+      const x=Math.floor(Math.random()*GRID);
+      const z=Math.floor(Math.random()*GRID);
+      const f=getFloorCount(x,z);
+      const agent={type,x,z,floor:f,ticksHere:0,satisfied:false,score:0};
+      agents.push(agent);
+      setVoxelState(x,z,f,2);
+
+      // Visual: colored box per agent (Mixamo loaded separately below)
+      const mat = AGENT_COLORS[type];
+      const geo = new THREE.BoxGeometry(VS*0.4,VS*0.8,VS*0.4);
+      const mesh = new THREE.Mesh(geo,mat);
+      const {wx,wz}=gridToWorld(x,z);
+      mesh.position.set(wx, f*V+V+VS*0.4, wz);
+      scene.add(mesh);
+      agentMeshes.push(mesh);
+    });
+    document.getElementById('stat-agents').textContent=agents.length;
+  }
+
+  function placeInitialVoxels() {
+    const n = params.density;
+    for(let i=0;i<n;i++) {
+      const x=Math.floor(Math.random()*GRID);
+      const z=Math.floor(Math.random()*GRID);
+      setVoxelState(x,z,0,1); // abandoned, grey
+    }
+  }
+
+  function stepSimulation() {
+    tick++;
+    document.getElementById('stat-tick').textContent=tick;
+
+    // Update tolerance if relative mode
+    if(params.relativeTolerance) {
+      const sat = agents.filter(a=>a.satisfied).length/agents.length;
+      // tolerance drifts toward sat slowly
+      currentTolerance += (sat - currentTolerance)*0.05;
+      currentTolerance = Math.max(0.05, Math.min(0.99, currentTolerance));
+    }
+
+    agents.forEach((agent,i)=>{
+      agent.ticksHere++;
+      // Re-evaluate every TICKS_PER_MOVE ticks
+      if(agent.ticksHere < TICKS_PER_MOVE) return;
+      agent.ticksHere=0;
+
+      // Current score
+      const curScore = scorePosition(agent,agent.x,agent.z,agent.floor);
+
+      // Social comparison: adjust threshold
+      let agentTolerance = currentTolerance;
+      if(params.socialComparison) {
+        const radius=Math.round(EXPLORE_RADIUS*(0.5+currentTolerance*0.5));
+        let neighborScores=[], count=0;
+        agents.forEach((other,j)=>{
+          if(j===i) return;
+          const dx=other.x-agent.x, dz=other.z-agent.z;
+          if(Math.abs(dx)<=radius&&Math.abs(dz)<=radius) {
+            neighborScores.push(other.score); count++;
+          }
+        });
+        if(count>0) {
+          const avgNeighbor=neighborScores.reduce((a,b)=>a+b,0)/count;
+          // neighbors doing better → desperate (tolerance drops)
+          // neighbors doing worse → relaxed (tolerance rises)
+          agentTolerance += (curScore - avgNeighbor)*0.3;
+          agentTolerance = Math.max(0.05,Math.min(0.99,agentTolerance));
+        }
+      }
+
+      const threshold = 1 - agentTolerance;
+      agent.satisfied = curScore >= threshold;
+      agent.score = curScore;
+
+      if(!agent.satisfied) {
+        // Abandon current voxel → grey
+        setVoxelState(agent.x,agent.z,agent.floor,1);
+        // Find new position
+        const best=findBestPosition(agent);
+        agent.x=best.x; agent.z=best.z; agent.floor=best.f;
+        agent.score=Math.max(0,best.score);
+        agent.satisfied=best.score>=(1-agentTolerance);
+        // Occupy new voxel
+        setVoxelState(agent.x,agent.z,agent.floor,2);
+      }
+
+      // Update agent mesh position
+      const mesh=agentMeshes[i];
+      if(mesh) {
+        const {wx,wz}=gridToWorld(agent.x,agent.z);
+        mesh.position.set(wx, agent.floor*V+V+VS*0.4, wz);
+      }
+    });
+
+    // Update KPIs every 5 ticks
+    if(tick%5===0) {
+      const sat=agents.filter(a=>a.satisfied).length;
+      document.getElementById('kpi-sat').textContent=Math.round(sat/agents.length*100)+'%';
+      document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
+      document.getElementById('stat-voxels').textContent=Object.keys(voxelMeshes).length;
+    }
+  }
+
+  // ── Reset ──────────────────────────────────────────────────────────────────
+  function reset() {
+    tick=0;
+    currentTolerance=params.tolerance;
+    // Clear all voxels
+    Object.keys(voxelMeshes).forEach(k=>{
+      scene.remove(voxelMeshes[k]); delete voxelMeshes[k];
+    });
+    initVoxelGrid();
+    placeInitialVoxels();
+    spawnAgents();
+    document.getElementById('kpi-sat').textContent='—';
+    document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
+  }
+
+  // ── Camera ─────────────────────────────────────────────────────────────────
+  let dragging=false, pm={x:0,y:0};
+  document.addEventListener('mousedown',e=>{dragging=true;pm={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',()=>dragging=false);
+  window.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    tSph.th-=(e.clientX-pm.x)*0.007;
+    tSph.ph=Math.max(0.15,Math.min(1.45,tSph.ph+(e.clientY-pm.y)*0.007));
+    pm={x:e.clientX,y:e.clientY};
+  });
+  document.addEventListener('wheel',e=>{
+    tSph.r=Math.max(5,Math.min(60,tSph.r+e.deltaY*0.04));
+    e.preventDefault();
+  },{passive:false});
+  let lastTouch=null;
+  document.addEventListener('touchstart',e=>{lastTouch=e.touches[0];},{passive:false});
+  document.addEventListener('touchmove',e=>{
+    if(!lastTouch)return;
+    tSph.th-=(e.touches[0].clientX-lastTouch.clientX)*0.007;
+    tSph.ph=Math.max(0.15,Math.min(1.45,tSph.ph+(e.touches[0].clientY-lastTouch.clientY)*0.007));
+    lastTouch=e.touches[0]; e.preventDefault();
+  },{passive:false});
+
+  // ── UI wiring ──────────────────────────────────────────────────────────────
+  function updateDistribution() {
+    const p=parseInt(document.getElementById('sl-power').value);
+    const a=parseInt(document.getElementById('sl-attention').value);
+    const f=Math.max(0,100-p-a);
+    params.power=p/100; params.attention=a/100; params.freedom=f/100;
+    document.getElementById('val-power').textContent=p+'%';
+    document.getElementById('val-attention').textContent=a+'%';
+    document.getElementById('val-freedom').textContent=f+'%';
+    document.getElementById('val-freedom-display').value=f;
+  }
+  document.getElementById('sl-power').addEventListener('input',updateDistribution);
+  document.getElementById('sl-attention').addEventListener('input',updateDistribution);
+
+  document.getElementById('sl-density').addEventListener('input',e=>{
+    params.density=parseInt(e.target.value);
+    document.getElementById('val-density').textContent=params.density;
+  });
+  document.getElementById('sl-tolerance').addEventListener('input',e=>{
+    params.tolerance=parseInt(e.target.value)/100;
+    currentTolerance=params.tolerance;
+    document.getElementById('val-tolerance').textContent=params.tolerance.toFixed(2);
+    document.getElementById('kpi-tol').textContent=params.tolerance.toFixed(2);
+  });
+  document.getElementById('sl-agents').addEventListener('input',e=>{
+    params.agentCount=parseInt(e.target.value);
+    document.getElementById('val-agents').textContent=params.agentCount;
+  });
+
+  function wireToggle(id, key) {
+    const el=document.getElementById(id);
+    el.addEventListener('click',()=>{
+      params[key]=!params[key];
+      el.classList.toggle('on',params[key]);
+    });
+  }
+  wireToggle('tog-social','socialComparison');
+  wireToggle('tog-reltol','relativeTolerance');
+
+  document.getElementById('btn-run').addEventListener('click',()=>{
+    running=!running;
+    document.getElementById('btn-run').textContent=running?'⏸ pause':'▶ run';
+    document.getElementById('btn-run').classList.toggle('active',running);
+  });
+  document.getElementById('btn-reset').addEventListener('click',reset);
+
+  // ── Loop ───────────────────────────────────────────────────────────────────
+  const clock = new THREE.Clock();
+  let simAccum=0;
+  const SIM_INTERVAL=0.4; // seconds per tick
+
+  function loop() {
+    requestAnimationFrame(loop);
+    const delta=clock.getDelta();
+
+    if(running) {
+      simAccum+=delta;
+      if(simAccum>=SIM_INTERVAL) { stepSimulation(); simAccum=0; }
+    }
+
+    mixers.forEach(m=>m.update(delta));
+
+    sph.th+=(tSph.th-sph.th)*0.07;
+    sph.ph+=(tSph.ph-sph.ph)*0.07;
+    sph.r +=(tSph.r -sph.r )*0.07;
+    cam.position.set(
+      sph.r*Math.sin(sph.ph)*Math.sin(sph.th),
+      sph.r*Math.cos(sph.ph)+3,
+      sph.r*Math.sin(sph.ph)*Math.cos(sph.th)
+    );
+    cam.lookAt(0,3,0);
+    renderer.render(scene,cam);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  initVoxelGrid();
+  placeInitialVoxels();
+  spawnAgents();
+  document.getElementById('kpi-tol').textContent=currentTolerance.toFixed(2);
+  loop();
+
+  window.addEventListener('resize',()=>{
+    const W=window.innerWidth,H=window.innerHeight;
+    renderer.setSize(W,H); cam.aspect=W/H; cam.updateProjectionMatrix();
+  });
+
+})();
+</script>
+</body>
+</html>    .ui-bottom {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 12px 1.5rem;
       display: flex; justify-content: space-between; align-items: center;
