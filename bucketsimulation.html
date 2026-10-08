@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>hyperspecialization in hierarchical webs — geometry of societies</title>
+<style>
+  :root {
+    --ink: #111;
+    --muted: #9a9a96;
+    --paper: #fff;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --icon: clamp(34px, 8.5vw, 60px);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+  a { color: inherit; text-decoration: none; }
+
+  .meta {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+    padding: 16px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .meta em { font-style: italic; color: var(--muted); }
+  .meta a:hover { text-decoration: underline; }
+
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 72px; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    row-gap: clamp(28px, 6vw, 48px); column-gap: clamp(6px, 3vw, 28px);
+  }
+  .cell { display: flex; flex-direction: column; align-items: center; }
+  .cell svg { width: var(--icon); height: var(--icon); display: block; }
+  .cell rect { fill: var(--ink); transition-property: opacity; transition-timing-function: ease-in-out; }
+  .label {
+    font-family: var(--mono); font-size: 10.5px; margin-top: 14px; color: var(--muted);
+    white-space: nowrap;
+  }
+  .cell.active .label { color: var(--ink); }
+  .cell.active { cursor: pointer; }
+  .cell.active:hover .label { text-decoration: underline; }
+  .cell.active:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
+
+  footer { margin-top: 72px; border-top: 0.5px solid var(--ink); padding-top: 28px; text-align: center; }
+  footer h1 {
+    margin: 0; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  @media (max-width: 520px) { .label .pre { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .cell rect { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <span><a href="experiments.html">← experiments</a> <em>//</em> geometry <em>of</em> societies <em>—</em> v0.1</span>
+  <span>phases <em>42</em> // agents <em>specializing</em></span>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <footer><h1>hyperspecialization in hierarchical webs</h1></footer>
+</main>
+
+<script>
+/* ---- settings you can edit ---------------------------------------- */
+const PHASES = 42;          // 7 columns x 6 rows
+const N = 11;               // pixel grid per icon (same box for all)
+const SEED = 2026;          // change for a different family of glyphs
+const LINKS = {             // phases that open something; others are placeholders
+  1: "phase_01.html"
+};
+/* -------------------------------------------------------------------- */
+
+function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rand = rng(SEED);
+const pick = arr => arr[Math.floor(rand() * arr.length)];
+const idx = (x, y) => y * N + x;
+const xy = i => [i % N, Math.floor(i / N)];
+
+function neighbours(i) {
+  const [x, y] = xy(i), out = [];
+  if (x > 0) out.push(i - 1); if (x < N - 1) out.push(i + 1);
+  if (y > 0) out.push(i - N); if (y < N - 1) out.push(i + N);
+  return out;
+}
+function emptyAdjacent(set) {
+  const c = new Set();
+  set.forEach(i => neighbours(i).forEach(j => { if (!set.has(j)) c.add(j); }));
+  return [...c];
+}
+function edgePixels(set) {
+  return [...set].filter(i => neighbours(i).some(j => !set.has(j)) || neighbours(i).length < 4);
+}
+
+/* Lineage: each phase grows from the previous one.
+   Sparse at phase_01, dense at phase_42, same bounding box throughout. */
+function targetCount(p) { return Math.round(4 + Math.pow((p - 1) / (PHASES - 1), 1.15) * 80); }
+
+const lineage = [];
+let cur = new Set([idx(5, 5), idx(6, 5), idx(5, 4), idx(4, 6)]);
+for (let p = 1; p <= PHASES; p++) {
+  const s = new Set(cur);
+  if (s.size > 6) {                                  // a little loss each phase
+    const drop = Math.floor(rand() * 3);
+    for (let k = 0; k < drop; k++) s.delete(pick(edgePixels(s)));
+  }
+  while (s.size < targetCount(p)) {                  // growth, mostly by adjacency
+    if (rand() < 0.86) s.add(pick(emptyAdjacent(s)));
+    else s.add(Math.floor(rand() * N * N));          // occasional stray pixel
+  }
+  lineage.push(s);
+  cur = s;
+}
+
+/* Build the sheet */
+const grid = document.getElementById("grid");
+const SVGNS = "http://www.w3.org/2000/svg";
+const icons = [];
+
+lineage.forEach((base, k) => {
+  const p = k + 1, name = "phase_" + String(p).padStart(2, "0");
+  const href = LINKS[p];
+  const cell = document.createElement(href ? "a" : "div");
+  cell.className = "cell" + (href ? " active" : "");
+  if (href) cell.href = href;
+  cell.setAttribute("aria-label", name + (href ? "" : " (not yet available)"));
+
+  const svg = document.createElementNS(SVGNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${N} ${N}`);
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("shape-rendering", "crispEdges");
+  const rects = [];
+  for (let i = 0; i < N * N; i++) {
+    const [x, y] = xy(i), r = document.createElementNS(SVGNS, "rect");
+    r.setAttribute("x", x + 0.06); r.setAttribute("y", y + 0.06);
+    r.setAttribute("width", 0.88); r.setAttribute("height", 0.88);
+    r.style.opacity = base.has(i) ? 1 : 0;
+    svg.appendChild(r); rects.push(r);
+  }
+  const label = document.createElement("div");
+  label.className = "label";
+  label.innerHTML = '<span class="pre">phase_</span>' + String(p).padStart(2, "0");
+  cell.append(svg, label); grid.appendChild(cell);
+  icons.push({ base, rects, live: new Map() });   // live: pixel -> expiry time
+});
+
+/* Parpadeo: a few pixels appear or vanish, then return to the base shape. */
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const fx = Math.random;  // flicker is not seeded, so it never repeats exactly
+
+function setPixel(icon, i, on) {
+  const r = icon.rects[i];
+  r.style.transitionDuration = (220 + fx() * 520) + "ms";
+  r.style.opacity = on ? 1 : 0;
+}
+function tick(icon) {
+  const now = performance.now();
+  icon.live.forEach((t, i) => {                    // let expired changes heal
+    if (t < now) { setPixel(icon, i, icon.base.has(i)); icon.live.delete(i); }
+  });
+  const max = 1 + Math.floor(icon.base.size / 22);
+  if (icon.live.size < max && fx() < 0.75) {
+    const shown = new Set([...icon.base].filter(i => !icon.live.has(i)));
+    let i, on;
+    if (fx() < 0.5 && shown.size > 3) { i = edgePixels(shown)[Math.floor(fx() * edgePixels(shown).length)]; on = false; }
+    else { const c = emptyAdjacent(icon.base); i = c[Math.floor(fx() * c.length)]; on = true; }
+    if (i !== undefined && !icon.live.has(i)) {
+      setPixel(icon, i, on);
+      icon.live.set(i, now + 700 + fx() * 2400);
+    }
+  }
+  setTimeout(() => tick(icon), 250 + fx() * 1400);
+}
+if (!still) icons.forEach(icon => setTimeout(() => tick(icon), fx() * 1500));
+</script>
+</body>
+</html>
