@@ -74,19 +74,24 @@
 
 <main>
   <h1>phase_01 — rank</h1>
-  <p class="sub">Two pairs of crabs climb toward the same fruit with the same hunger. In one pair each crab looks only at the fruit. In the other, each crab also looks at its rival.</p>
+  <p class="sub">Two pairs of crabs, with the same hunger and the same economy, climb toward fruits that keep appearing on the horizon. In one pair each crab looks only at the fruits. In the other, each crab also looks at its rival.</p>
 
-<div class="eq"><b>intrinsic</b> = hunger                          <span class="c">// while below the fruit, then 0</span>
+<div class="eq"><b>intrinsic</b> = hunger                          <span class="c">// there is always a next fruit</span>
 <b>extrinsic</b> = k · max(0, h_rival + margin − h)   <span class="c">// pushes until it is margin ahead</span>
-<b>impulse</b>   = intrinsic + extrinsic        h ← h + impulse
+<b>want</b>      = intrinsic + extrinsic             <span class="c">// impulse: the craving</span>
+<b>spend</b>     = min(want, energy)                 <span class="c">// capacity: you climb what you can pay for</span>
+h ← h + spend        energy ← energy − spend + income
 
+<span class="c">fruits sit every</span> spacing<span class="c">; when the highest is eaten for the first time, a new one appears above it</span>
 <span class="c">absolute pair:</span> k = 0        <span class="c">relational pair:</span> k > 0</div>
 
   <div class="controls">
     <div class="ctl"><div class="top"><span>hunger</span><span id="o-hunger"></span></div>
-      <input type="range" id="hunger" min="0.2" max="2" step="0.1" value="1"><div class="hint">intrinsic climb per turn</div></div>
-    <div class="ctl"><div class="top"><span>fruit height</span><span id="o-fruit"></span></div>
-      <input type="range" id="fruit" min="10" max="60" step="1" value="30"><div class="hint">what hunger points at</div></div>
+      <input type="range" id="hunger" min="0.1" max="2" step="0.1" value="0.5"><div class="hint">intrinsic craving per turn</div></div>
+    <div class="ctl"><div class="top"><span>income</span><span id="o-income"></span></div>
+      <input type="range" id="income" min="0.1" max="2" step="0.1" value="0.8"><div class="hint">energy earned per turn · same for all</div></div>
+    <div class="ctl"><div class="top"><span>fruit spacing</span><span id="o-fruit"></span></div>
+      <input type="range" id="fruit" min="3" max="15" step="1" value="6"><div class="hint">distance between horizons</div></div>
     <div class="ctl"><div class="top"><span>k · comparison</span><span id="o-k"></span></div>
       <input type="range" id="k" min="0.05" max="0.9" step="0.05" value="0.3"><div class="hint">relational pair only</div></div>
     <div class="ctl"><div class="top"><span>margin</span><span id="o-margin"></span></div>
@@ -126,13 +131,14 @@
       <div class="stats"></div>
     </section>
   </div>
-  <p class="note">History panel: each milestone that both sides contested is a fruit, stacked in the order the first one was reached (the Moon landing sits at fruit height). A fruit appears on the horizon when it was publicly declared as a goal, or otherwise at the first serious attempt. Between milestones each country's climb is drawn as a straight line. 100 turns = Oct 1957 (Sputnik) to Jul 1975 (Apollo–Soyuz), about two months per turn.</p>
+  <p class="note">All crabs start with 10 energy. Climbing one unit of height costs one unit of energy; unspent energy is saved. History panel: each milestone that both sides contested is a fruit, stacked in the order the first one was reached, one fruit spacing apart, so one historical milestone equals one fruit in the models. A fruit appears on the horizon when it was publicly declared as a goal, or otherwise at the first serious attempt. Between milestones each country's climb is drawn as a straight line. 100 turns = Oct 1957 (Sputnik) to Jul 1975 (Apollo–Soyuz), about two months per turn.</p>
 </main>
 
 <script>
 const T = 100;
 const $ = id => document.getElementById(id);
-const P = () => ({ hunger: +$('hunger').value, fruit: +$('fruit').value, k: +$('k').value, margin: +$('margin').value, head: +$('head').value });
+const E0 = 10;
+const P = () => ({ hunger: +$('hunger').value, income: +$('income').value, fruit: +$('fruit').value, k: +$('k').value, margin: +$('margin').value, head: +$('head').value });
 const SVGNS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const e = document.createElementNS(SVGNS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; };
 const f1 = v => v.toFixed(1);
@@ -141,36 +147,47 @@ const f1 = v => v.toFixed(1);
 let leader = 0, scenes, timer = null;
 
 function makeScene(id, relational) {
-  return { id, relational, t: 0, h: [0, 0], hist: [[0], [0]], intr: [0, 0], extr: [0, 0], spent: [0, 0], fruitAt: [null, null] };
+  return { id, relational, t: 0, h: [0, 0], E: [E0, E0], hist: [[0], [0]], intr: [0, 0], extr: [0, 0], spend: [0, 0],
+           fruits: [], eaten: [0, 0], firsts: [0, 0] };
+}
+// a crab eats every fruit at or below its height; when the highest fruit is eaten for the first time, a new one appears
+function eatAndSpawn(s, p) {
+  if (!s.fruits.length) s.fruits.push({ h: p.fruit, by: [] });
+  let changed = true;
+  while (changed) {
+    changed = false;
+    s.fruits.forEach(f => [0, 1].forEach(i => {
+      if (s.h[i] >= f.h && !f.by.includes(i)) { f.by.push(i); s.eaten[i]++; if (f.by.length === 1) s.firsts[i]++; changed = true; }
+    }));
+    const top = s.fruits[s.fruits.length - 1];
+    if (top.by.length) { s.fruits.push({ h: top.h + p.fruit, by: [] }); changed = true; }
+  }
 }
 function reset(reroll) {
   if (reroll) leader = Math.random() < 0.5 ? 0 : 1;
   const p = P();
   scenes = [makeScene('absolute', false), makeScene('relational', true)];
-  scenes.forEach(s => {
-    s.h[leader] = p.head; s.hist = [[s.h[0]], [s.h[1]]];
-    s.h.forEach((h, i) => { if (h >= p.fruit) s.fruitAt[i] = 0; });
-  });
+  scenes.forEach(s => { s.h[leader] = p.head; s.hist = [[s.h[0]], [s.h[1]]]; eatAndSpawn(s, p); });
   render();
 }
 function step() {
   const p = P();
   scenes.forEach(s => {
     if (s.t >= T) return;
-    const imp = [0, 1].map(i => {
+    const spend = [0, 1].map(i => {
       const j = 1 - i;
-      const intr = s.h[i] < p.fruit ? p.hunger : 0;
+      const intr = p.hunger;
       const extr = s.relational ? p.k * Math.max(0, s.h[j] + p.margin - s.h[i]) : 0;
       s.intr[i] = intr; s.extr[i] = extr;
-      return intr + extr;
+      return Math.min(intr + extr, s.E[i]);                 // you climb what you can pay for
     });
     [0, 1].forEach(i => {
-      let nh = s.h[i] + imp[i];
-      if (!s.relational && s.h[i] < p.fruit) nh = Math.min(nh, p.fruit);   // absolute crabs stop at the fruit
-      s.spent[i] += nh - s.h[i];
-      s.h[i] = nh; s.hist[i].push(nh);
-      if (s.fruitAt[i] === null && nh >= p.fruit) s.fruitAt[i] = s.t + 1;
+      s.spend[i] = spend[i];
+      s.h[i] += spend[i];
+      s.E[i] += p.income - spend[i];
+      s.hist[i].push(s.h[i]);
     });
+    eatAndSpawn(s, p);
     s.t++;
   });
   render();
@@ -183,8 +200,17 @@ const FRUIT = [".11.", "1111", "1111", ".11."];
 
 function scaleMax() {
   const p = P();
-  const m = Math.max(...scenes.flatMap(s => s.hist.flat()));
-  return Math.max(p.fruit * 1.5, m * 1.08);
+  const m = Math.max(...scenes.flatMap(s => s.hist.flat()), ...scenes.flatMap(s => s.fruits.map(f => f.h)));
+  return Math.max(p.fruit * (FRUITS.length + 1), m) * 1.08;      // shared by all three panels
+}
+function fruitRows(svg, fruits, Y, mono) {                         // fruits on the right edge of a drawing
+  fruits.forEach((f, n) => {
+    const y = Y(f.h), open = !f.by.length;
+    el('line', { x1: 150, x2: 300, y1: y, y2: y, stroke: open ? '#6d7f1c' : '#efeee9', 'stroke-dasharray': open ? '2 3' : '' }, svg);
+    glyph(svg, FRUIT, 298, y - 4, 2, open ? '#c8e054' : '#d6d5cf');
+    const lab = el('text', { x: 293, y: y - 2, 'text-anchor': 'end', 'font-size': 7, fill: open ? '#6d7f1c' : '#9a9a96', ...mono }, svg);
+    lab.textContent = f.name || ('fruit ' + (n + 1) + (f.by.length ? ' · ' + f.by.map(i => i ? 'B' : 'A').join(', ') : ''));
+  });
 }
 function glyph(svg, rows, x, y, px, fill) {
   rows.forEach((r, ry) => [...r].forEach((c, rx) => { if (c === '1') el('rect', { x: x + rx * px, y: y + ry * px, width: px, height: px, fill }, svg); }));
@@ -199,22 +225,20 @@ function drawScene(s, max) {
   }
   el('line', { x1: 21, x2: 21, y1: TOP, y2: G, stroke: '#bbb' }, svg);
   el('line', { x1: 21, x2: 310, y1: G, y2: G, stroke: '#111' }, svg);   // ground
-  el('line', { x1: 21, x2: 300, y1: Y(p.fruit), y2: Y(p.fruit), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, svg);
-  glyph(svg, FRUIT, 290, Y(p.fruit) - 12, 3, '#c8e054');
-  const ft = el('text', { x: 284, y: Y(p.fruit) - 4, 'text-anchor': 'end', 'font-size': 8, 'font-family': 'Space Mono, monospace', fill: '#6d7f1c' }, svg); ft.textContent = 'fruit';
+  fruitRows(svg, s.fruits, Y, { 'font-family': 'Space Mono, monospace' });
 
-  const cols = [110, 210], fills = ['#111', '#9a9a96'];
+  const cols = [62, 118], fills = ['#111', '#9a9a96'];
   [0, 1].forEach(i => {
     const x = cols[i], y = Y(s.h[i]);
     el('line', { x1: x, x2: x, y1: G, y2: y, stroke: fills[i], 'stroke-width': 1, 'stroke-dasharray': i ? '3 3' : '' }, svg);
     glyph(svg, CRAB, x - 13.5, y - 18, 3, fills[i]);
     const lab = el('text', { x: x, y: G + 12, 'text-anchor': 'middle', 'font-size': 9, 'font-family': 'Space Mono, monospace', fill: '#111' }, svg);
-    lab.textContent = (i ? 'B' : 'A') + (i === leader ? ' · head start' : '');
+    lab.textContent = (i ? 'B' : 'A') + (i === leader ? ' ·' : '');
   });
 
   const ro = root.querySelector('.readout');
-  ro.innerHTML = '<span class="h"></span><span class="h">height</span><span class="h">intrinsic</span><span class="h">extrinsic</span>' +
-    [0, 1].map(i => `<span>${i ? 'B' : 'A'}</span><span>${f1(s.h[i])}</span><span>${f1(s.intr[i])}</span><span>${f1(s.extr[i])}</span>`).join('');
+  ro.innerHTML = '<span class="h"></span><span class="h">want</span><span class="h">spend</span><span class="h">energy</span>' +
+    [0, 1].map(i => `<span>${i ? 'B' : 'A'}</span><span>${f1(s.intr[i] + s.extr[i])}</span><span>${f1(s.spend[i])}</span><span>${f1(s.E[i])}</span>`).join('');
 }
 function drawChart(s, max) {
   const p = P(), svg = $(s.id).querySelector('svg.chart');
@@ -227,19 +251,16 @@ function drawChart(s, max) {
   }
   [0, 50, 100].forEach(t => { const e = el('text', { x: X(t), y: B + 13, 'text-anchor': 'middle', 'font-size': 8, 'font-family': 'Space Mono, monospace', fill: '#9a9a96' }, svg); e.textContent = t; });
   el('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#111' }, svg);
-  el('line', { x1: L, x2: R, y1: Y(p.fruit), y2: Y(p.fruit), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, svg);
+  s.fruits.forEach(f => el('line', { x1: L, x2: R, y1: Y(f.h), y2: Y(f.h), stroke: '#c8e054', 'stroke-width': 0.6 }, svg));
   [[0, '#111', ''], [1, '#9a9a96', '4 3']].forEach(([i, c, d]) => {
     const pts = s.hist[i].map((h, t) => `${X(t).toFixed(1)},${Y(h).toFixed(1)}`).join(' ');
     el('polyline', { points: pts, fill: 'none', stroke: c, 'stroke-width': 1.6, 'stroke-dasharray': d, 'stroke-linejoin': 'round' }, svg);
   });
 
-  const p2 = P();
-  const reached = s.fruitAt.filter(v => v !== null);
-  const beyond = Math.max(0, ...s.h.map(h => h - p2.fruit));
   $(s.id).querySelector('.stats').innerHTML =
-    `<div class="stat"><div class="l">fruit reached</div><div class="v">${reached.length ? 'turn ' + Math.max(...reached) + (reached.length < 2 ? '*' : '') : '—'}</div></div>` +
-    `<div class="stat"><div class="l">climbed past fruit</div><div class="v">${f1(beyond)}</div></div>` +
-    `<div class="stat"><div class="l">total climbed</div><div class="v">${f1(s.spent[0] + s.spent[1])}</div></div>`;
+    `<div class="stat"><div class="l">fruits · A / B</div><div class="v">${s.eaten[0]} / ${s.eaten[1]}</div></div>` +
+    `<div class="stat"><div class="l">firsts · A / B</div><div class="v">${s.firsts[0]} / ${s.firsts[1]}</div></div>` +
+    `<div class="stat"><div class="l">energy saved</div><div class="v">${f1(s.E[0] + s.E[1])}</div></div>`;
 }
 /* ---- history ------------------------------------------------------ */
 // [fruit, appears on horizon, USSR reached, USA reached]  (null = never in range)
@@ -289,9 +310,8 @@ function rungAt(side, t) {
   return p[p.length - 1][1];
 }
 
-function drawHistory(t) {
-  const p = P(), unit = p.fruit / MOON_RUNG, root = $('history');
-  const max = FRUITS.length * unit * 1.12;
+function drawHistory(t, max) {
+  const p = P(), unit = p.fruit, root = $('history');           // one milestone = one fruit spacing
   const svg = root.querySelector('svg.draw'); svg.innerHTML = '';
   const G = 232, TOP = 14, Y = h => G - (h / max) * (G - TOP);
   const mono = { 'font-family': 'Space Mono, monospace' };
@@ -330,7 +350,7 @@ function drawHistory(t) {
   }
   [1960, 1965, 1970, 1975].forEach(yr => { const u = turnOf(yr + '-01-01'); const tx = el('text', { x: X(u), y: B + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, c); tx.textContent = yr; });
   el('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#111' }, c);
-  el('line', { x1: L, x2: R, y1: CY(p.fruit), y2: CY(p.fruit), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, c);
+  FRUITS.forEach((f, k) => { if (Math.max(0, turnOf(f[1])) <= t) el('line', { x1: L, x2: R, y1: CY((k + 1) * unit), y2: CY((k + 1) * unit), stroke: '#c8e054', 'stroke-width': 0.6 }, c); });
   [[0, '#111', ''], [1, '#9a9a96', '4 3']].forEach(([i, col, d]) => {
     const pts = []; for (let u = 0; u <= t; u += 0.5) pts.push(`${X(u).toFixed(1)},${CY(rungAt(i, u) * unit).toFixed(1)}`);
     pts.push(`${X(t).toFixed(1)},${CY(rungAt(i, t) * unit).toFixed(1)}`);
@@ -352,10 +372,10 @@ function drawHistory(t) {
 function render() {
   const max = scaleMax();
   scenes.forEach(s => { drawScene(s, max); drawChart(s, max); });
-  drawHistory(scenes[0].t);
+  drawHistory(scenes[0].t, max);
   $('tick').textContent = `turn ${scenes[0].t} / ${T}`;
   const p = P();
-  $('o-hunger').textContent = p.hunger.toFixed(1); $('o-fruit').textContent = p.fruit;
+  $('o-hunger').textContent = p.hunger.toFixed(1); $('o-income').textContent = p.income.toFixed(1); $('o-fruit').textContent = p.fruit;
   $('o-k').textContent = p.k.toFixed(2); $('o-margin').textContent = p.margin.toFixed(1); $('o-head').textContent = p.head;
 }
 
@@ -376,7 +396,7 @@ $('tps').addEventListener('input', () => {        // change speed without restar
 });
 $('step').onclick = () => { stop(); if (scenes[0].t < T) step(); };
 $('reset').onclick = () => { stop(); reset(true); };
-['hunger', 'fruit', 'k', 'margin', 'head'].forEach(id => $(id).addEventListener('input', () => { stop(); reset(false); }));
+['hunger', 'income', 'fruit', 'k', 'margin', 'head'].forEach(id => $(id).addEventListener('input', () => { stop(); reset(false); }));
 reset(true);
 </script>
 </body>
