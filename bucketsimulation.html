@@ -35,14 +35,14 @@
   .cell rect { fill: var(--ink); transition-property: opacity; transition-timing-function: ease-in-out; }
   .label {
     font-family: var(--mono); font-size: 10.5px; margin-top: 14px; color: var(--muted);
-    white-space: nowrap;
+    white-space: nowrap; opacity: 0; transition: opacity .5s ease;
   }
   .cell.active .label { color: var(--ink); }
   .cell.active { cursor: pointer; }
   .cell.active:hover .label { text-decoration: underline; }
   .cell.active:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
 
-  footer { margin-top: 72px; border-top: 0.5px solid var(--ink); padding-top: 28px; text-align: center; }
+  footer { opacity: 0; transition: opacity .8s ease; margin-top: 72px; border-top: 0.5px solid var(--ink); padding-top: 28px; text-align: center; }
   footer h1 {
     margin: 0; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   }
@@ -137,14 +137,14 @@ lineage.forEach((base, k) => {
     const [x, y] = xy(i), r = document.createElementNS(SVGNS, "rect");
     r.setAttribute("x", x + 0.06); r.setAttribute("y", y + 0.06);
     r.setAttribute("width", 0.88); r.setAttribute("height", 0.88);
-    r.style.opacity = base.has(i) ? 1 : 0;
+    r.style.opacity = 0;
     svg.appendChild(r); rects.push(r);
   }
   const label = document.createElement("div");
   label.className = "label";
   label.innerHTML = '<span class="pre">phase_</span>' + String(p).padStart(2, "0");
   cell.append(svg, label); grid.appendChild(cell);
-  icons.push({ base, rects, live: new Map() });   // live: pixel -> expiry time
+  icons.push({ base, rects, label, live: new Map() });   // live: pixel -> expiry time
 });
 
 /* Parpadeo: a few pixels appear or vanish, then return to the base shape. */
@@ -153,6 +153,7 @@ const fx = Math.random;  // flicker is not seeded, so it never repeats exactly
 
 function setPixel(icon, i, on) {
   const r = icon.rects[i];
+  r.style.transitionDelay = "0ms";
   r.style.transitionDuration = (220 + fx() * 520) + "ms";
   r.style.opacity = on ? 1 : 0;
 }
@@ -174,7 +175,51 @@ function tick(icon) {
   }
   setTimeout(() => tick(icon), 250 + fx() * 1400);
 }
-if (!still) icons.forEach(icon => setTimeout(() => tick(icon), fx() * 1500));
+/* Arrival: phases appear one after another, each glyph growing outward
+   from a seed pixel. Whole sheet is in place in about 4.5 seconds. */
+const STAGGER = 75;    // ms between one phase starting and the next
+const BUILD = 1100;    // ms for one glyph to grow in
+
+function growthOrder(base) {
+  const cells = [...base], c = (N - 1) / 2;
+  cells.sort((a, b) => { const [ax, ay] = xy(a), [bx, by] = xy(b);
+    return Math.hypot(ax - c, ay - c) - Math.hypot(bx - c, by - c); });
+  const order = [], seen = new Set();
+  for (const start of cells) {                     // flood outward, island by island
+    if (seen.has(start)) continue;
+    let front = [start]; seen.add(start);
+    while (front.length) {
+      const nxt = [];
+      front.sort(() => fx() - 0.5).forEach(i => {
+        order.push(i);
+        neighbours(i).forEach(j => { if (base.has(j) && !seen.has(j)) { seen.add(j); nxt.push(j); } });
+      });
+      front = nxt;
+    }
+  }
+  return order;
+}
+
+if (still) {
+  icons.forEach(icon => { icon.base.forEach(i => icon.rects[i].style.opacity = 1); icon.label.style.opacity = 1; });
+  document.querySelector("footer").style.opacity = 1;
+} else {
+  icons.forEach((icon, k) => {
+    const start = k * STAGGER, order = growthOrder(icon.base);
+    order.forEach((i, n) => {
+      const r = icon.rects[i];
+      r.style.transitionDuration = (140 + fx() * 220) + "ms";
+      r.style.transitionDelay = Math.round(start + (n / order.length) * BUILD * (0.8 + fx() * 0.4)) + "ms";
+    });
+    icon.label.style.transitionDelay = (start + 200) + "ms";
+    setTimeout(() => tick(icon), start + BUILD + 600 + fx() * 1200);
+  });
+  document.querySelector("footer").style.transitionDelay = (icons.length * STAGGER + 300) + "ms";
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    icons.forEach(icon => { icon.base.forEach(i => icon.rects[i].style.opacity = 1); icon.label.style.opacity = 1; });
+    document.querySelector("footer").style.opacity = 1;
+  }));
+}
 </script>
 </body>
 </html>
