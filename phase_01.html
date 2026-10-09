@@ -19,7 +19,7 @@
   .meta { font-family: var(--mono); font-size: 11px; padding: 16px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .meta em { font-style: normal; color: var(--muted); }
   .meta a:hover { text-decoration: underline; }
-  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 72px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 72px; }
 
   h1 { font-family: var(--mono); font-size: 13px; font-weight: 700; margin: 0 0 6px; }
   .sub { font-size: 15px; color: #444; margin: 0 0 28px; max-width: 620px; line-height: 1.55; }
@@ -38,9 +38,18 @@
   button { font-family: var(--mono); font-size: 11px; background: var(--paper); color: var(--ink); border: 1px solid var(--ink); padding: 7px 14px; cursor: pointer; }
   button:hover { background: var(--ink); color: var(--paper); }
   .tick { color: var(--muted); margin-left: 8px; }
+  .speed { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .speed input { width: 140px; }
+  .speed b { min-width: 18px; text-align: right; }
+  @media (max-width: 520px) { .speed { margin-left: 0; width: 100%; } .speed input { flex: 1; } }
 
-  .scenes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
-  @media (max-width: 720px) { .scenes { grid-template-columns: 1fr; } }
+  .scenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; }
+  @media (max-width: 1000px) { .scenes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 680px) { .scenes { grid-template-columns: 1fr; } }
+  .log { font-family: var(--mono); font-size: 10.5px; line-height: 1.7; margin: 8px 0 18px; min-height: 54px; }
+  .log div { color: var(--muted); }
+  .log div:first-child { color: var(--ink); }
+  .note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.7; max-width: 720px; margin-top: 40px; }
   .scene h2 { font-family: var(--mono); font-size: 12px; font-weight: 700; margin: 0 0 2px; }
   .scene .what { font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 0 0 12px; }
   .scene svg { width: 100%; display: block; }
@@ -60,7 +69,7 @@
 
 <div class="meta">
   <span><a href="bucketsimulation.html">← catalogue</a> <em>//</em> geometry of societies <em>—</em> phase_01</span>
-  <span>crabs <em>4</em> // question <em>rank</em></span>
+  <span>crabs <em>4 + 2 real ones</em> // question <em>rank</em></span>
 </div>
 
 <main>
@@ -88,6 +97,7 @@
   <div class="buttons">
     <button id="run">run</button><button id="step">step</button><button id="reset">reset</button>
     <span class="tick" id="tick">turn 0 / 100</span>
+    <label class="speed">ticks per second <input type="range" id="tps" min="1" max="30" step="1" value="10"> <b id="o-tps">10</b></label>
   </div>
 
   <div class="scenes">
@@ -107,7 +117,16 @@
       <div class="legend"><span><i></i>crab A</span><span><i class="b"></i>crab B</span><span><i class="f"></i>fruit</span></div>
       <div class="stats"></div>
     </section>
+    <section class="scene" id="history">
+      <h2>history</h2><p class="what">USSR · USA · 1957–1975 · fruits appear when declared</p>
+      <svg class="draw" viewBox="0 0 320 250" aria-label="drawing of the space race"></svg>
+      <div class="log"></div>
+      <svg class="chart" viewBox="0 0 320 150" aria-label="rank on the innovation ladder over time"></svg>
+      <div class="legend"><span><i></i>USSR</span><span><i class="b"></i>USA</span><span>● first ○ second</span></div>
+      <div class="stats"></div>
+    </section>
   </div>
+  <p class="note">History panel: each milestone that both sides contested is a fruit, stacked in the order the first one was reached (the Moon landing sits at fruit height). A fruit appears on the horizon when it was publicly declared as a goal, or otherwise at the first serious attempt. Between milestones each country's climb is drawn as a straight line. 100 turns = Oct 1957 (Sputnik) to Jul 1975 (Apollo–Soyuz), about two months per turn.</p>
 </main>
 
 <script>
@@ -222,9 +241,118 @@ function drawChart(s, max) {
     `<div class="stat"><div class="l">climbed past fruit</div><div class="v">${f1(beyond)}</div></div>` +
     `<div class="stat"><div class="l">total climbed</div><div class="v">${f1(s.spent[0] + s.spent[1])}</div></div>`;
 }
+/* ---- history ------------------------------------------------------ */
+// [fruit, appears on horizon, USSR reached, USA reached]  (null = never in range)
+const FRUITS = [
+  ['satellite in orbit',   '1955-07-29', '1957-10-04', '1958-01-31'],  // IGY satellite announcement
+  ['animal in orbit',      '1957-11-03', '1957-11-03', '1961-11-29'],  // Sputnik 2 / Enos
+  ['hit the Moon',         '1958-08-17', '1959-09-13', '1962-04-26'],  // Pioneer 0 attempt / Luna 2 / Ranger 4
+  ['far side of the Moon', '1959-10-04', '1959-10-07', '1966-08-14'],  // Luna 3 / Lunar Orbiter 1
+  ['human in orbit',       '1958-12-17', '1961-04-12', '1962-02-20'],  // Mercury announced / Gagarin / Glenn
+  ['multi-person crew',    '1962-01-03', '1964-10-12', '1965-03-23'],  // Gemini announced / Voskhod 1 / Gemini 3
+  ['spacewalk',            '1962-01-03', '1965-03-18', '1965-06-03'],  // Leonov / White
+  ['rendezvous',           '1962-01-03', '1967-10-30', '1965-12-15'],  // Kosmos 186-188 / Gemini 6A-7
+  ['soft Moon landing',    '1963-01-04', '1966-02-03', '1966-06-02'],  // first attempt / Luna 9 / Surveyor 1
+  ['docking',              '1962-01-03', '1967-10-30', '1966-03-16'],  // Kosmos 186-188 / Gemini 8
+  ['crewed lunar orbit',   '1961-05-25', null,         '1968-12-24'],  // Kennedy / Apollo 8
+  ['humans on the Moon',   '1961-05-25', null,         '1969-07-20'],  // Kennedy / Apollo 11
+  ['space station',        '1963-12-10', '1971-04-19', '1973-05-14'],  // MOL announced / Salyut 1 / Skylab
+];
+const MOON_RUNG = 12, SIDES = ['USSR', 'USA'];
+const H0 = Date.UTC(1957, 9, 4), H1 = Date.UTC(1975, 6, 17);
+const turnOf = s => { const [y, m, d] = s.split('-').map(Number); return (Date.UTC(y, m - 1, d) - H0) / (H1 - H0) * T; };
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dateAt = t => { const d = new Date(H0 + (t / T) * (H1 - H0)); return MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); };
+const fmt = s => { const [y, m] = s.split('-').map(Number); return MONTHS[m - 1] + ' ' + y; };
+
+// every event, in time order
+const EVENTS = [];
+FRUITS.forEach(([name, appear, a, b], k) => {
+  EVENTS.push({ t: Math.max(0, turnOf(appear)), kind: 'appear', name, date: appear, rung: k + 1 });
+  const got = [[0, a], [1, b]].filter(x => x[1]).sort((x, y) => turnOf(x[1]) - turnOf(y[1]));
+  got.forEach(([side, d], n) => EVENTS.push({ t: turnOf(d), kind: n === 0 ? 'first' : 'second', side, name, date: d, rung: k + 1 }));
+});
+EVENTS.sort((x, y) => x.t - y.t || (x.kind === 'appear' ? -1 : 1));
+
+// each side's climb: straight lines between the moments it reaches a new highest rung
+const PATH = [0, 1].map(side => {
+  const pts = [[0, 0]]; let top = 0;
+  EVENTS.filter(e => e.side === side && e.kind !== 'appear').forEach(e => { if (e.rung > top) { pts.push([e.t, e.rung]); top = e.rung; } });
+  return pts;
+});
+function rungAt(side, t) {
+  const p = PATH[side];
+  for (let i = 1; i < p.length; i++) if (t <= p[i][0]) {
+    const [t0, r0] = p[i - 1], [t1, r1] = p[i];
+    return t1 === t0 ? r1 : r0 + (r1 - r0) * (t - t0) / (t1 - t0);
+  }
+  return p[p.length - 1][1];
+}
+
+function drawHistory(t) {
+  const p = P(), unit = p.fruit / MOON_RUNG, root = $('history');
+  const max = FRUITS.length * unit * 1.12;
+  const svg = root.querySelector('svg.draw'); svg.innerHTML = '';
+  const G = 232, TOP = 14, Y = h => G - (h / max) * (G - TOP);
+  const mono = { 'font-family': 'Space Mono, monospace' };
+  el('line', { x1: 21, x2: 21, y1: TOP, y2: G, stroke: '#bbb' }, svg);
+  el('line', { x1: 21, x2: 310, y1: G, y2: G, stroke: '#111' }, svg);
+  for (let v = 0; v <= max; v += 10) {
+    el('line', { x1: 18, x2: 24, y1: Y(v), y2: Y(v), stroke: '#bbb' }, svg);
+    const tx = el('text', { x: 14, y: Y(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); tx.textContent = v;
+  }
+  FRUITS.forEach(([name, appear, a, b], k) => {
+    if (Math.max(0, turnOf(appear)) > t) return;                      // not yet on the horizon
+    const y = Y((k + 1) * unit);
+    const eaten = [[0, a], [1, b]].filter(x => x[1] && turnOf(x[1]) <= t).sort((x, z) => turnOf(x[1]) - turnOf(z[1])).map(x => SIDES[x[0]]);
+    el('line', { x1: 150, x2: 300, y1: y, y2: y, stroke: k + 1 === MOON_RUNG ? '#6d7f1c' : '#efeee9', 'stroke-dasharray': k + 1 === MOON_RUNG ? '2 3' : '' }, svg);
+    glyph(svg, FRUIT, 298, y - 4, 2, eaten.length ? '#d6d5cf' : '#c8e054');
+    const lab = el('text', { x: 293, y: y - 2, 'text-anchor': 'end', 'font-size': 7, fill: eaten.length ? '#9a9a96' : '#6d7f1c', ...mono }, svg);
+    lab.textContent = name + (eaten.length ? ' · ' + eaten.join(', ') : '');
+  });
+  const cols = [62, 118], fills = ['#111', '#9a9a96'];
+  [0, 1].forEach(i => {
+    const x = cols[i], y = Y(rungAt(i, t) * unit);
+    el('line', { x1: x, x2: x, y1: G, y2: y, stroke: fills[i], 'stroke-dasharray': i ? '3 3' : '' }, svg);
+    glyph(svg, CRAB, x - 13.5, y - 18, 3, fills[i]);
+    const lab = el('text', { x, y: G + 12, 'text-anchor': 'middle', 'font-size': 9, fill: '#111', ...mono }, svg); lab.textContent = SIDES[i];
+  });
+
+  const past = EVENTS.filter(e => e.t <= t && !(e.kind === 'appear' && e.t === 0 && e.rung === 1)).slice(-3).reverse();
+  root.querySelector('.log').innerHTML = `<div>${dateAt(t)}</div>` + past.map(e =>
+    `<div>${fmt(e.date)} · ${e.kind === 'appear' ? 'on the horizon: ' + e.name : SIDES[e.side] + ' · ' + e.name + ' (' + e.kind + ')'}</div>`).join('');
+
+  const c = root.querySelector('svg.chart'); c.innerHTML = '';
+  const L = 26, R = 312, B = 132, CT = 8, X = u => L + (u / T) * (R - L), CY = h => B - (h / max) * (B - CT);
+  for (let v = 0; v <= max; v += 10) {
+    el('line', { x1: L, x2: R, y1: CY(v), y2: CY(v), stroke: '#efeee9' }, c);
+    const tx = el('text', { x: L - 5, y: CY(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, c); tx.textContent = v;
+  }
+  [1960, 1965, 1970, 1975].forEach(yr => { const u = turnOf(yr + '-01-01'); const tx = el('text', { x: X(u), y: B + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, c); tx.textContent = yr; });
+  el('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#111' }, c);
+  el('line', { x1: L, x2: R, y1: CY(p.fruit), y2: CY(p.fruit), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, c);
+  [[0, '#111', ''], [1, '#9a9a96', '4 3']].forEach(([i, col, d]) => {
+    const pts = []; for (let u = 0; u <= t; u += 0.5) pts.push(`${X(u).toFixed(1)},${CY(rungAt(i, u) * unit).toFixed(1)}`);
+    pts.push(`${X(t).toFixed(1)},${CY(rungAt(i, t) * unit).toFixed(1)}`);
+    el('polyline', { points: pts.join(' '), fill: 'none', stroke: col, 'stroke-width': 1.6, 'stroke-dasharray': d, 'stroke-linejoin': 'round' }, c);
+  });
+  EVENTS.filter(e => e.kind !== 'appear' && e.t <= t).forEach(e => {
+    const col = e.side ? '#9a9a96' : '#111';
+    el('circle', { cx: X(e.t), cy: CY(e.rung * unit), r: 2.2, fill: e.kind === 'first' ? col : '#fff', stroke: col, 'stroke-width': 1 }, c);
+  });
+
+  const firsts = [0, 1].map(s => EVENTS.filter(e => e.kind === 'first' && e.side === s && e.t <= t).length);
+  const horizon = FRUITS.filter(f => Math.max(0, turnOf(f[1])) <= t).length;
+  root.querySelector('.stats').innerHTML =
+    `<div class="stat"><div class="l">firsts · USSR</div><div class="v">${firsts[0]}</div></div>` +
+    `<div class="stat"><div class="l">firsts · USA</div><div class="v">${firsts[1]}</div></div>` +
+    `<div class="stat"><div class="l">fruits on horizon</div><div class="v">${horizon}</div></div>`;
+}
+
 function render() {
   const max = scaleMax();
   scenes.forEach(s => { drawScene(s, max); drawChart(s, max); });
+  drawHistory(scenes[0].t);
   $('tick').textContent = `turn ${scenes[0].t} / ${T}`;
   const p = P();
   $('o-hunger').textContent = p.hunger.toFixed(1); $('o-fruit').textContent = p.fruit;
@@ -236,8 +364,16 @@ function stop() { clearInterval(timer); timer = null; $('run').textContent = 'ru
 $('run').onclick = () => {
   if (timer) return stop();
   if (scenes[0].t >= T) reset(false);
-  timer = setInterval(step, 70); $('run').textContent = 'pause';
+  start();
 };
+function start() {
+  clearInterval(timer);
+  timer = setInterval(step, 1000 / +$('tps').value); $('run').textContent = 'pause';
+}
+$('tps').addEventListener('input', () => {        // change speed without restarting the run
+  $('o-tps').textContent = $('tps').value;
+  if (timer) start();
+});
 $('step').onclick = () => { stop(); if (scenes[0].t < T) step(); };
 $('reset').onclick = () => { stop(); reset(true); };
 ['hunger', 'fruit', 'k', 'margin', 'head'].forEach(id => $(id).addEventListener('input', () => { stop(); reset(false); }));
