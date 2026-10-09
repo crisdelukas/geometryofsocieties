@@ -154,7 +154,7 @@ const fx = Math.random;  // flicker is not seeded, so it never repeats exactly
 function setPixel(icon, i, on) {
   const r = icon.rects[i];
   r.style.transitionDelay = "0ms";
-  r.style.transitionDuration = (220 + fx() * 520) + "ms";
+  r.style.transitionDuration = "Oms";
   r.style.opacity = on ? 1 : 0;
 }
 function tick(icon) {
@@ -208,7 +208,7 @@ if (still) {
     const start = k * STAGGER, order = growthOrder(icon.base);
     order.forEach((i, n) => {
       const r = icon.rects[i];
-      r.style.transitionDuration = (140 + fx() * 220) + "ms";
+      r.style.transitionDuration = "Oms";
       r.style.transitionDelay = Math.round(start + (n / order.length) * BUILD * (0.8 + fx() * 0.4)) + "ms";
     });
     icon.label.style.transitionDelay = (start + 200) + "ms";
