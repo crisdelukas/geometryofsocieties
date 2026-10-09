@@ -28,7 +28,10 @@
   .eq b { font-weight: 700; }
   .eq .c { color: var(--muted); }
 
-  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 28px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px 36px; margin-bottom: 18px; }
+  .group { display: grid; gap: 12px; }
+  .gh { font-family: var(--mono); font-size: 11px; font-weight: 700; border-bottom: 1px solid var(--ink); padding-bottom: 4px; }
+  .gh em { font-style: normal; font-weight: 400; color: var(--muted); }
   .ctl { font-family: var(--mono); font-size: 11px; }
   .ctl .top { display: flex; justify-content: space-between; margin-bottom: 4px; }
   .ctl .top span:last-child { font-weight: 700; }
@@ -55,7 +58,7 @@
   .scene svg { width: 100%; display: block; }
   .readout { font-family: var(--mono); font-size: 10.5px; display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 2px 12px; margin: 8px 0 18px; }
   .readout .h { color: var(--muted); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
   .stat { border-top: 1px solid var(--ink); padding-top: 6px; }
   .stat .l { font-family: var(--mono); font-size: 10px; color: var(--muted); }
   .stat .v { font-size: 20px; font-weight: 500; margin-top: 2px; }
@@ -63,6 +66,7 @@
   .legend i { display: inline-block; width: 18px; height: 0; vertical-align: middle; margin-right: 6px; border-top: 2px solid var(--ink); }
   .legend i.b { border-top: 2px dashed var(--muted); }
   .legend i.f { border-top: 2px dotted var(--fruit-ink); }
+  .legend i.h { border-top: 4px solid rgba(17,17,17,0.12); }
 </style>
 </head>
 <body>
@@ -74,7 +78,7 @@
 
 <main>
   <h1>phase_01 — rank</h1>
-  <p class="sub">Two pairs of crabs, with the same hunger and the same economy, climb toward fruits that keep appearing on the horizon. In one pair each crab looks only at the fruits. In the other, each crab also looks at its rival.</p>
+  <p class="sub">Two pairs of crabs climb toward fruits that keep appearing on the horizon. Crab A plays the USSR and crab B the USA; their traits can be tuned so the model resembles the real race, drawn faintly behind each graph. In one pair each crab looks only at the fruits. In the other, each crab also looks at its rival.</p>
 
 <div class="eq"><b>intrinsic</b> = hunger                          <span class="c">// there is always a next fruit</span>
 <b>extrinsic</b> = k · max(0, h_rival + margin − h)   <span class="c">// pushes until it is margin ahead</span>
@@ -88,20 +92,34 @@
 <span class="c">absolute pair:</span> k = 0        <span class="c">relational pair:</span> k > 0</div>
 
   <div class="controls">
-    <div class="ctl"><div class="top"><span>hunger</span><span id="o-hunger"></span></div>
-      <input type="range" id="hunger" min="0.1" max="2" step="0.1" value="0.5"><div class="hint">intrinsic craving per turn</div></div>
-    <div class="ctl"><div class="top"><span>tank</span><span id="o-tank"></span></div>
-      <input type="range" id="tank" min="2" max="30" step="1" value="10"><div class="hint">energy when full · same for all</div></div>
-    <div class="ctl"><div class="top"><span>recovery</span><span id="o-rec"></span></div>
-      <input type="range" id="rec" min="0.2" max="3" step="0.1" value="1"><div class="hint">energy regained per turn of rest</div></div>
-    <div class="ctl"><div class="top"><span>fruit spacing</span><span id="o-fruit"></span></div>
-      <input type="range" id="fruit" min="3" max="15" step="1" value="6"><div class="hint">distance between horizons</div></div>
-    <div class="ctl"><div class="top"><span>k · comparison</span><span id="o-k"></span></div>
-      <input type="range" id="k" min="0.05" max="0.9" step="0.05" value="0.3"><div class="hint">relational pair only</div></div>
-    <div class="ctl"><div class="top"><span>margin</span><span id="o-margin"></span></div>
-      <input type="range" id="margin" min="0" max="10" step="0.5" value="3"><div class="hint">how far ahead feels safe</div></div>
-    <div class="ctl"><div class="top"><span>head start</span><span id="o-head"></span></div>
-      <input type="range" id="head" min="0" max="20" step="1" value="5"><div class="hint">one crab, chosen at random</div></div>
+    <div class="group"><div class="gh">crab A <em>· plays the USSR</em></div>
+      <div class="ctl"><div class="top"><span>starting height</span><span id="o-startA"></span></div>
+        <input type="range" id="startA" min="0" max="30" step="1" value="8"><div class="hint">what it already has</div></div>
+      <div class="ctl"><div class="top"><span>tank</span><span id="o-tankA"></span></div>
+        <input type="range" id="tankA" min="2" max="30" step="1" value="8"><div class="hint">energy when full</div></div>
+      <div class="ctl"><div class="top"><span>recovery</span><span id="o-recA"></span></div>
+        <input type="range" id="recA" min="0.2" max="3" step="0.1" value="0.8"><div class="hint">energy regained per turn of rest</div></div>
+      <div class="ctl"><div class="top"><span>hunger</span><span id="o-hungerA"></span></div>
+        <input type="range" id="hungerA" min="0.1" max="2" step="0.1" value="0.5"><div class="hint">its own craving per turn</div></div>
+    </div>
+    <div class="group"><div class="gh">crab B <em>· plays the USA</em></div>
+      <div class="ctl"><div class="top"><span>starting height</span><span id="o-startB"></span></div>
+        <input type="range" id="startB" min="0" max="30" step="1" value="0"><div class="hint">what it already has</div></div>
+      <div class="ctl"><div class="top"><span>tank</span><span id="o-tankB"></span></div>
+        <input type="range" id="tankB" min="2" max="30" step="1" value="14"><div class="hint">energy when full</div></div>
+      <div class="ctl"><div class="top"><span>recovery</span><span id="o-recB"></span></div>
+        <input type="range" id="recB" min="0.2" max="3" step="0.1" value="1.4"><div class="hint">energy regained per turn of rest</div></div>
+      <div class="ctl"><div class="top"><span>hunger</span><span id="o-hungerB"></span></div>
+        <input type="range" id="hungerB" min="0.1" max="2" step="0.1" value="0.5"><div class="hint">its own craving per turn</div></div>
+    </div>
+    <div class="group"><div class="gh">shared</div>
+      <div class="ctl"><div class="top"><span>fruit spacing</span><span id="o-fruit"></span></div>
+        <input type="range" id="fruit" min="3" max="15" step="1" value="6"><div class="hint">distance between horizons</div></div>
+      <div class="ctl"><div class="top"><span>k · comparison</span><span id="o-k"></span></div>
+        <input type="range" id="k" min="0.05" max="0.9" step="0.05" value="0.3"><div class="hint">relational pair only</div></div>
+      <div class="ctl"><div class="top"><span>margin</span><span id="o-margin"></span></div>
+        <input type="range" id="margin" min="0" max="10" step="0.5" value="3"><div class="hint">how far ahead feels safe</div></div>
+    </div>
   </div>
   <div class="buttons">
     <button id="run">run</button><button id="step">step</button><button id="reset">reset</button>
@@ -115,7 +133,7 @@
       <svg class="draw" viewBox="0 0 320 250" aria-label="drawing of the absolute pair"></svg>
       <div class="readout"></div>
       <svg class="chart" viewBox="0 0 320 150" aria-label="height over time, absolute pair"></svg>
-      <div class="legend"><span><i></i>crab A</span><span><i class="b"></i>crab B</span><span><i class="f"></i>fruit</span></div>
+      <div class="legend"><span><i></i>crab A</span><span><i class="b"></i>crab B</span><span><i class="h"></i>history</span></div>
       <div class="stats"></div>
     </section>
     <section class="scene" id="relational">
@@ -123,7 +141,7 @@
       <svg class="draw" viewBox="0 0 320 250" aria-label="drawing of the relational pair"></svg>
       <div class="readout"></div>
       <svg class="chart" viewBox="0 0 320 150" aria-label="height over time, relational pair"></svg>
-      <div class="legend"><span><i></i>crab A</span><span><i class="b"></i>crab B</span><span><i class="f"></i>fruit</span></div>
+      <div class="legend"><span><i></i>crab A</span><span><i class="b"></i>crab B</span><span><i class="h"></i>history</span></div>
       <div class="stats"></div>
     </section>
     <section class="scene" id="history">
@@ -141,18 +159,20 @@
 <script>
 const T = 100;
 const $ = id => document.getElementById(id);
-const P = () => ({ hunger: +$('hunger').value, tank: +$('tank').value, rec: +$('rec').value, fruit: +$('fruit').value, k: +$('k').value, margin: +$('margin').value, head: +$('head').value });
+const C = id => [+$(id + 'A').value, +$(id + 'B').value];
+const P = () => ({ start: C('start'), tank: C('tank'), rec: C('rec'), hunger: C('hunger'),
+                   fruit: +$('fruit').value, k: +$('k').value, margin: +$('margin').value });
 const SVGNS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const e = document.createElementNS(SVGNS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; };
 const f1 = v => v.toFixed(1);
 
 /* ---- model -------------------------------------------------------- */
-let leader = 0, scenes, timer = null;
+let scenes, timer = null;
 
 function makeScene(id, relational) {
   const tank = P().tank;
-  return { id, relational, t: 0, h: [0, 0], E: [tank, tank], resting: [false, false], restTurns: [0, 0],
-           hist: [[0], [0]], ehist: [[tank], [tank]], intr: [0, 0], extr: [0, 0], spend: [0, 0],
+  return { id, relational, t: 0, h: [0, 0], E: [tank[0], tank[1]], resting: [false, false], restTurns: [0, 0],
+           hist: [[0], [0]], ehist: [[tank[0]], [tank[1]]], intr: [0, 0], extr: [0, 0], spend: [0, 0],
            fruits: [], eaten: [0, 0], firsts: [0, 0] };
 }
 // a crab eats every fruit at or below its height; when the highest fruit is eaten for the first time, a new one appears
@@ -169,10 +189,9 @@ function eatAndSpawn(s, p) {
   }
 }
 function reset(reroll) {
-  if (reroll) leader = Math.random() < 0.5 ? 0 : 1;
   const p = P();
   scenes = [makeScene('absolute', false), makeScene('relational', true)];
-  scenes.forEach(s => { s.h[leader] = p.head; s.hist = [[s.h[0]], [s.h[1]]]; eatAndSpawn(s, p); });
+  scenes.forEach(s => { s.h = [...p.start]; s.hist = [[s.h[0]], [s.h[1]]]; eatAndSpawn(s, p); });
   render();
 }
 function step() {
@@ -181,15 +200,15 @@ function step() {
     if (s.t >= T) return;
     const want = [0, 1].map(i => {                          // decided on the same snapshot
       const j = 1 - i;
-      s.intr[i] = p.hunger;
+      s.intr[i] = p.hunger[i];
       s.extr[i] = s.relational ? p.k * Math.max(0, s.h[j] + p.margin - s.h[i]) : 0;
       return s.intr[i] + s.extr[i];
     });
     [0, 1].forEach(i => {
       if (s.resting[i]) {                                   // resting: no climb, refill
         s.spend[i] = 0; s.restTurns[i]++;
-        s.E[i] = Math.min(p.tank, s.E[i] + p.rec);
-        if (s.E[i] >= p.tank) s.resting[i] = false;
+        s.E[i] = Math.min(p.tank[i], s.E[i] + p.rec[i]);
+        if (s.E[i] >= p.tank[i]) s.resting[i] = false;
       } else {                                              // climbing: spend what you want, as far as energy allows
         const sp = Math.min(want[i], s.E[i]);
         s.spend[i] = sp; s.h[i] += sp; s.E[i] -= sp;
@@ -243,16 +262,16 @@ function drawScene(s, max) {
     el('line', { x1: x, x2: x, y1: G, y2: y, stroke: fills[i], 'stroke-width': 1, 'stroke-dasharray': i ? '3 3' : '' }, svg);
     glyph(svg, CRAB, x - 13.5, y - 18, 3, s.resting[i] ? '#d6d5cf' : fills[i]);
     if (s.resting[i]) { const z = el('text', { x: x + 16, y: y - 16, 'font-size': 8, 'font-family': 'Space Mono, monospace', fill: '#9a9a96' }, svg); z.textContent = 'zz'; }
-    const bh = 30, fill = s.E[i] / p.tank;                  // energy bar beside the crab
+    const bh = 30, fill = s.E[i] / p.tank[i];                  // energy bar beside the crab
     el('rect', { x: x + 17, y: G - bh, width: 4, height: bh, fill: 'none', stroke: '#bbb', 'stroke-width': 0.6 }, svg);
     el('rect', { x: x + 17, y: G - bh * fill, width: 4, height: bh * fill, fill: s.resting[i] ? '#d6d5cf' : fills[i] }, svg);
     const lab = el('text', { x: x, y: G + 12, 'text-anchor': 'middle', 'font-size': 9, 'font-family': 'Space Mono, monospace', fill: '#111' }, svg);
-    lab.textContent = (i ? 'B' : 'A') + (i === leader ? ' ·' : '');
+    lab.textContent = i ? 'B · USA' : 'A · USSR';
   });
 
   const ro = root.querySelector('.readout');
   ro.innerHTML = '<span class="h"></span><span class="h">want</span><span class="h">energy</span><span class="h">state</span>' +
-    [0, 1].map(i => `<span>${i ? 'B' : 'A'}</span><span>${f1(s.intr[i] + s.extr[i])}</span><span>${f1(s.E[i])} / ${p.tank}</span><span>${s.resting[i] ? 'resting' : 'climbing'}</span>`).join('');
+    [0, 1].map(i => `<span>${i ? 'B' : 'A'}</span><span>${f1(s.intr[i] + s.extr[i])}</span><span>${f1(s.E[i])} / ${p.tank[i]}</span><span>${s.resting[i] ? 'resting' : 'climbing'}</span>`).join('');
 }
 function drawChart(s, max) {
   const p = P(), svg = $(s.id).querySelector('svg.chart');
@@ -267,12 +286,16 @@ function drawChart(s, max) {
   el('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#111' }, svg);
   s.fruits.forEach(f => el('line', { x1: L, x2: R, y1: Y(f.h), y2: Y(f.h), stroke: '#c8e054', 'stroke-width': 0.6 }, svg));
   svg.setAttribute('viewBox', '0 0 320 196');               // energy strip under the height chart
-  const EB = 190, ET = 160, EY = e => EB - (e / p.tank) * (EB - ET);
+  const EB = 190, ET = 160, EY = e => EB - (e / Math.max(...p.tank)) * (EB - ET);
   el('line', { x1: L, x2: R, y1: EB, y2: EB, stroke: '#bbb' }, svg);
   const et = el('text', { x: L - 5, y: (EB + ET) / 2 + 3, 'text-anchor': 'end', 'font-size': 7, 'font-family': 'Space Mono, monospace', fill: '#9a9a96' }, svg); et.textContent = 'E';
   [[0, '#111', ''], [1, '#9a9a96', '3 2']].forEach(([i, c, d]) => {
     const pts = s.ehist[i].map((e, t) => `${X(t).toFixed(1)},${EY(e).toFixed(1)}`).join(' ');
     el('polyline', { points: pts, fill: 'none', stroke: c, 'stroke-width': 0.9, 'stroke-dasharray': d }, svg);
+  });
+  [[0, '#111'], [1, '#9a9a96']].forEach(([i, c]) => {      // the real race, faint, behind the model
+    const pts = []; for (let u = 0; u <= T; u += 1) pts.push(`${X(u).toFixed(1)},${Y(rungAt(i, u) * p.fruit).toFixed(1)}`);
+    el('polyline', { points: pts.join(' '), fill: 'none', stroke: c, 'stroke-width': 3, 'stroke-opacity': 0.12, 'stroke-linejoin': 'round' }, svg);
   });
   [[0, '#111', ''], [1, '#9a9a96', '4 3']].forEach(([i, c, d]) => {
     const pts = s.hist[i].map((h, t) => `${X(t).toFixed(1)},${Y(h).toFixed(1)}`).join(' ');
@@ -282,7 +305,14 @@ function drawChart(s, max) {
   $(s.id).querySelector('.stats').innerHTML =
     `<div class="stat"><div class="l">fruits · A / B</div><div class="v">${s.eaten[0]} / ${s.eaten[1]}</div></div>` +
     `<div class="stat"><div class="l">firsts · A / B</div><div class="v">${s.firsts[0]} / ${s.firsts[1]}</div></div>` +
-    `<div class="stat"><div class="l">resting · A / B</div><div class="v">${s.restTurns[0]} / ${s.restTurns[1]}</div></div>`;
+    `<div class="stat"><div class="l">resting · A / B</div><div class="v">${s.restTurns[0]} / ${s.restTurns[1]}</div></div>` +
+    `<div class="stat"><div class="l">distance to history</div><div class="v">${f1(distance(s, p))}</div></div>`;
+}
+// how far the model's crabs are from the real USSR (A) and USA (B): root-mean-square gap in height so far
+function distance(s, p) {
+  let sum = 0, n = 0;
+  for (let t = 0; t <= s.t; t++) for (const i of [0, 1]) { const d = s.hist[i][t] - rungAt(i, t) * p.fruit; sum += d * d; n++; }
+  return Math.sqrt(sum / n);
 }
 /* ---- history ------------------------------------------------------ */
 // [fruit, appears on horizon, USSR reached, USA reached]  (null = never in range)
@@ -397,8 +427,11 @@ function render() {
   drawHistory(scenes[0].t, max);
   $('tick').textContent = `turn ${scenes[0].t} / ${T}`;
   const p = P();
-  $('o-hunger').textContent = p.hunger.toFixed(1); $('o-tank').textContent = p.tank; $('o-rec').textContent = p.rec.toFixed(1); $('o-fruit').textContent = p.fruit;
-  $('o-k').textContent = p.k.toFixed(2); $('o-margin').textContent = p.margin.toFixed(1); $('o-head').textContent = p.head;
+  ['A', 'B'].forEach((c, i) => {
+    $('o-start' + c).textContent = p.start[i]; $('o-tank' + c).textContent = p.tank[i];
+    $('o-rec' + c).textContent = p.rec[i].toFixed(1); $('o-hunger' + c).textContent = p.hunger[i].toFixed(1);
+  });
+  $('o-fruit').textContent = p.fruit; $('o-k').textContent = p.k.toFixed(2); $('o-margin').textContent = p.margin.toFixed(1);
 }
 
 /* ---- controls ----------------------------------------------------- */
@@ -418,7 +451,7 @@ $('tps').addEventListener('input', () => {        // change speed without restar
 });
 $('step').onclick = () => { stop(); if (scenes[0].t < T) step(); };
 $('reset').onclick = () => { stop(); reset(true); };
-['hunger', 'tank', 'rec', 'fruit', 'k', 'margin', 'head'].forEach(id => $(id).addEventListener('input', () => { stop(); reset(false); }));
+['startA', 'tankA', 'recA', 'hungerA', 'startB', 'tankB', 'recB', 'hungerB', 'fruit', 'k', 'margin'].forEach(id => $(id).addEventListener('input', () => { stop(); reset(false); }));
 reset(true);
 </script>
 </body>
