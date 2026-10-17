@@ -63,6 +63,15 @@
   .gloss td:first-child { font-weight: 700; white-space: nowrap; }
   .gloss td:nth-child(2) { color: #555; white-space: nowrap; }
   .gloss tr.sec td { color: var(--muted); font-weight: 400; padding-top: 14px; border-bottom: none; }
+  .calib { border-top: 1px solid var(--ink); padding-top: 18px; margin: 0 0 36px; }
+  .calib-top { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .calib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px 40px; margin-top: 18px; }
+  .calib-grid h3 { font-family: var(--mono); font-size: 12px; margin: 0 0 8px; }
+  .calib-grid .big { font-size: 28px; font-weight: 500; }
+  .calib-grid .big small { font-size: 12px; color: var(--muted); font-family: var(--mono); font-weight: 400; }
+  .calib-grid table { font-family: var(--mono); font-size: 11px; border-collapse: collapse; margin: 8px 0 12px; }
+  .calib-grid td { padding: 2px 16px 2px 0; }
+  .calib-grid td:first-child { color: var(--muted); }
   .note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.7; max-width: 760px; margin-top: 40px; }
 </style>
 </head>
@@ -153,16 +162,23 @@
       <div class="ctl"><div class="top"><span>funding</span><span id="o-fund"></span></div>
         <input type="range" id="fund" min="0" max="15" step="0.5" value="6"><div class="hint">investor money per turn when the gap is full</div></div>
       <div class="ctl"><div class="top"><span>entry</span><span id="o-entry"></span></div>
-        <input type="range" id="entry" min="0" max="0.3" step="0.01" value="0.08"><div class="hint">chance per turn of a new firm when the gap is full</div></div>
+        <input type="range" id="entry" min="0" max="0.3" step="0.01" value="0.08"><div class="hint">random mode only · chance per turn of a new firm when the gap is full</div></div>
       <div class="ctl"><div class="top"><span>exit share</span><span id="o-exit"></span></div>
-        <input type="range" id="exit" min="0" max="0.1" step="0.005" value="0.04"><div class="hint">below this share for 20 turns, a firm leaves</div></div>
+        <input type="range" id="exit" min="0" max="0.1" step="0.005" value="0.04"><div class="hint">random mode only · below this share for 20 turns, a firm leaves</div></div>
     </div>
   </div>
   <div class="buttons">
     <button id="run">run</button><button id="step">step</button><button id="reset">reset</button><button id="seed">new seed</button>
+    <label class="tick" style="margin-left:16px">entry <select id="mode" style="font-family:var(--mono);font-size:11px"><option value="historical" selected>historical · labs enter as in the data</option><option value="random">random · driven by the gap to belief</option></select></label>
     <span class="tick" id="tick">turn 0 / 150</span>
     <label class="speed" style="margin-left:24px">turns <input type="range" id="horizon" min="50" max="500" step="10" value="150" style="width:110px"> <b id="o-horizon">150</b></label>
     <label class="speed" style="margin-left:24px">ticks per second <input type="range" id="tps" min="1" max="30" step="1" value="12"> <b id="o-tps">12</b></label>
+  </div>
+
+  <div class="calib">
+    <div class="calib-top"><button id="calibrate">calibrate</button>
+      <span id="calib-status">historical mode · tries 1,500 random combinations of the free sliders for each world and keeps the one closest to the real labs</span></div>
+    <div class="calib-grid" id="calib-out"></div>
   </div>
 
   <div class="scenes">
@@ -203,7 +219,7 @@
       <div class="log"></div>
     </section>
   </div>
-  <p class="note">History panel: Epoch AI, Epoch Capabilities Index (ECI) model scores and Frontier AI Models database, downloaded Oct 2026, CC BY 4.0. Each lab's crab sits at the best ECI it has released so far, minus 100 (ECI's zero point is arbitrary; the shift puts labs on the crabs' scale), and jumps when a better model comes out; a lab appears with its first scored model. Compute dots are single models whose training compute Epoch could estimate; most labs disclose little, so the record is sparse. The window, 30 Nov 2022 to 7 Oct 2026, is stretched over the same number of turns as the models. Both worlds start from the same single pioneer firm and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Each firm keeps the colour of its order of entry; the leader's number is in bold; exited firms fade. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
+  <p class="note">Historical mode: each crab is one lab, entering on the turn of its first scored model and at that model’s level; all labs share the same hunger, and nobody exits (no real lab has). Distance to history is the root-mean-square gap between each crab and its own lab, in innovation units. History panel: Epoch AI, Epoch Capabilities Index (ECI) model scores and Frontier AI Models database, downloaded Oct 2026, CC BY 4.0. Each lab's crab sits at the best ECI it has released so far, minus 100 (ECI's zero point is arbitrary; the shift puts labs on the crabs' scale), and jumps when a better model comes out; a lab appears with its first scored model. Compute dots are single models whose training compute Epoch could estimate; most labs disclose little, so the record is sparse. The window, 30 Nov 2022 to 7 Oct 2026, is stretched over the same number of turns as the models. Both worlds start from the same single pioneer firm and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Each firm keeps the colour of its order of entry; the leader's number is in bold; exited firms fade. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
 </main>
 
 <script>
@@ -221,18 +237,27 @@ function rng(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.im
 /* ---- model -------------------------------------------------------- */
 let SEED = 7, worlds, timer = null;
 const SEED_MONEY = 8;
-function newFirm(w, p, t) {
-  const id = w.firms.length + 1;
-  w.firms.push({ id, born: t, died: null, alive: true, compute: 0, h: 0, money: SEED_MONEY,
-    hunger: p.hunger * (0.6 + 0.8 * w.rand()), want: 0, spend: 0, low: 0, hist: [], shist: [] });
-  w.log.unshift(`turn ${t} · firm ${id} enters`);
+function newFirm(w, p, t, lab) {
+  const id = lab ? lab.idx + 1 : w.firms.length + 1;
+  // historical: a lab enters at the level of its first measured model (compute that gives that h)
+  const h0 = lab ? lab.h0 : 0, compute0 = Math.exp(h0 / 10) - 1;
+  w.firms.push({ id, name: lab ? lab.name : null, born: t, died: null, alive: true, compute: compute0, compute0, h: h0, money: SEED_MONEY,
+    hunger: lab ? p.hunger : p.hunger * (0.6 + 0.8 * w.rand()), want: 0, spend: 0, low: 0, hist: [], shist: [] });
+  w.log.unshift(`turn ${t} · ${lab ? lab.name : 'firm ' + id} enters`);
 }
+const MODE = () => $('mode').value;
+// entry schedule from the data: each lab's first scored model, and its level then
+const schedule = () => REAL.map((l, idx) => ({ idx, name: l.name, turn: turnOfDate(l.steps[0][0]), h0: Math.max(0, l.steps[0][1] - ECI_SHIFT) }));
 function makeWorld(id, relational, p) {
   const w = { id, relational, t: 0, firms: [], rand: rng(SEED), log: [], entries: 0, exits: 0, invest: 0 };
-  newFirm(w, p, 0);                                           // one pioneer; everyone else has to enter
-  w.log = ['turn 0 · firm 1 starts alone'];
+  w.historical = MODE() === 'historical';
+  if (w.historical) { w.queue = schedule(); w.log = ['30 Nov 2022 · ChatGPT launches · labs enter as in the data']; enterDue(w, p); }
+  else { newFirm(w, p, 0); w.log = ['turn 0 · firm 1 starts alone']; }
   record(w, p);
   return w;
+}
+function enterDue(w, p) {
+  while (w.queue.length && w.queue[0].turn <= w.t) { const lab = w.queue.shift(); newFirm(w, p, w.t, lab); w.entries++; }
 }
 const alive = w => w.firms.filter(f => f.alive);
 function shares(w, p) {
@@ -264,16 +289,17 @@ function stepWorld(w, p) {
     f.h = 10 * Math.log(1 + f.compute);
   });
   // market and investors pay
-  const sh = shares(w, p), frontier = Math.max(...a.map(f => f.h));
+  const sh = shares(w, p), frontier = a.length ? Math.max(...a.map(f => f.h)) : 0;
   const gap = Math.max(0, p.belief - frontier) / p.belief;
   w.invest = p.fund * gap; w.gap = gap; w.frontier = frontier;
   a.forEach(f => { f.money += p.base + (p.rev + w.invest) * sh.get(f); });
-  // exit
-  a.forEach(f => {
+  // exit (random mode only)
+  if (!w.historical) a.forEach(f => {
     f.low = sh.get(f) < p.exit ? f.low + 1 : 0;
     if (f.low >= 20 && alive(w).length > 1) { f.alive = false; f.died = w.t + 1; w.exits++; w.log.unshift(`turn ${w.t + 1} · firm ${f.id} exits`); }
   });
   // entry
+  if (w.historical) { w.t++; enterDue(w, p); record(w, p); return; }
   if (alive(w).length < MAX_FIRMS && w.rand() < p.entry * gap) { newFirm(w, p, w.t + 1); w.entries++; } else w.rand();
   w.t++;
   record(w, p);
@@ -316,13 +342,18 @@ function drawWorld(w, max) {
     el('line', { x1: 18, x2: 24, y1: Y(v), y2: Y(v), stroke: '#bbb' }, svg);
     const t = el('text', { x: 16, y: Y(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = v;
   }
-  const n = w.firms.length, colW = 286 / Math.max(n, 4), px = Math.max(1.4, Math.min(3, colW / 11));
+  const n = w.historical ? REAL.length : w.firms.length, colW = 286 / Math.max(n, 4), px = Math.max(1.4, Math.min(3, colW / 11));
   w.firms.forEach((f, i) => {
-    const x = 26 + colW * (i + 0.5), y = Y(f.h);
+    const x = 26 + colW * ((w.historical ? f.id - 1 : i) + 0.5), y = Y(f.h);
     const col = colorOf(f), op = f.alive ? 1 : 0.22;
     const g = el('g', { opacity: f.alive ? 1 : 0.35 }, svg);
     el('line', { x1: x, x2: x, y1: G, y2: y, stroke: col, 'stroke-width': 0.6 }, g);
     glyph(g, CRAB, x - 4.5 * px, y - 6 * px - 1, px, col);
+    if (f.name) {
+      const lab = el('text', { x: x + 2, y: G + 8, 'text-anchor': 'end', 'font-size': 6.5, 'font-weight': f === leader ? 700 : 400,
+        fill: '#111', transform: `rotate(-40 ${x + 2} ${G + 8})`, ...mono }, svg);
+      lab.textContent = f.name; return;
+    }
     const lab = el('text', { x, y: G + 11, 'text-anchor': 'middle', 'font-size': 8, 'font-weight': f === leader ? 700 : 400, fill: f.alive ? '#111' : '#bbb', ...mono }, svg);
     lab.textContent = f.id;
     if (f.alive) {
@@ -330,7 +361,7 @@ function drawWorld(w, max) {
       s.textContent = Math.round(sh.get(f) * 100) + '%';
     }
   });
-  axisTitles(svg, 'innovation (h)', 'firms, in order of entry · share below', G + 33, 7);
+  axisTitles(svg, 'innovation (h)', w.historical ? '' : 'firms, in order of entry · share below', G + 33, 7);
   svg.setAttribute('viewBox', '0 0 320 252');
 
   // capability over time
@@ -395,8 +426,18 @@ function drawWorld(w, max) {
     `<div class="stat"><div class="l">concentration</div><div class="v">${hhi.toFixed(2)}</div></div>` +
     `<div class="stat"><div class="l">leader · share</div><div class="v">${leader ? leader.id + ' · ' + Math.round(sh.get(leader) * 100) + '%' : '—'}</div></div>` +
     `<div class="stat"><div class="l">frontier</div><div class="v">${f1(w.frontier ?? 0)}</div></div>` +
-    `<div class="stat"><div class="l">investment / turn</div><div class="v">${f1(w.invest)}</div></div>`;
+    `<div class="stat"><div class="l">${w.historical ? 'distance to history' : 'investment / turn'}</div><div class="v">${w.historical ? (distanceToHistory(w) ?? 0).toFixed(1) : f1(w.invest)}</div></div>`;
   root.querySelector('.log').innerHTML = w.log.slice(0, 4).map(l => `<div>${l}</div>`).join('');
+}
+// root-mean-square gap between each crab and its own lab, over the turns where both exist
+function distanceToHistory(w) {
+  if (!w.historical) return null;
+  let sum = 0, n = 0;
+  w.firms.forEach(f => {
+    const lab = REAL[f.id - 1];
+    f.hist.forEach((h, t) => { if (h === null || h === undefined) return; const r = realH(lab, t); if (r === null) return; sum += (h - r) ** 2; n++; });
+  });
+  return n ? Math.sqrt(sum / n) : null;
 }
 function render() {
   const max = scaleMax();
@@ -519,12 +560,70 @@ function drawHistory(t, max) {
     .map(x => `<div>${x.d.slice(0, 7)} · ${x.lab} · ${x.m} (${(x.e - ECI_SHIFT).toFixed(1)})</div>`).join('');
 }
 
+/* ---- calibration (historical mode) -------------------------------- */
+const FREE = { hunger: [0.2, 3, 0.1], kup: [0, 0.5, 0.01], kdown: [0, 1, 0.05], margin: [0, 15, 0.5], reach: [0, 1, 0.05],
+               cap: [0.5, 10, 0.5], beta: [0.5, 6, 0.1], rev: [0, 10, 0.5], base: [0, 1, 0.05], belief: [20, 120, 5], fund: [0, 15, 0.5] };
+const RELATIONAL_ONLY = ['kup', 'kdown', 'margin', 'reach'];
+const N_CAL = 1500;
+const pick = ([lo, hi, st]) => Math.round((lo + Math.random() * (hi - lo)) / st) * st;
+function runOnce(v, relational) {
+  const p = Object.assign(P(), v);
+  if (!relational) { p.kup = 0; p.kdown = 0; }
+  const w = makeWorld(relational ? 'relational' : 'absolute', relational, p);
+  while (w.t < T) stepWorld(w, p);
+  return { d: distanceToHistory(w), w };
+}
+function calibrate() {
+  const out = {};
+  for (const rel of [false, true]) {
+    const tries = [];
+    for (let n = 0; n < N_CAL; n++) {
+      const v = {}; for (const k in FREE) if (rel || !RELATIONAL_ONLY.includes(k)) v[k] = pick(FREE[k]);
+      tries.push({ v, d: runOnce(v, rel).d });
+    }
+    tries.sort((a, b) => a.d - b.d);
+    out[rel ? 'relational' : 'absolute'] = tries;
+  }
+  return out;
+}
+let lastCal = null;
+function showCalibration(res) {
+  lastCal = res;
+  const best = Math.min(res.absolute[0].d, res.relational[0].d), good = best * 1.25;
+  const labels = { hunger: 'hunger', kup: 'k_up', kdown: 'k_down', margin: 'margin', reach: 'reach', cap: 'capacity', beta: 'β', rev: 'revenue', base: 'base', belief: 'belief', fund: 'funding' };
+  $('calib-out').innerHTML = ['absolute', 'relational'].map(name => {
+    const tries = res[name], b = tries[0], ok = tries.filter(x => x.d <= good);
+    const range = k => { const xs = ok.map(x => x.v[k]).filter(x => x !== undefined); return xs.length ? Math.min(...xs).toFixed(2) + ' – ' + Math.max(...xs).toFixed(2) : '—'; };
+    const rows = Object.keys(b.v).map(k => `<tr><td>${labels[k]}</td><td>${(+b.v[k]).toFixed(2)}</td><td>${range(k)}</td></tr>`).join('');
+    return `<div><h3>${name}</h3>
+      <div class="big">${b.d.toFixed(1)} <small>innovation units from the real labs at best</small></div>
+      <div style="font-family:var(--mono);font-size:11px;color:#555;margin-top:4px">${ok.length} of ${N_CAL} combinations within ${good.toFixed(1)} (25% of the best overall)</div>
+      <table><tr><td></td><td>best</td><td>range among the good ones</td></tr>${rows}</table>
+      <button data-apply="${name}">apply best ${name}</button></div>`;
+  }).join('');
+  document.querySelectorAll('[data-apply]').forEach(btn => btn.onclick = () => {
+    const v = lastCal[btn.dataset.apply][0].v;
+    for (const k in v) $(k).value = v[k];
+    stop(); reset();
+  });
+}
+$('calibrate').onclick = () => {
+  if (MODE() !== 'historical') { $('mode').value = 'historical'; }
+  $('calib-status').textContent = 'searching…';
+  setTimeout(() => {
+    const res = calibrate();
+    $('calib-status').textContent = `done · ${N_CAL.toLocaleString()} combinations per world · press again for a new random sample`;
+    showCalibration(res); stop(); reset();
+  }, 30);
+};
+
 /* ---- controls ----------------------------------------------------- */
 function stop() { clearInterval(timer); timer = null; $('run').textContent = 'run'; }
 function start() { clearInterval(timer); timer = setInterval(step, 1000 / +$('tps').value); $('run').textContent = 'pause'; }
 $('run').onclick = () => { if (timer) return stop(); if (worlds[0].t >= T) reset(); start(); };
 $('step').onclick = () => { stop(); if (worlds[0].t < T) step(); };
 $('reset').onclick = () => { stop(); reset(); };
+$('mode').addEventListener('change', () => { stop(); reset(); });
 $('seed').onclick = () => { stop(); SEED = Math.floor(Math.random() * 1e6); reset(); };
 $('tps').addEventListener('input', () => { $('o-tps').textContent = $('tps').value; if (timer) start(); });
 ['horizon', 'hunger', 'kup', 'kdown', 'margin', 'reach', 'cap', 'beta', 'rev', 'base', 'belief', 'fund', 'entry', 'exit']
