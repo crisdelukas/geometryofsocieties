@@ -90,16 +90,19 @@
     <thead><tr><th>symbol</th><th>name</th><th>meaning</th></tr></thead>
     <tbody>
       <tr class="sec"><td colspan="3">humans · the people who lead each firm</td></tr>
-      <tr><td>hunger</td><td>own drive</td><td>how much the firm wants to innovate for its own sake, each turn</td></tr>
+      <tr><td>hunger</td><td>own drive</td><td>how fast the firm wants to grow for its own sake: % more capacity per turn</td></tr>
       <tr><td>k_up</td><td>ambition</td><td>extra drive per unit of distance to the firms above (the closest counts most)</td></tr>
       <tr><td>k_down</td><td>fear</td><td>extra drive when firms below come within the margin (the closest counts most)</td></tr>
       <tr><td>reach</td><td>horizon of rivalry</td><td>how much the next rival up or down counts compared with the closest one: 0 = neighbours only, 1 = all equally</td></tr>
       <tr><td>margin</td><td>safe distance</td><td>how far ahead of the firm below feels safe</td></tr>
-      <tr><td>want</td><td>craving</td><td>total drive this turn: hunger + ambition + fear</td></tr>
+      <tr><td>want</td><td>craving</td><td>total drive this turn, in % growth: hunger + ambition + fear</td></tr>
       <tr class="sec"><td colspan="3">technology · the model each firm builds</td></tr>
-      <tr><td>compute</td><td>accumulated effort</td><td>all the compute a firm has spent on its model so far</td></tr>
+      <tr><td>compute</td><td>accumulated training</td><td>all the compute a firm has used to train its models so far</td></tr>
       <tr><td>h</td><td>innovation</td><td>the model's level, 10 · ln(1 + compute): each step costs more than the last · later, the language intelligence frontier</td></tr>
-      <tr><td>capacity</td><td>infrastructure</td><td>the most compute a firm can use in one turn (servers, chips)</td></tr>
+      <tr><td>capacity</td><td>infrastructure</td><td>compute a firm owns per turn (servers, chips); grows when money is spent on building it</td></tr>
+      <tr><td>build cost</td><td>price of growth</td><td>money needed for one unit of new capacity</td></tr>
+      <tr><td>inference</td><td>serving users</td><td>capacity spent answering users; the market's total is the inference share of all capacity, split by share</td></tr>
+      <tr><td>training</td><td>building the next model</td><td>capacity left after inference; only this raises innovation</td></tr>
       <tr><td>frontier</td><td>best model</td><td>the highest innovation level among living firms</td></tr>
       <tr class="sec"><td colspan="3">market · the users, in aggregate</td></tr>
       <tr><td>share</td><td>market share</td><td>part of the market a firm holds: h^β / Σ h^β</td></tr>
@@ -121,11 +124,13 @@
 <b>want</b>       = hunger + k_up · Σ reach^(n−1) · (h_above,n − h) + k_down · Σ reach^(n−1) · max(0, margin − (h − h_below,n))
              <span class="c">// ambition toward every firm above, fear of every firm below; the n-th one away counts less</span>
 <span class="c">technology</span>
-<b>spend</b>      = min(want, money, capacity)          <b>compute</b> ← compute + spend
+<b>build</b>      = min(want% · capacity · cost, money) / cost      <b>capacity</b> ← capacity + build   <span class="c">// servers and chips</span>
+<b>inference</b>  = inference share · all capacity in the market · share        <span class="c">// serving users comes first</span>
+<b>training</b>   = capacity − inference                <b>compute</b> ← compute + training
 <b>h</b>          = 10 · ln(1 + compute)                <span class="c">// innovation level · big gains need ever bigger compute</span>
 <span class="c">market</span>
 <b>share</b>      = h^β / Σ h^β                          <span class="c">// β: how much users concentrate on the best</span>
-<b>money</b>      ← money − spend + base + revenue · share + investment
+<b>money</b>      ← money − build · cost + base + revenue · share + investment
 <span class="c">investors</span>
 <b>gap</b>        = max(0, belief − frontier) / belief   <span class="c">// how far the technology still looks from its promise</span>
 <b>investment</b> = funding · gap, split like share;   new firms enter with probability entry · gap
@@ -136,19 +141,21 @@
   <div class="controls">
     <div class="group"><div class="gh">humans</div>
       <div class="ctl"><div class="top"><span>hunger</span><span id="o-hunger"></span></div>
-        <input type="range" id="hunger" min="0.2" max="3" step="0.1" value="0.8"><div class="hint">average own craving per turn · each firm varies ±40%</div></div>
+        <input type="range" id="hunger" min="0.5" max="8" step="0.1" value="3"><div class="hint">% growth of capacity craved per turn · random mode varies ±40%</div></div>
       <div class="ctl"><div class="top"><span>k_up · ambition</span><span id="o-kup"></span></div>
-        <input type="range" id="kup" min="0" max="0.5" step="0.01" value="0.15"><div class="hint">relational only · pull of the firm above</div></div>
+        <input type="range" id="kup" min="0" max="0.5" step="0.01" value="0.1"><div class="hint">relational only · extra % growth per unit of gap above</div></div>
       <div class="ctl"><div class="top"><span>k_down · fear</span><span id="o-kdown"></span></div>
-        <input type="range" id="kdown" min="0" max="1" step="0.05" value="0.4"><div class="hint">relational only · push of the firm below</div></div>
+        <input type="range" id="kdown" min="0" max="1" step="0.05" value="0.3"><div class="hint">relational only · extra % growth per unit the firm below is inside the margin</div></div>
       <div class="ctl"><div class="top"><span>margin</span><span id="o-margin"></span></div>
         <input type="range" id="margin" min="0" max="15" step="0.5" value="5"><div class="hint">how far ahead of the one below feels safe</div></div>
       <div class="ctl"><div class="top"><span>reach</span><span id="o-reach"></span></div>
         <input type="range" id="reach" min="0" max="1" step="0.05" value="0.5"><div class="hint">0 = only the neighbours · 1 = every rival counts the same</div></div>
     </div>
     <div class="group"><div class="gh">technology <em>· and market</em></div>
-      <div class="ctl"><div class="top"><span>capacity</span><span id="o-cap"></span></div>
-        <input type="range" id="cap" min="0.5" max="10" step="0.5" value="4"><div class="hint">most compute a firm can use per turn</div></div>
+      <div class="ctl"><div class="top"><span>inference share</span><span id="o-infer"></span></div>
+        <input type="range" id="infer" min="0" max="0.9" step="0.05" value="0.6"><div class="hint">part of all compute that goes to serving users · split by share</div></div>
+      <div class="ctl"><div class="top"><span>build cost</span><span id="o-cost"></span></div>
+        <input type="range" id="cost" min="0.2" max="5" step="0.1" value="1"><div class="hint">money per unit of new capacity</div></div>
       <div class="ctl"><div class="top"><span>β · concentration</span><span id="o-beta"></span></div>
         <input type="range" id="beta" min="0.5" max="6" step="0.1" value="4"><div class="hint">1 = share ∝ innovation · high = winner takes most</div></div>
       <div class="ctl"><div class="top"><span>revenue</span><span id="o-rev"></span></div>
@@ -226,7 +233,7 @@
 let T = 150; const MAX_FIRMS = 14;
 const $ = id => document.getElementById(id);
 const P = () => ({ hunger: +$('hunger').value, kup: +$('kup').value, kdown: +$('kdown').value, margin: +$('margin').value, reach: +$('reach').value,
-  cap: +$('cap').value, beta: +$('beta').value, rev: +$('rev').value, base: +$('base').value,
+  infer: +$('infer').value, cost: +$('cost').value, beta: +$('beta').value, rev: +$('rev').value, base: +$('base').value,
   belief: +$('belief').value, fund: +$('fund').value, entry: +$('entry').value, exit: +$('exit').value });
 const SVGNS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const e = document.createElementNS(SVGNS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; };
@@ -241,11 +248,13 @@ function newFirm(w, p, t, lab) {
   const id = lab ? lab.idx + 1 : w.firms.length + 1;
   // historical: a lab enters at the level of its first measured model (compute that gives that h)
   const h0 = lab ? lab.h0 : 0, compute0 = Math.exp(h0 / 10) - 1;
-  w.firms.push({ id, name: lab ? lab.name : null, born: t, died: null, alive: true, compute: compute0, compute0, h: h0, money: SEED_MONEY,
+  const cap0 = Math.max(0.3, CAP_RATIO * compute0);              // entrants own capacity in proportion to what they have already built
+  w.firms.push({ id, name: lab ? lab.name : null, born: t, died: null, alive: true, compute: compute0, compute0, cap: cap0, train: 0, infer: 0, build: 0, h: h0, money: SEED_MONEY,
     hunger: lab ? p.hunger : p.hunger * (0.6 + 0.8 * w.rand()), want: 0, spend: 0, low: 0, hist: [], shist: [] });
   w.log.unshift(`turn ${t} · ${lab ? lab.name : 'firm ' + id} enters`);
 }
 const MODE = () => $('mode').value;
+const CAP_RATIO = 0.03;
 // entry schedule from the data: each lab's first scored model, and its level then
 const schedule = () => REAL.map((l, idx) => ({ idx, name: l.name, turn: turnOfDate(l.steps[0][0]), h0: Math.max(0, l.steps[0][1] - ECI_SHIFT) }));
 function makeWorld(id, relational, p) {
@@ -267,14 +276,14 @@ function shares(w, p) {
 function record(w, p) {
   const sh = shares(w, p);
   w.firms.forEach(f => { f.hist[w.t] = f.alive ? f.h : null; f.shist[w.t] = f.alive ? sh.get(f) : 0; });
-  w.spentHist = w.spentHist || []; w.spentHist[w.t] = w.firms.reduce((s, f) => s + f.compute, 0);
+  w.spentHist = w.spentHist || []; w.spentHist[w.t] = w.firms.reduce((s, f) => s + f.compute - (f.compute0 || 0), 0);
 }
 function stepWorld(w, p) {
   if (w.t >= T) return;
   const a = alive(w).slice().sort((x, y) => x.h - y.h);           // lowest first
   // humans decide how much they want, on the same snapshot
   a.forEach((f, i) => {
-    let want = f.hunger;
+    let want = f.hunger;                                            // in % growth of capacity per turn
     if (w.relational) {
       // every firm above pulls, every firm below threatens; the n-th one away counts reach^(n-1)
       for (let n = 1; i + n < a.length; n++) want += p.kup * Math.pow(p.reach, n - 1) * Math.max(0, a[i + n].h - f.h);
@@ -282,10 +291,18 @@ function stepWorld(w, p) {
     }
     f.want = want;
   });
-  // technology climbs
+  // infrastructure grows: humans buy the % growth they crave, as far as money allows
   a.forEach(f => {
-    f.spend = Math.min(f.want, f.money, p.cap);
-    f.money -= f.spend; f.compute += f.spend;
+    const wanted = (f.want / 100) * f.cap * p.cost;
+    f.spend = Math.min(wanted, f.money);
+    f.money -= f.spend; f.build = f.spend / p.cost; f.cap += f.build;
+  });
+  // serving users comes first; what is left trains the next model
+  const sh0 = shares(w, p), totalCap = a.reduce((s2, f) => s2 + f.cap, 0);
+  a.forEach(f => {
+    f.infer = Math.min(f.cap, p.infer * totalCap * sh0.get(f));
+    f.train = f.cap - f.infer;
+    f.compute += f.train;
     f.h = 10 * Math.log(1 + f.compute);
   });
   // market and investors pay
@@ -402,14 +419,14 @@ function drawWorld(w, max) {
   const other = worlds.find(o => o !== w);
   const sMax = Math.max(1, ...worlds.flatMap(o => o.spentHist || [])) * 1.08;
   const PB = 104, PT = 16, PY = v => PB - (v / sMax) * (PB - PT);
-  const step = sMax > 600 ? 200 : sMax > 300 ? 100 : 50;
+  const mag = Math.pow(10, Math.floor(Math.log10(sMax))), step = sMax / mag > 5 ? 2 * mag : sMax / mag > 2 ? mag : mag / 2;
   for (let v = 0; v <= sMax; v += step) {
     el('line', { x1: L, x2: R, y1: PY(v), y2: PY(v), stroke: '#efeee9' }, svg);
     const t = el('text', { x: L - 5, y: PY(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = v;
   }
   el('line', { x1: L, x2: R, y1: PB, y2: PB, stroke: '#111' }, svg);
   for (let t = 0; t <= T; t += tStep) { const e = el('text', { x: X(t), y: PB + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); e.textContent = t; }
-  axisTitles(svg, 'compute spent', 'turn', PB + 26, 7);
+  axisTitles(svg, 'training compute, cumulative', 'turn', PB + 26, 7);
   [[other, '#c6c5bf', 1, '4 3'], [w, '#111', 1.8, '']].forEach(([o, c, sw, d]) => {
     const pts = (o.spentHist || []).map((v, t) => `${X(t).toFixed(1)},${PY(v).toFixed(1)}`).join(' ');
     el('polyline', { points: pts, fill: 'none', stroke: c, 'stroke-width': sw, 'stroke-dasharray': d }, svg);
@@ -445,8 +462,8 @@ function render() {
   drawHistory(worlds[0].t, max);
   $('tick').textContent = `turn ${worlds[0].t} / ${T}`;
   const p = P();
-  $('o-hunger').textContent = p.hunger.toFixed(1); $('o-kup').textContent = p.kup.toFixed(2); $('o-kdown').textContent = p.kdown.toFixed(2);
-  $('o-margin').textContent = p.margin.toFixed(1); $('o-reach').textContent = p.reach.toFixed(2); $('o-cap').textContent = p.cap.toFixed(1); $('o-beta').textContent = p.beta.toFixed(1);
+  $('o-hunger').textContent = p.hunger.toFixed(1) + '%'; $('o-kup').textContent = p.kup.toFixed(2); $('o-kdown').textContent = p.kdown.toFixed(2);
+  $('o-margin').textContent = p.margin.toFixed(1); $('o-reach').textContent = p.reach.toFixed(2); $('o-infer').textContent = Math.round(p.infer * 100) + '%'; $('o-cost').textContent = p.cost.toFixed(1); $('o-beta').textContent = p.beta.toFixed(1);
   $('o-rev').textContent = p.rev.toFixed(1); $('o-base').textContent = p.base.toFixed(2); $('o-belief').textContent = p.belief;
   $('o-fund').textContent = p.fund.toFixed(1); $('o-entry').textContent = p.entry.toFixed(2); $('o-exit').textContent = (p.exit * 100).toFixed(1) + '%';
 }
@@ -561,8 +578,8 @@ function drawHistory(t, max) {
 }
 
 /* ---- calibration (historical mode) -------------------------------- */
-const FREE = { hunger: [0.2, 3, 0.1], kup: [0, 0.5, 0.01], kdown: [0, 1, 0.05], margin: [0, 15, 0.5], reach: [0, 1, 0.05],
-               cap: [0.5, 10, 0.5], beta: [0.5, 6, 0.1], rev: [0, 10, 0.5], base: [0, 1, 0.05], belief: [20, 120, 5], fund: [0, 15, 0.5] };
+const FREE = { hunger: [0.5, 8, 0.1], kup: [0, 0.5, 0.01], kdown: [0, 1, 0.05], margin: [0, 15, 0.5], reach: [0, 1, 0.05],
+               infer: [0, 0.9, 0.05], cost: [0.2, 5, 0.1], beta: [0.5, 6, 0.1], rev: [0, 10, 0.5], base: [0, 1, 0.05], belief: [20, 120, 5], fund: [0, 15, 0.5] };
 const RELATIONAL_ONLY = ['kup', 'kdown', 'margin', 'reach'];
 const N_CAL = 1500;
 const pick = ([lo, hi, st]) => Math.round((lo + Math.random() * (hi - lo)) / st) * st;
@@ -590,7 +607,7 @@ let lastCal = null;
 function showCalibration(res) {
   lastCal = res;
   const best = Math.min(res.absolute[0].d, res.relational[0].d), good = best * 1.25;
-  const labels = { hunger: 'hunger', kup: 'k_up', kdown: 'k_down', margin: 'margin', reach: 'reach', cap: 'capacity', beta: 'β', rev: 'revenue', base: 'base', belief: 'belief', fund: 'funding' };
+  const labels = { hunger: 'hunger', kup: 'k_up', kdown: 'k_down', margin: 'margin', reach: 'reach', infer: 'inference share', cost: 'build cost', beta: 'β', rev: 'revenue', base: 'base', belief: 'belief', fund: 'funding' };
   $('calib-out').innerHTML = ['absolute', 'relational'].map(name => {
     const tries = res[name], b = tries[0], ok = tries.filter(x => x.d <= good);
     const range = k => { const xs = ok.map(x => x.v[k]).filter(x => x !== undefined); return xs.length ? Math.min(...xs).toFixed(2) + ' – ' + Math.max(...xs).toFixed(2) : '—'; };
@@ -626,7 +643,7 @@ $('reset').onclick = () => { stop(); reset(); };
 $('mode').addEventListener('change', () => { stop(); reset(); });
 $('seed').onclick = () => { stop(); SEED = Math.floor(Math.random() * 1e6); reset(); };
 $('tps').addEventListener('input', () => { $('o-tps').textContent = $('tps').value; if (timer) start(); });
-['horizon', 'hunger', 'kup', 'kdown', 'margin', 'reach', 'cap', 'beta', 'rev', 'base', 'belief', 'fund', 'entry', 'exit']
+['horizon', 'hunger', 'kup', 'kdown', 'margin', 'reach', 'infer', 'cost', 'beta', 'rev', 'base', 'belief', 'fund', 'entry', 'exit']
   .forEach(id => $(id).addEventListener('input', () => { stop(); reset(); }));
 reset();
 </script>
