@@ -56,6 +56,12 @@
   .stat .v { font-size: 20px; font-weight: 500; margin-top: 2px; }
   .log { font-family: var(--mono); font-size: 10.5px; line-height: 1.7; margin-top: 12px; height: 72px; overflow: hidden; color: var(--muted); }
   .log div:first-child { color: var(--ink); }
+  .gloss { font-family: var(--mono); font-size: 11px; border-collapse: collapse; width: 100%; max-width: 900px; margin: 0 0 32px; }
+  .gloss th { text-align: left; font-weight: 700; border-bottom: 1px solid var(--ink); padding: 4px 16px 4px 0; }
+  .gloss td { padding: 3px 16px 3px 0; border-bottom: 0.5px solid var(--faint); vertical-align: top; }
+  .gloss td:first-child { font-weight: 700; white-space: nowrap; }
+  .gloss td:nth-child(2) { color: #555; white-space: nowrap; }
+  .gloss tr.sec td { color: var(--muted); font-weight: 400; padding-top: 14px; border-bottom: none; }
   .note { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.7; max-width: 760px; margin-top: 40px; }
 </style>
 </head>
@@ -68,20 +74,50 @@
 
 <main>
   <h1>phase_03 — market</h1>
-  <p class="sub">Many firms build the same technology and compete for one market. Each firm has humans, who crave, and a model, which climbs. Share follows relative capability, revenue and investors' money feed the climb, and new firms enter while the technology still looks far from what people believe it can become. In one world the humans look only at their own hunger; in the other they also look at the firm just above and the firm just below.</p>
+  <p class="sub">Many firms build the same technology and compete for one market. Each firm has humans, who crave, and a model, whose innovation level climbs. Share follows relative innovation, revenue and investors' money feed the climb, and new firms enter while the technology still looks far from what people believe it can become. In one world the humans look only at their own hunger; in the other they also look at the firm just above and the firm just below.</p>
+
+  <table class="gloss">
+    <thead><tr><th>symbol</th><th>name</th><th>meaning</th></tr></thead>
+    <tbody>
+      <tr class="sec"><td colspan="3">humans · the people who lead each firm</td></tr>
+      <tr><td>hunger</td><td>own drive</td><td>how much the firm wants to innovate for its own sake, each turn</td></tr>
+      <tr><td>k_up</td><td>ambition</td><td>extra drive per unit of distance to the firm just above</td></tr>
+      <tr><td>k_down</td><td>fear</td><td>extra drive when the firm just below comes within the margin</td></tr>
+      <tr><td>margin</td><td>safe distance</td><td>how far ahead of the firm below feels safe</td></tr>
+      <tr><td>want</td><td>craving</td><td>total drive this turn: hunger + ambition + fear</td></tr>
+      <tr class="sec"><td colspan="3">technology · the model each firm builds</td></tr>
+      <tr><td>compute</td><td>accumulated effort</td><td>all the compute a firm has spent on its model so far</td></tr>
+      <tr><td>h</td><td>innovation</td><td>the model's level, 10 · ln(1 + compute): each step costs more than the last · later, the language intelligence frontier</td></tr>
+      <tr><td>capacity</td><td>infrastructure</td><td>the most compute a firm can use in one turn (servers, chips)</td></tr>
+      <tr><td>frontier</td><td>best model</td><td>the highest innovation level among living firms</td></tr>
+      <tr class="sec"><td colspan="3">market · the users, in aggregate</td></tr>
+      <tr><td>share</td><td>market share</td><td>part of the market a firm holds: h^β / Σ h^β</td></tr>
+      <tr><td>β</td><td>concentration</td><td>how strongly users flock to the best model (1 = in proportion, high = winner takes most)</td></tr>
+      <tr><td>revenue</td><td>market size</td><td>money the whole market pays per turn, split by share</td></tr>
+      <tr><td>base</td><td>own funds</td><td>money each firm gets per turn regardless of sales</td></tr>
+      <tr><td>money</td><td>cash</td><td>what a firm has to spend: grows with base, revenue and investment, shrinks with spending</td></tr>
+      <tr class="sec"><td colspan="3">investors · entry and exit</td></tr>
+      <tr><td>belief</td><td>promise</td><td>how far investors think the technology can go, on the same scale as h</td></tr>
+      <tr><td>gap</td><td>perceived distance</td><td>(belief − frontier) / belief: how much is still left to win</td></tr>
+      <tr><td>funding</td><td>investor money</td><td>investment per turn when the gap is full, split like share</td></tr>
+      <tr><td>entry</td><td>new firms</td><td>chance per turn that a new firm appears, scaled by the gap</td></tr>
+      <tr><td>exit share</td><td>survival line</td><td>a firm below this share for 20 turns leaves the market</td></tr>
+      <tr><td>concentration</td><td>outcome</td><td>sum of squared shares: 1 = one firm holds everything</td></tr>
+    </tbody>
+  </table>
 
 <div class="eq"><span class="c">humans</span>
 <b>want</b>       = hunger + k_up · (h_above − h) + k_down · max(0, margin − (h − h_below))
              <span class="c">// ambition toward the firm above, fear of the firm below</span>
 <span class="c">technology</span>
 <b>spend</b>      = min(want, money, capacity)          <b>compute</b> ← compute + spend
-<b>h</b>          = 10 · ln(1 + compute)                <span class="c">// big gains need ever bigger compute</span>
+<b>h</b>          = 10 · ln(1 + compute)                <span class="c">// innovation level · big gains need ever bigger compute</span>
 <span class="c">market</span>
 <b>share</b>      = h^β / Σ h^β                          <span class="c">// β: how much users concentrate on the best</span>
 <b>money</b>      ← money − spend + base + revenue · share + investment
 <span class="c">investors</span>
-<b>gap</b>        = max(0, belief − frontier)            <span class="c">// how far the technology still looks from its promise</span>
-<b>investment</b> = funding · gap / belief, split like share; new firms enter with probability entry · gap / belief
+<b>gap</b>        = max(0, belief − frontier) / belief   <span class="c">// how far the technology still looks from its promise</span>
+<b>investment</b> = funding · gap, split like share;   new firms enter with probability entry · gap
 <b>exit</b>       : a firm below the exit share for 20 turns leaves
 
 <span class="c">absolute world:</span> k_up = k_down = 0        <span class="c">relational world:</span> k_up, k_down > 0</div>
@@ -101,7 +137,7 @@
       <div class="ctl"><div class="top"><span>capacity</span><span id="o-cap"></span></div>
         <input type="range" id="cap" min="0.5" max="10" step="0.5" value="4"><div class="hint">most compute a firm can use per turn</div></div>
       <div class="ctl"><div class="top"><span>β · concentration</span><span id="o-beta"></span></div>
-        <input type="range" id="beta" min="0.5" max="6" step="0.1" value="4"><div class="hint">1 = share ∝ capability · high = winner takes most</div></div>
+        <input type="range" id="beta" min="0.5" max="6" step="0.1" value="4"><div class="hint">1 = share ∝ innovation · high = winner takes most</div></div>
       <div class="ctl"><div class="top"><span>revenue</span><span id="o-rev"></span></div>
         <input type="range" id="rev" min="0" max="10" step="0.5" value="3"><div class="hint">money the whole market pays per turn</div></div>
       <div class="ctl"><div class="top"><span>base</span><span id="o-base"></span></div>
@@ -121,36 +157,37 @@
   <div class="buttons">
     <button id="run">run</button><button id="step">step</button><button id="reset">reset</button><button id="seed">new seed</button>
     <span class="tick" id="tick">turn 0 / 150</span>
-    <label class="speed">ticks per second <input type="range" id="tps" min="1" max="30" step="1" value="12"> <b id="o-tps">12</b></label>
+    <label class="speed" style="margin-left:24px">turns <input type="range" id="horizon" min="50" max="500" step="10" value="150" style="width:110px"> <b id="o-horizon">150</b></label>
+    <label class="speed" style="margin-left:24px">ticks per second <input type="range" id="tps" min="1" max="30" step="1" value="12"> <b id="o-tps">12</b></label>
   </div>
 
   <div class="scenes">
     <section class="scene" id="absolute">
       <h2>absolute</h2><p class="what">k_up = k_down = 0 · each firm looks only at its own hunger</p>
       <svg class="draw" viewBox="0 0 320 230" aria-label="drawing of the absolute market"></svg>
-      <div class="label">capability over time</div>
-      <svg class="cap" viewBox="0 0 320 140" aria-label="capability over time"></svg>
+      <div class="label">innovation over time</div>
+      <svg class="cap" viewBox="0 0 320 150" aria-label="innovation over time"></svg>
       <div class="label">market share over time</div>
-      <svg class="share" viewBox="0 0 320 120" aria-label="market share over time"></svg>
+      <svg class="share" viewBox="0 0 320 132" aria-label="market share over time"></svg>
       <div class="stats"></div>
       <div class="log"></div>
     </section>
     <section class="scene" id="relational">
       <h2>relational</h2><p class="what">k_up, k_down &gt; 0 · each firm also looks above and below</p>
       <svg class="draw" viewBox="0 0 320 230" aria-label="drawing of the relational market"></svg>
-      <div class="label">capability over time</div>
-      <svg class="cap" viewBox="0 0 320 140" aria-label="capability over time"></svg>
+      <div class="label">innovation over time</div>
+      <svg class="cap" viewBox="0 0 320 150" aria-label="innovation over time"></svg>
       <div class="label">market share over time</div>
-      <svg class="share" viewBox="0 0 320 120" aria-label="market share over time"></svg>
+      <svg class="share" viewBox="0 0 320 132" aria-label="market share over time"></svg>
       <div class="stats"></div>
       <div class="log"></div>
     </section>
   </div>
-  <p class="note">Both worlds start from the same three firms and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
+  <p class="note">Both worlds start from the same three firms and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Each firm keeps the colour of its order of entry; the leader is boxed in black; exited firms fade. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
 </main>
 
 <script>
-const T = 150, MAX_FIRMS = 14;
+let T = 150; const MAX_FIRMS = 14;
 const $ = id => document.getElementById(id);
 const P = () => ({ hunger: +$('hunger').value, kup: +$('kup').value, kdown: +$('kdown').value, margin: +$('margin').value,
   cap: +$('cap').value, beta: +$('beta').value, rev: +$('rev').value, base: +$('base').value,
@@ -221,6 +258,7 @@ function stepWorld(w, p) {
   record(w, p);
 }
 function reset() {
+  T = +$('horizon').value; $('o-horizon').textContent = T;
   const p = P();
   worlds = [makeWorld('absolute', false, p), makeWorld('relational', true, p)];
   render();
@@ -234,32 +272,37 @@ function step() {
 
 /* ---- drawing ------------------------------------------------------ */
 const CRAB = ["1.......1", "11.1.1.11", ".1111111.", "111111111", ".1.1.1.1.", "1.......1"];
-const SHADES = ['#111', '#6b6a66', '#a9a8a2', '#3d3c39', '#8a8984', '#c6c5bf', '#262624', '#555450', '#9a9a96', '#d6d5cf', '#2f2f2c', '#7a7975', '#b8b7b1', '#4a4946'];
+const PALETTE = ['#a6c23a', '#3fb8c9', '#d4537e', '#f08a24', '#7f77dd', '#e0b53a', '#2f9e86', '#e2674a'];   // lime-led, by order of entry
+const colorOf = f => PALETTE[(f.id - 1) % PALETTE.length];
 function glyph(svg, rows, x, y, px, fill) {
   rows.forEach((r, ry) => [...r].forEach((c, rx) => { if (c === '1') el('rect', { x: x + rx * px, y: y + ry * px, width: px, height: px, fill }, svg); }));
 }
-const scaleMax = () => Math.max(P().belief, ...worlds.flatMap(w => w.firms.map(f => f.h))) * 1.08;
+function axisTitles(svg, yTitle, xTitle, xY, yTop) {          // y title sits above the axis, x title at the right end
+  const yt = el('text', { x: 4, y: yTop, 'font-size': 8, fill: '#555', ...mono }, svg); yt.textContent = '↑ ' + yTitle;
+  const xt = el('text', { x: 312, y: xY, 'text-anchor': 'end', 'font-size': 8, fill: '#555', ...mono }, svg); xt.textContent = xTitle;
+}
+const scaleMax = () => Math.max(20, ...worlds.flatMap(w => w.firms.map(f => f.h))) * 1.08;
 
 function drawWorld(w, max) {
   const p = P(), root = $(w.id), sh = shares(w, p);
   const leader = alive(w).reduce((b, f) => (!b || f.h > b.h ? f : b), null);
   // drawing: one column per firm that ever existed
   let svg = root.querySelector('svg.draw'); svg.innerHTML = '';
-  const G = 206, TOP = 14, Y = h => G - (h / max) * (G - TOP);
+  const G = 206, TOP = 20, Y = h => G - (h / max) * (G - TOP);
   el('line', { x1: 21, x2: 21, y1: TOP, y2: G, stroke: '#bbb' }, svg);
   el('line', { x1: 21, x2: 312, y1: G, y2: G, stroke: '#111' }, svg);
   for (let v = 0; v <= max; v += 20) {
     el('line', { x1: 18, x2: 24, y1: Y(v), y2: Y(v), stroke: '#bbb' }, svg);
-    const t = el('text', { x: 14, y: Y(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = v;
+    const t = el('text', { x: 16, y: Y(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = v;
   }
-  el('line', { x1: 21, x2: 312, y1: Y(p.belief), y2: Y(p.belief), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, svg);
-  const bt = el('text', { x: 312, y: Y(p.belief) - 4, 'text-anchor': 'end', 'font-size': 8, fill: '#6d7f1c', ...mono }, svg); bt.textContent = 'belief';
   const n = w.firms.length, colW = 286 / Math.max(n, 4), px = Math.max(1.4, Math.min(3, colW / 11));
   w.firms.forEach((f, i) => {
     const x = 26 + colW * (i + 0.5), y = Y(f.h);
-    const col = !f.alive ? '#e4e3de' : f === leader ? '#111' : '#9a9a96';
-    el('line', { x1: x, x2: x, y1: G, y2: y, stroke: col, 'stroke-width': 1 }, svg);
-    glyph(svg, CRAB, x - 4.5 * px, y - 6 * px - 1, px, col);
+    const col = colorOf(f), op = f.alive ? 1 : 0.22;
+    const g = el('g', { opacity: op }, svg);
+    el('line', { x1: x, x2: x, y1: G, y2: y, stroke: col, 'stroke-width': 1.2 }, g);
+    glyph(g, CRAB, x - 4.5 * px, y - 6 * px - 1, px, col);
+    if (f === leader) el('rect', { x: x - 4.5 * px - 2, y: y - 6 * px - 3, width: 9 * px + 4, height: 6 * px + 4, fill: 'none', stroke: '#111', 'stroke-width': 1 }, svg);
     const lab = el('text', { x, y: G + 11, 'text-anchor': 'middle', 'font-size': 8, fill: f.alive ? '#111' : '#bbb', ...mono }, svg);
     lab.textContent = f.id;
     if (f.alive) {
@@ -267,36 +310,40 @@ function drawWorld(w, max) {
       s.textContent = Math.round(sh.get(f) * 100) + '%';
     }
   });
-  svg.setAttribute('viewBox', '0 0 320 232');
+  axisTitles(svg, 'innovation (h)', 'firms, in order of entry · share below', G + 33, 7);
+  svg.setAttribute('viewBox', '0 0 320 242');
 
   // capability over time
   svg = root.querySelector('svg.cap'); svg.innerHTML = '';
-  const L = 26, R = 312, B = 122, CT = 8, X = t => L + (t / T) * (R - L), CY = h => B - (h / max) * (B - CT);
+  const L = 26, R = 312, B = 122, CT = 18, X = t => L + (t / T) * (R - L), CY = h => B - (h / max) * (B - CT);
   for (let v = 0; v <= max; v += 20) {
     el('line', { x1: L, x2: R, y1: CY(v), y2: CY(v), stroke: '#efeee9' }, svg);
     const t = el('text', { x: L - 5, y: CY(v) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = v;
   }
-  [0, 50, 100, 150].forEach(t => { const e = el('text', { x: X(t), y: B + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); e.textContent = t; });
+  const tStep = T <= 200 ? 50 : 100;
+  for (let t = 0; t <= T; t += tStep) { const e = el('text', { x: X(t), y: B + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); e.textContent = t; }
+  axisTitles(svg, 'innovation (h)', 'turn', B + 26, 7);
   el('line', { x1: L, x2: R, y1: B, y2: B, stroke: '#111' }, svg);
-  el('line', { x1: L, x2: R, y1: CY(p.belief), y2: CY(p.belief), stroke: '#6d7f1c', 'stroke-dasharray': '2 3' }, svg);
   w.firms.forEach(f => {
     const pts = []; f.hist.forEach((h, t) => { if (h !== null && h !== undefined) pts.push(`${X(t).toFixed(1)},${CY(h).toFixed(1)}`); });
-    if (pts.length > 1) el('polyline', { points: pts.join(' '), fill: 'none', stroke: f === leader ? '#111' : f.alive ? '#9a9a96' : '#d6d5cf', 'stroke-width': f === leader ? 1.6 : 1, 'stroke-linejoin': 'round' }, svg);
+    if (pts.length > 1) el('polyline', { points: pts.join(' '), fill: 'none', stroke: colorOf(f), 'stroke-opacity': f.alive ? 1 : 0.3, 'stroke-width': f === leader ? 2.2 : 1.2, 'stroke-linejoin': 'round' }, svg);
   });
 
   // market share over time: stacked bands
   svg = root.querySelector('svg.share'); svg.innerHTML = '';
-  const SB = 104, ST = 4, SY = v => SB - v * (SB - ST);
+  const SB = 104, ST = 16, SY = v => SB - v * (SB - ST);
   const cum = new Array(w.t + 1).fill(0);
   w.firms.forEach((f, i) => {
     const lower = cum.slice(), upper = cum.map((c, t) => c + (f.shist[t] || 0));
     if (Math.max(...upper.map((u, t) => u - lower[t])) <= 0) return;
     const top = upper.map((u, t) => `${X(t).toFixed(1)},${SY(u).toFixed(1)}`);
     const bot = lower.map((u, t) => `${X(t).toFixed(1)},${SY(u).toFixed(1)}`).reverse();
-    el('polygon', { points: top.concat(bot).join(' '), fill: SHADES[i % SHADES.length], stroke: '#fff', 'stroke-width': 0.4 }, svg);
+    el('polygon', { points: top.concat(bot).join(' '), fill: colorOf(f), stroke: '#fff', 'stroke-width': 0.5 }, svg);
     upper.forEach((u, t) => cum[t] = u);
   });
   el('line', { x1: L, x2: R, y1: SB, y2: SB, stroke: '#111' }, svg);
+  for (let t = 0; t <= T; t += tStep) { const e = el('text', { x: X(t), y: SB + 13, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); e.textContent = t; }
+  axisTitles(svg, 'market share', 'turn', SB + 26, 7);
   ['0', '50%', '100%'].forEach((lab, k) => { const t = el('text', { x: L - 5, y: SY(k / 2) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); t.textContent = lab; });
 
   // stats
@@ -329,7 +376,7 @@ $('step').onclick = () => { stop(); if (worlds[0].t < T) step(); };
 $('reset').onclick = () => { stop(); reset(); };
 $('seed').onclick = () => { stop(); SEED = Math.floor(Math.random() * 1e6); reset(); };
 $('tps').addEventListener('input', () => { $('o-tps').textContent = $('tps').value; if (timer) start(); });
-['hunger', 'kup', 'kdown', 'margin', 'cap', 'beta', 'rev', 'base', 'belief', 'fund', 'entry', 'exit']
+['horizon', 'hunger', 'kup', 'kdown', 'margin', 'cap', 'beta', 'rev', 'base', 'belief', 'fund', 'entry', 'exit']
   .forEach(id => $(id).addEventListener('input', () => { stop(); reset(); }));
 reset();
 </script>
