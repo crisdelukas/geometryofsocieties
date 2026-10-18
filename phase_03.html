@@ -229,7 +229,7 @@
       <div class="log"></div>
     </section>
   </div>
-  <p class="note">Historical mode: each crab is one lab, entering on the turn of its first scored models and at the level of the best of them, already growing at the craved rate; all labs share the same hunger, and nobody exits (no real lab has). Distance to history is the root-mean-square gap between each crab and its own lab, in innovation units. History panel: Epoch AI, Epoch Capabilities Index (ECI) model scores and Frontier AI Models database, downloaded Oct 2026, CC BY 4.0. Each lab's crab sits at the best ECI it has released so far, minus 90 (ECI's zero point is arbitrary; 90 is the lowest shift at which no lab's first model falls below zero), and jumps when a better model comes out; a lab appears with its first scored model. Compute dots are single models whose training compute Epoch could estimate; most labs disclose little, so the record is sparse. The window, 30 Nov 2022 to 7 Oct 2026, is stretched over the same number of turns as the models. Both worlds start from the same single pioneer firm and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Each firm keeps the colour of its order of entry; the leader's number is in bold; exited firms fade. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
+  <p class="note">Historical mode: each crab is one lab, entering on the turn of its first scored models and at the level of the best of them, already growing at the craved rate; all labs share the same hunger, and nobody exits (no real lab has). Distance to history is the root-mean-square gap between each crab and its own lab, in innovation units. History panel: Epoch AI, Epoch Capabilities Index (ECI) model scores and Frontier AI Models database, downloaded Oct 2026, CC BY 4.0. Each lab's crab sits at the best ECI it has released so far, minus 90 (ECI's zero point is arbitrary; 90 is the lowest shift at which no lab's first model falls below zero), and jumps when a better model comes out; a lab appears with its first scored model. Market share in the history panel: Similarweb, share of worldwide visits to gen-AI chatbot websites (ChatGPT, Gemini, Claude, DeepSeek, Grok; everyone else in grey), from its monthly Gen AI traffic updates as published on X and reported by PPC Land, Dec 2024 to May 2026; values between snapshots are interpolated; DeepSeek and Grok were below the 1.5% reporting cutoff in Dec 2024 and are set to 0 there; Grok's April 2026 value is missing and bridged. Consumer web traffic only, not apps, enterprise or API use. Compute dots are single models whose training compute Epoch could estimate; most labs disclose little, so the record is sparse. The window, 30 Nov 2022 to 7 Oct 2026, is stretched over the same number of turns as the models. Both worlds start from the same single pioneer firm and use the same random seed, so differences come from the rules, not from luck. Entries still differ once the worlds diverge, because the chance of entry depends on each world's own frontier. Each firm keeps the colour of its order of entry; the leader's number is in bold; exited firms fade. Concentration is the sum of squared shares (1 = one firm holds everything; 1/N = N equal firms). Money is in arbitrary units.</p>
 </main>
 
 <script>
@@ -487,6 +487,20 @@ function render() {
 
 /* ---- history: real AI labs (Epoch AI) ----------------------------- */
 const REAL = [{"name":"Meta AI","steps":[["2023-02-24",96.82,"LLaMA-7B"],["2023-02-24",100.69,"LLaMA-13B"],["2023-02-24",107.49,"LLaMA-33B"],["2023-02-24",110.23,"LLaMA-65B"],["2023-07-18",113.84,"Llama 2-70B"],["2024-04-18",116.49,"Llama 3-8B"],["2024-04-18",122.94,"Llama 3-70B"],["2024-07-23",125.94,"Llama 3.1-70B"],["2024-07-23",128.76,"Llama 3.1-405B"],["2025-04-05",129.65,"Llama 4 Scout"],["2025-04-06",132.2,"Llama 4 Maverick"],["2026-04-08",152.13,"Muse Spark"],["2026-07-09",154.0,"Muse Spark 1.1"],["2026-08-05",154.9,"Muse Spark 1.2"],["2026-09-02",156.76,"Muse Spark 1.3"]]},{"name":"OpenAI","steps":[["2023-03-14",125.88,"GPT-4 (Mar 2023)"],["2024-01-25",126.46,"GPT-4 Turbo (Nov 2023)"],["2024-04-09",127.25,"GPT-4 Turbo (Apr 2024)"],["2024-05-13",129.05,"GPT-4o (May 2024)"],["2024-09-12",134.78,"o1-preview"],["2024-09-12",135.82,"o1-mini"],["2024-12-17",141.84,"o1"],["2025-04-16",145.6,"o4-mini"],["2025-04-16",146.87,"o3"],["2025-06-10",147.37,"o3-pro"],["2025-08-07",150.0,"GPT-5"],["2025-10-07",150.74,"GPT-5 Pro"],["2025-12-11",153.46,"GPT-5.2"],["2025-12-11",156.03,"GPT-5.2 Pro"],["2026-02-05",156.76,"GPT-5.3 Codex"],["2026-03-05",159.0,"GPT-5.4 Pro"],["2026-04-23",161.97,"GPT-5.5 Pro"],["2026-09-03",166.41,"GPT-6 Astra"]]},{"name":"Anthropic","steps":[["2023-07-11",120.15,"Claude 2"],["2023-08-09",120.31,"Claude Instant"],["2024-02-29",120.72,"Claude 3 Sonnet"],["2024-02-29",126.91,"Claude 3 Opus"],["2024-06-20",130.0,"Claude 3.5 Sonnet"],["2024-10-22",133.53,"Claude 3.5 Sonnet (October 2024)"],["2025-02-24",141.14,"Claude 3.7 Sonnet"],["2025-05-22",141.67,"Claude Sonnet 4"],["2025-05-22",142.65,"Claude Opus 4"],["2025-08-05",144.09,"Claude Opus 4.1"],["2025-09-29",146.83,"Claude Sonnet 4.5"],["2025-11-24",150.17,"Claude Opus 4.5"],["2026-02-05",155.27,"Claude Opus 4.6"],["2026-04-16",156.32,"Claude Opus 4.7"],["2026-05-28",158.26,"Claude Opus 4.8"],["2026-06-09",162.13,"Claude Fable 5"],["2026-07-24",162.6,"Claude Opus 5"],["2026-09-01",164.65,"Claude Fable 5.1"],["2026-09-22",166.82,"Claude Opus 5.5"]]},{"name":"Alibaba","steps":[["2023-09-24",113.09,"Qwen-14B"],["2024-06-07",125.28,"Qwen2-72B"],["2024-09-17",128.53,"Qwen2.5-32B"],["2024-09-19",129.0,"Qwen2.5-72B"],["2025-01-25",132.53,"Qwen2.5-Max"],["2025-03-05",137.58,"QwQ-32B"],["2025-04-28",139.35,"Qwen3-235B-A22B"],["2025-07-25",143.81,"Qwen3-235B-A22B-Thinking (Jul 2025)"],["2026-02-13",146.66,"Qwen3.5 397B-A17B"],["2026-03-31",147.49,"Qwen 3.6 Plus"],["2026-04-20",149.24,"Qwen 3.6 Max (Preview)"],["2026-05-19",153.83,"Qwen3.7-Max"],["2026-08-02",156.88,"Qwen 3.8 Max"]]},{"name":"Mistral AI","steps":[["2023-09-27",112.27,"Mistral 7B v0.1"],["2023-12-11",118.5,"Mixtral 8x7B"],["2024-02-26",122.03,"Mistral Large"],["2024-04-17",122.05,"Mixtral 8x22B"],["2024-07-24",127.55,"Mistral Large 2 (Jul 2024)"],["2024-11-18",128.53,"Mistral Large 2 (Nov 2024)"],["2025-05-07",134.06,"Mistral Medium 3"],["2026-04-28",141.47,"Mistral Medium 3.5"],["2026-10-06",146.9,"Mistral Large 4"]]},{"name":"DeepSeek","steps":[["2023-11-02",63.88,"DeepSeek Coder 1.3B"],["2023-11-02",89.77,"DeepSeek Coder 6.7B"],["2023-11-02",96.45,"DeepSeek Coder 33B"],["2023-11-29",110.47,"DeepSeek LLM 67B"],["2024-05-07",124.78,"DeepSeek-V2 (MoE-236B, May 2024)"],["2024-12-26",132.33,"DeepSeek-V3"],["2025-01-20",135.44,"DeepSeek-R1-Distill-Qwen-14B"],["2025-01-20",137.42,"DeepSeek-R1-Distill-Qwen-32B"],["2025-01-20",138.96,"DeepSeek-R1"],["2025-05-28",141.27,"DeepSeek-R1 (May 2025)"],["2025-09-29",144.97,"DeepSeek-V3.2-Exp"],["2025-12-01",146.11,"DeepSeek-V3.2"],["2026-04-24",149.19,"DeepSeek-V4-Pro"],["2026-07-31",154.49,"DeepSeek V4 Flash 0731"],["2026-08-13",155.29,"DeepSeek V4 Pro 0813"],["2026-09-09",155.57,"DeepSeek V4.1 Flash"]]},{"name":"Google DeepMind","steps":[["2023-12-13",117.07,"Gemini 1.0 Pro"],["2024-05-14",126.92,"Gemini 1.5 Pro (May 2024)"],["2024-09-24",129.37,"Gemini 1.5 Flash (Sep 2024)"],["2024-09-24",131.73,"Gemini 1.5 Pro (Sept 2024)"],["2024-12-11",134.69,"Gemini 2.0 Flash (Dec 2024)"],["2025-01-21",135.36,"Gemini 2.0 Flash Thinking (Jan 2025)"],["2025-03-31",144.12,"Gemini 2.5 Pro (Mar 2025)"],["2025-06-05",145.31,"Gemini 2.5 Pro (Jun 2025)"],["2025-11-18",152.9,"Gemini 3 Pro"],["2026-02-19",154.67,"Gemini 3.1 Pro"],["2026-08-13",157.22,"Gemini 3.7 Flash"],["2026-09-30",164.56,"Gemini 4 Argon"]]},{"name":"xAI","steps":[["2024-12-12",130.49,"Grok-2 (Dec 2024)"],["2025-04-09",138.32,"Grok 3"],["2025-06-24",140.33,"Grok-3 mini"],["2025-07-09",146.43,"Grok 4"],["2026-02-17",152.08,"Grok 4.20"],["2026-07-08",153.93,"Grok 4.5"],["2026-08-12",156.31,"Grok 4.6"]]},{"name":"Moonshot","steps":[["2025-07-12",140.12,"Kimi K2 (Jul 2025)"],["2025-11-06",145.96,"Kimi K2 Thinking"],["2026-01-27",147.98,"Kimi K2.5"],["2026-04-20",150.92,"Kimi K2.6"],["2026-07-16",157.42,"Kimi K3"]]},{"name":"Z.ai (Zhipu)","steps":[["2025-12-22",143.79,"GLM-4.7"],["2026-02-11",145.78,"GLM-5"],["2026-04-07",149.99,"GLM-5.1"],["2026-06-16",151.86,"GLM-5.2"],["2026-08-14",155.91,"GLM-5.3"]]}];
+// consumer web-traffic share of gen-AI chatbot websites, worldwide (Similarweb snapshots, %)
+// keys: chatgpt (OpenAI), gemini (Google DeepMind), claude (Anthropic), deepseek, grok (xAI); grey = everyone else
+const SHARE_LABS = [['chatgpt', 'OpenAI'], ['gemini', 'Google DeepMind'], ['claude', 'Anthropic'], ['deepseek', 'DeepSeek'], ['grok', 'xAI']];
+const SHARE = [
+  ['2024-12-15', { chatgpt: 87.2, gemini: 5.4, claude: 1.6, deepseek: 0, grok: 0 }],
+  ['2025-06-15', { chatgpt: 76.4, gemini: 8.9, claude: 1.6, deepseek: 5.3, grok: 2.8 }],
+  ['2025-07-15', { chatgpt: 77.5, gemini: 9.4, claude: 1.9, deepseek: 4.2, grok: 3.1 }],
+  ['2025-08-15', { chatgpt: 73.3, gemini: 12.9, claude: 1.9, deepseek: 4.0, grok: 2.6 }],
+  ['2025-10-15', { chatgpt: 71.8, gemini: 13.6, claude: 2.3, deepseek: 4.1, grok: 2.8 }],
+  ['2026-01-15', { chatgpt: 65.2, gemini: 20.3, claude: 2.0, deepseek: 3.8, grok: 3.8 }],
+  ['2026-02-15', { chatgpt: 56.7, gemini: 25.4, claude: 6.0, deepseek: 3.4, grok: 3.7 }],
+  ['2026-04-15', { chatgpt: 53.7, gemini: 26.7, claude: 8.0, deepseek: 4.0, grok: null }],
+  ['2026-05-15', { chatgpt: 52.7, gemini: 27.3, claude: 8.9, deepseek: 4.0, grok: 2.8 }],
+];
 const COMP = [["2023-03-15",2.1e+25,"GPT-4 (Mar 2023)",1,"Likely"],["2023-04-10",3.89e+24,"SenseChat",-1,"Speculative"],["2023-05-10",7.34e+24,"PaLM 2",6,"Likely"],["2023-06-13",2.1e+25,"GPT-4 (Jun 2023)",1,"Likely"],["2023-07-11",3.866e+24,"Claude 2",2,"Speculative"],["2023-09-06",3.76e+24,"Falcon-180B",-1,"Confident"],["2023-09-28",4.8e+24,"Amazon Titan",-1,"Likely"],["2023-11-22",1.001e+25,"Inflection-2",-1,"Confident"],["2023-12-06",5e+25,"Gemini 1.0 Ultra",6,"Speculative"],["2024-06-14",1.8e+25,"Nemotron-4 340B",-1,"Confident"],["2024-06-20",2.7e+25,"Claude 3.5 Sonnet",2,"Speculative"],["2024-07-23",3.8e+25,"Llama 3.1-405B",0,"Confident"],["2024-08-13",2.96e+25,"Grok-2",7,"Confident"],["2025-02-17",3.5e+26,"Grok 3",7,"Likely"],["2025-02-27",3.8e+26,"GPT-4.5",1,"Likely"],["2025-03-18",3.911e+25,"Llama Nemotron Ultra 253B",-1,"Likely"],["2025-04-05",5.184e+25,"Llama 4 Behemoth (preview)",0,"Likely"],["2025-07-09",5e+26,"Grok 4",7,"Speculative"],["2026-09-03",9.4e+26,"GPT-6 Astra",1,"Likely"]];   // [date, training FLOP, model, lab index or -1, confidence]
 const R0 = Date.UTC(2022, 10, 30), R1 = Date.UTC(2026, 9, 7), ECI_SHIFT = 90;
 const dayOf = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
@@ -558,11 +572,39 @@ function drawHistory(t, max) {
       'stroke-width': lead && lead.i === i ? 1.8 : 1.2 }, svg);
   });
 
-  // market share: still to collect
+  // market share: consumer web traffic to each lab's chatbot (Similarweb snapshots), the rest grey
   svg = root.querySelector('svg.share'); svg.innerHTML = '';
-  el('rect', { x: 26, y: 16, width: 286, height: 88, fill: 'none', stroke: '#e4e3de', 'stroke-dasharray': '3 3' }, svg);
-  const m = el('text', { x: 169, y: 64, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg);
-  m.textContent = 'consumer web-traffic share · data still to be collected';
+  const SB = 104, ST = 16, SY = v => SB - v * (SB - ST);
+  el('line', { x1: L, x2: R, y1: SB, y2: SB, stroke: '#111' }, svg);
+  ['0', '50%', '100%'].forEach((lab, k) => { const tx = el('text', { x: L - 5, y: SY(k / 2) + 3, 'text-anchor': 'end', 'font-size': 8, fill: '#9a9a96', ...mono }, svg); tx.textContent = lab; });
+  yearTicks(svg, X, SB + 13);
+  axisTitles(svg, 'consumer web-traffic share', 'year', SB + 26, 7);
+  const firstU = turnOfDate(SHARE[0][0]);
+  if (t < firstU) {
+    const m2 = el('text', { x: 169, y: 64, 'text-anchor': 'middle', 'font-size': 8, fill: '#9a9a96', ...mono }, svg);
+    m2.textContent = 'no published data before Dec 2024';
+  } else {
+    const nowU = Math.min(t, turnOfDate(SHARE[SHARE.length - 1][0]));
+    const us = []; for (let u = firstU; u <= nowU; u += 0.5) us.push(u); us.push(nowU);
+    const val = (k, u) => {                                     // linear between snapshots; missing values bridged
+      const pts = SHARE.map(r => [turnOfDate(r[0]), r[1][k]]).filter(x => x[1] !== null && x[1] !== undefined);
+      if (u <= pts[0][0]) return pts[0][1] / 100;
+      for (let j = 1; j < pts.length; j++) if (u <= pts[j][0]) { const [u0, v0] = pts[j - 1], [u1, v1] = pts[j]; return (v0 + (v1 - v0) * (u - u0) / (u1 - u0)) / 100; }
+      return pts[pts.length - 1][1] / 100;
+    };
+    const cum = us.map(() => 0);
+    SHARE_LABS.forEach(([k, labName]) => {
+      const i = REAL.findIndex(l => l.name === labName);
+      const lower = cum.slice(), upper = us.map((u, j) => cum[j] + val(k, u));
+      const top = upper.map((v, j) => `${X(us[j]).toFixed(1)},${SY(v).toFixed(1)}`);
+      const bot = lower.map((v, j) => `${X(us[j]).toFixed(1)},${SY(v).toFixed(1)}`).reverse();
+      el('polygon', { points: top.concat(bot).join(' '), fill: PALETTE[i % PALETTE.length], stroke: '#fff', 'stroke-width': 0.5 }, svg);
+      upper.forEach((v, j) => cum[j] = v);
+    });
+    const top = us.map(u => `${X(u).toFixed(1)},${SY(1).toFixed(1)}`), bot = cum.map((v, j) => `${X(us[j]).toFixed(1)},${SY(v).toFixed(1)}`).reverse();
+    el('polygon', { points: top.concat(bot).join(' '), fill: '#ecebe6', stroke: '#fff', 'stroke-width': 0.5 }, svg);
+    SHARE.forEach(r => { const u = turnOfDate(r[0]); if (u <= t) el('line', { x1: X(u), x2: X(u), y1: SB, y2: SB + 3, stroke: '#111' }, svg); });
+  }
 
   // compute: one dot per frontier model, log scale
   svg = root.querySelector('svg.spent'); svg.innerHTML = '';
