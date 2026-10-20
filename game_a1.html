@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <style>
   :root {
-    --paper: #ecebe7;
+    --paper: #fff;
     --ink: #1d1d1b;
     --muted: #8d8c86;
     --panel: #2b2b29;
@@ -19,8 +19,6 @@
   body {
     margin: 0; color: var(--ink); font-family: var(--sans);
     background-color: var(--paper);
-    /* paper grain */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   a { color: inherit; text-decoration: none; }
 
@@ -179,7 +177,9 @@ function playerIcon(svg, cx, cy) {
    width runs along the player's edge, depth runs toward the centre; both grow with size */
 const CELLG = 1.6;                     // spacing of the grid inside the block
 function organism(svg, s, size, edge) {
-  const w = Math.min(edge * 0.8, 3 + size * 2.4), d = Math.min(1.5 + size * 0.9, w * 0.9);
+  // the slider (1–10) maps to a visual size of 0.5–3.7: at 3.7 twelve organisms just fit without touching
+  const v = 0.5 + (size - 1) * (3.2 / 9);
+  const w = Math.min(edge * 0.8, 3 + v * 2.4), d = Math.min(1.5 + v * 0.9, w * 0.9);
   const ang = Math.atan2(s.nx, -s.ny) * 180 / Math.PI;      // local +y points into the board
   const g = el('g', { transform: `translate(${s.x} ${s.y}) rotate(${ang})` }, svg);
   const x0 = -w / 2, y0 = 1.2;                              // a small gap from the edge
