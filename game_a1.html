@@ -1,1 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>game_A1 — geometry of societies</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<style>
+  :root {
+    --paper: #ecebe7;
+    --ink: #1d1d1b;
+    --muted: #8d8c86;
+    --panel: #2b2b29;
+    --dot: #e9e8e3;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); font-family: var(--sans);
+    background-color: var(--paper);
+    /* paper grain */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  a { color: inherit; text-decoration: none; }
 
+  .meta {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+    padding: 16px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .meta em { font-style: italic; color: var(--muted); }
+  .meta a:hover { text-decoration: underline; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 40px 16px 64px; }
+
+  .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 720px) { .figs { grid-template-columns: 1fr; } }
+  .fig-top, .fig-bot {
+    font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+    display: flex; justify-content: space-between; color: var(--ink); padding: 4px 0;
+  }
+  .fig-top span:last-child, .fig-bot span:last-child { color: var(--muted); }
+  svg.fig { display: block; width: 100%; aspect-ratio: 1 / 1; background: var(--panel); }
+  svg.fig text { font-family: var(--mono); fill: #a9a8a2; letter-spacing: .04em; }
+
+  /* controls, written like a form */
+  .controls {
+    margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 40px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+  }
+  @media (max-width: 720px) { .controls { grid-template-columns: 1fr; } }
+  .row { display: grid; grid-template-columns: 120px 1fr 92px; align-items: center; gap: 12px; padding: 5px 0; border-bottom: 0.5px solid rgba(0,0,0,.18); }
+  .row output { text-align: right; }
+  .row .tag { color: var(--muted); }
+  .group-title { color: var(--muted); padding: 6px 0 2px; }
+
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; height: 14px; }
+  input[type=range]::-webkit-slider-runnable-track { height: 1px; background: var(--ink); }
+  input[type=range]::-moz-range-track { height: 1px; background: var(--ink); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 9px; height: 9px; background: var(--ink); margin-top: -4px; border-radius: 0; }
+  input[type=range]::-moz-range-thumb { width: 9px; height: 9px; background: var(--ink); border: 0; border-radius: 0; }
+  input[type=range]:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
+
+  /* ruler */
+  .ruler { margin-top: 36px; }
+  .ruler svg { display: block; width: 100%; height: 28px; }
+  .ruler .cap { font-family: var(--mono); font-size: 8px; letter-spacing: .14em; text-transform: uppercase; text-align: center; color: var(--ink); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <span><a href="games.html">← games</a> <em>//</em> game_A1 <em>—</em> who holds the centre</span>
+  <span>trial <em>01</em> // players <em id="meta-n">2</em></span>
+</div>
+
+<main>
+  <div class="figs">
+    <div>
+      <div class="fig-top"><span>[fig. 1a]</span><span>the board</span></div>
+      <svg class="fig" id="board" viewBox="0 0 100 100" aria-label="the board"></svg>
+      <div class="fig-bot"><span id="shape-name">rectangle</span><span>players around the board, each with an organism</span></div>
+    </div>
+    <div>
+      <div class="fig-top"><span>[fig. 1b]</span><span>the graphs</span></div>
+      <svg class="fig" id="graph" viewBox="0 0 100 100" aria-label="organism size per player"></svg>
+      <div class="fig-bot"><span>organism size per player</span><span>no turns yet</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <div class="group-title">board</div>
+      <div class="row">
+        <label for="n">players</label>
+        <input type="range" id="n" min="2" max="12" step="1" value="2">
+        <output id="o-n">2</output>
+      </div>
+    </div>
+    <div>
+      <div class="group-title">organisms · size</div>
+      <div id="sizes"></div>
+    </div>
+  </div>
+
+  <div class="ruler">
+    <svg id="ruler" viewBox="0 0 1000 28" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <div class="cap">— turn 0 · nothing has happened yet —</div>
+  </div>
+</main>
+
+<script>
+/* ---- settings you can edit ---------------------------------------- */
+const INK = '#e9e8e3', DIM = '#8d8c86';
+/* -------------------------------------------------------------------- */
+
+const $ = id => document.getElementById(id);
+const SHAPES = ['', '', 'rectangle', 'triangle', 'square', 'pentagon', 'hexagon', 'heptagon',
+                'octagon', 'nonagon', 'decagon', 'hendecagon', 'dodecagon'];
+const sizes = Array(12).fill(5);
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+/* pixels only as light and shadow: two dot patterns (sparse and dense) */
+function patterns(svg) {
+  const defs = el('defs', {}, svg);
+  const sparse = el('pattern', { id: svg.id + '-sparse', width: 2.4, height: 2.4, patternUnits: 'userSpaceOnUse' }, defs);
+  el('rect', { x: 0, y: 0, width: 0.55, height: 0.55, fill: INK, opacity: 0.35 }, sparse);
+  const dense = el('pattern', { id: svg.id + '-dense', width: 1.2, height: 1.2, patternUnits: 'userSpaceOnUse' }, defs);
+  el('rect', { x: 0, y: 0, width: 0.6, height: 0.6, fill: INK, opacity: 0.8 }, dense);
+  const hatch = el('pattern', { id: svg.id + '-hatch', width: 1.6, height: 1.6, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+  el('line', { x1: 0, y1: 0, x2: 0, y2: 1.6, stroke: INK, 'stroke-width': 0.3, opacity: 0.6 }, hatch);
+  // organism shadow: dense dots only on the lower-right half
+  const grad = el('linearGradient', { id: svg.id + '-fade', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+  el('stop', { offset: '0.45', 'stop-color': '#fff', 'stop-opacity': 0 }, grad);
+  el('stop', { offset: '0.75', 'stop-color': '#fff', 'stop-opacity': 1 }, grad);
+  const mask = el('mask', { id: svg.id + '-shade', maskContentUnits: 'objectBoundingBox' }, defs);
+  el('rect', { x: 0, y: 0, width: 1, height: 1, fill: `url(#${svg.id}-fade)` }, mask);
+}
+
+/* ---- board geometry (in a 100 × 100 box) ---- */
+function geometry(n) {
+  const C = 50;
+  if (n === 2) {                                   // rectangle: one player on each long side
+    const w = 56, h = 34;
+    const pts = [[C - w / 2, C - h / 2], [C + w / 2, C - h / 2], [C + w / 2, C + h / 2], [C - w / 2, C + h / 2]];
+    return { pts, seats: [{ x: C, y: C - h / 2, nx: 0, ny: -1 }, { x: C, y: C + h / 2, nx: 0, ny: 1 }], edge: w };
+  }
+  const R = 27, rot = Math.PI / 2 + Math.PI / n;   // a flat edge at the bottom
+  const pts = [];
+  for (let k = 0; k < n; k++) { const a = rot + k * 2 * Math.PI / n; pts.push([C + R * Math.cos(a), C + R * Math.sin(a)]); }
+  const seats = pts.map((p, k) => {
+    const q = pts[(k + 1) % n], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, l = Math.hypot(mx - C, my - C);
+    return { x: mx, y: my, nx: (mx - C) / l, ny: (my - C) / l };
+  });
+  return { pts, seats, edge: 2 * R * Math.sin(Math.PI / n) };
+}
+
+/* ---- organism: a roughly round body made of touching pixels ----
+   Its edge wobbles a little (fixed per player), and its tone goes from
+   light (upper left) to dark (lower right), in a few steps, like a lit volume. */
+const PX = 0.6;                        // size of one organism pixel, in board units
+const BODY = '#bdbcb6';                // the organism's single grey
+function seeded(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function organism(svg, cx, cy, r, id) {
+  // a plain pixelated disc, one tone
+  const g = el('g', { 'shape-rendering': 'crispEdges', fill: BODY }, svg);
+  const x0 = Math.round(cx / PX) * PX, y0 = Math.round(cy / PX) * PX, k = Math.ceil(r / PX);
+  for (let j = -k; j < k; j++) for (let i = -k; i < k; i++) {
+    const dx = (i + 0.5) * PX, dy = (j + 0.5) * PX;
+    if (Math.hypot(dx, dy) > r) continue;
+    el('rect', { x: x0 + i * PX, y: y0 + j * PX, width: PX + 0.02, height: PX + 0.02 }, g);
+  }
+}
+
+function drawBoard() {
+  const n = +$('n').value, g = geometry(n), svg = $('board'), C = 50;
+  svg.innerHTML = ''; patterns(svg);
+  const poly = g.pts.map(p => p.join(',')).join(' ');
+
+  // the board: just a clean edge
+  el('polygon', { points: poly, fill: 'none', stroke: INK, 'stroke-width': 0.45, 'stroke-linejoin': 'miter' }, svg);
+
+  // the centre: for now the middle of the board (later: the balance of the flows)
+  el('circle', { cx: C, cy: C, r: 2.6, fill: 'none', stroke: INK, 'stroke-width': 0.35, 'stroke-dasharray': '0.8 0.6' }, svg);
+  el('circle', { cx: C, cy: C, r: 0.5, fill: INK }, svg);
+  const lab = el('text', { x: C + 3.6, y: C - 2.6, 'font-size': 2 }, svg); lab.textContent = 'centre';
+
+  // players: an organism outside each side, tied to its edge
+  g.seats.forEach((s, i) => {
+    const r = Math.min(1.6 + sizes[i] * 0.55, Math.max(2, g.edge * 0.48));
+    const ox = s.x + s.nx * (r + 3.5), oy = s.y + s.ny * (r + 3.5);
+    el('line', { x1: s.x, y1: s.y, x2: ox - s.nx * r * 0.85, y2: oy - s.ny * r * 0.85, stroke: DIM, 'stroke-width': 0.35 }, svg);
+    el('circle', { cx: s.x, cy: s.y, r: 0.6, fill: INK }, svg);
+    organism(svg, ox, oy, r, i);
+    const t = el('text', { x: ox + s.nx * (r + 2.6), y: oy + s.ny * (r + 2.6) + 0.7, 'font-size': 2, 'text-anchor': 'middle' }, svg);
+    t.textContent = 'p' + String(i + 1).padStart(2, '0');
+  });
+  $('shape-name').textContent = SHAPES[n];
+  $('meta-n').textContent = n;
+}
+
+function drawGraph() {
+  const n = +$('n').value, svg = $('graph');
+  svg.innerHTML = ''; patterns(svg);
+  const L = 14, B = 84, T = 14, R = 90, Y = v => B - (v / 10) * (B - T);
+  // grid, ticks and axes
+  for (let v = 0; v <= 10; v += 2) {
+    el('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: '#ffffff', 'stroke-opacity': 0.08, 'stroke-width': 0.3 }, svg);
+    const t = el('text', { x: L - 2, y: Y(v) + 0.7, 'font-size': 2.1, 'text-anchor': 'end' }, svg); t.textContent = v;
+  }
+  el('polyline', { points: `${L},${T} ${L},${B} ${R},${B}`, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, svg);
+  const yl = el('text', { x: L, y: T - 4, 'font-size': 2.1 }, svg); yl.textContent = 'organism size';
+  // one bar per player: outline, hatched body
+  const slot = (R - L) / n, w = Math.min(10, slot * 0.5);
+  for (let i = 0; i < n; i++) {
+    const x = L + slot * i + (slot - w) / 2, y = Y(sizes[i]);
+    el('rect', { x, y, width: w, height: B - y, fill: 'url(#graph-hatch)' }, svg);
+    el('rect', { x, y, width: w, height: B - y, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, svg);
+    const t = el('text', { x: x + w / 2, y: B + 4, 'font-size': 2.1, 'text-anchor': 'middle' }, svg);
+    t.textContent = 'p' + String(i + 1).padStart(2, '0');
+  }
+}
+
+/* ---- controls ---- */
+function buildSizeSliders() {
+  const n = +$('n').value, box = $('sizes');
+  box.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const row = document.createElement('div'); row.className = 'row';
+    row.innerHTML = `<label for="s${i}">player ${String(i + 1).padStart(2, '0')}</label>
+      <input type="range" id="s${i}" min="1" max="10" step="1" value="${sizes[i]}">
+      <output id="o-s${i}">${sizes[i]}</output>`;
+    box.appendChild(row);
+    row.querySelector('input').addEventListener('input', e => { sizes[i] = +e.target.value; $('o-s' + i).textContent = sizes[i]; render(); });
+  }
+}
+function render() { drawBoard(); drawGraph(); }
+
+$('n').addEventListener('input', () => { $('o-n').textContent = $('n').value; buildSizeSliders(); render(); });
+
+/* ---- ruler ---- */
+(function ruler() {
+  const svg = $('ruler'), NS = 'http://www.w3.org/2000/svg';
+  for (let i = 0; i <= 200; i++) {
+    const x = 1 + i * 4.99, big = i % 20 === 0, mid = i % 10 === 0;
+    const l = document.createElementNS(NS, 'line');
+    l.setAttribute('x1', x); l.setAttribute('x2', x); l.setAttribute('y1', big ? 2 : mid ? 8 : 12); l.setAttribute('y2', 18);
+    l.setAttribute('stroke', '#1d1d1b'); l.setAttribute('stroke-width', big ? 1 : 0.5);
+    svg.appendChild(l);
+    if (big) { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', 27);
+      t.setAttribute('font-size', 7); t.setAttribute('font-family', 'ui-monospace, Menlo, monospace');
+      t.setAttribute('text-anchor', i === 0 ? 'start' : i === 200 ? 'end' : 'middle'); t.textContent = i / 2; svg.appendChild(t); }
+  }
+})();
+
+buildSizeSliders();
+render();
+</script>
+</body>
+</html>
