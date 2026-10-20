@@ -59,6 +59,14 @@
   input[type=range]::-moz-range-thumb { width: 9px; height: 9px; background: var(--ink); border: 0; border-radius: 0; }
   input[type=range]:focus-visible { outline: 1px dotted var(--ink); outline-offset: 2px; }
 
+  .buttons { display: flex; gap: 8px; padding: 10px 0 4px; }
+  button {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    background: none; border: 0.5px solid var(--ink); color: var(--ink); padding: 5px 12px; cursor: pointer; border-radius: 0;
+  }
+  button:hover { background: var(--ink); color: var(--paper); }
+  .legend { font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--muted); padding: 8px 0 0; line-height: 1.7; text-transform: none; }
+
   /* ruler */
   .ruler { margin-top: 36px; }
   .ruler svg { display: block; width: 100%; height: 28px; }
@@ -81,8 +89,8 @@
     </div>
     <div>
       <div class="fig-top"><span>[fig. 1b]</span><span>the graphs</span></div>
-      <svg class="fig" id="graph" viewBox="0 0 100 100" aria-label="organism size per player"></svg>
-      <div class="fig-bot"><span>organism size per player</span><span>no turns yet</span></div>
+      <svg class="fig" id="graph" viewBox="0 0 100 100" aria-label="links per player, against capacity"></svg>
+      <div class="fig-bot"><span>links per player · against capacity</span><span id="graph-note">turn 0</span></div>
     </div>
   </div>
 
@@ -94,28 +102,47 @@
         <input type="range" id="n" min="2" max="12" step="1" value="2">
         <output id="o-n">2</output>
       </div>
+      <div class="row">
+        <label for="mats">materials</label>
+        <input type="range" id="mats" min="10" max="200" step="5" value="60">
+        <output id="o-mats">60</output>
+      </div>
+      <div class="row">
+        <label for="need">food to link</label>
+        <input type="range" id="need" min="0" max="10" step="1" value="3">
+        <output id="o-need">3</output>
+      </div>
+      <div class="buttons"><button id="play">play</button><button id="step">step</button><button id="reset">new board</button></div>
+      <div class="legend">each turn, every organism with at least “food to link” in its system<br>
+        links to the nearest free material, until it reaches its capacity.<br>
+        capacity = organism size, for now. food is not used up yet.</div>
     </div>
     <div>
       <div class="group-title">organisms · size</div>
       <div id="sizes"></div>
+      <div class="group-title" style="margin-top:14px">organisms · food in the system</div>
+      <div id="foods"></div>
     </div>
   </div>
 
   <div class="ruler">
     <svg id="ruler" viewBox="0 0 1000 28" preserveAspectRatio="none" aria-hidden="true"></svg>
-    <div class="cap">— turn 0 · nothing has happened yet —</div>
+    <div class="cap" id="ruler-cap">— turn 0 · nothing has happened yet —</div>
   </div>
 </main>
 
 <script>
 /* ---- settings you can edit ---------------------------------------- */
 const INK = '#e9e8e3', DIM = '#8d8c86';
+const MAT = '#d8c46a';               // materials: a soft yellow
+const TURNS = 100, TICK_MS = 250;
 /* -------------------------------------------------------------------- */
 
 const $ = id => document.getElementById(id);
 const SHAPES = ['', '', 'rectangle', 'triangle', 'square', 'pentagon', 'hexagon', 'heptagon',
                 'octagon', 'nonagon', 'decagon', 'hendecagon', 'dodecagon'];
 const sizes = Array(12).fill(5);
+const foods = Array(12).fill(5);
 const NS = 'http://www.w3.org/2000/svg';
 function el(tag, attrs, parent) {
   const e = document.createElementNS(NS, tag);
@@ -176,13 +203,21 @@ function playerIcon(svg, cx, cy) {
 /* ---- organism: a gridded block on the board, in front of its player ----
    width runs along the player's edge, depth runs toward the centre; both grow with size */
 const CELLG = 1.6;                     // spacing of the grid inside the block
-function organism(svg, s, size, edge) {
+function block(s, size, edge) {
   // the slider (1–10) maps to a visual size of 0.5–3.7: at 3.7 twelve organisms just fit without touching
   const v = 0.5 + (size - 1) * (3.2 / 9);
   const w = Math.min(edge * 0.8, 3 + v * 2.4), d = Math.min(1.5 + v * 0.9, w * 0.9);
-  const ang = Math.atan2(s.nx, -s.ny) * 180 / Math.PI;      // local +y points into the board
-  const g = el('g', { transform: `translate(${s.x} ${s.y}) rotate(${ang})` }, svg);
-  const x0 = -w / 2, y0 = 1.2;                              // a small gap from the edge
+  const ang = Math.atan2(s.nx, -s.ny);                       // local +y points into the board
+  const toWorld = (lx, ly) => [s.x + lx * Math.cos(ang) - ly * Math.sin(ang), s.y + lx * Math.sin(ang) + ly * Math.cos(ang)];
+  const toLocal = (x, y) => { const dx = x - s.x, dy = y - s.y; return [dx * Math.cos(ang) + dy * Math.sin(ang), -dx * Math.sin(ang) + dy * Math.cos(ang)]; };
+  const GAP = 1.2;
+  const front = toWorld(0, GAP + d);                         // middle of the face looking at the centre
+  return { w, d, ang, GAP, toWorld, toLocal, front };
+}
+function organism(svg, s, size, edge) {
+  const b = block(s, size, edge), w = b.w, d = b.d;
+  const g = el('g', { transform: `translate(${s.x} ${s.y}) rotate(${b.ang * 180 / Math.PI})` }, svg);
+  const x0 = -w / 2, y0 = b.GAP;                            // a small gap from the edge
   for (let x = x0 + CELLG; x < x0 + w - 0.1; x += CELLG) el('line', { x1: x, x2: x, y1: y0, y2: y0 + d, stroke: INK, 'stroke-width': 0.18, opacity: 0.55 }, g);
   for (let y = y0 + CELLG; y < y0 + d - 0.1; y += CELLG) el('line', { x1: x0, x2: x0 + w, y1: y, y2: y, stroke: INK, 'stroke-width': 0.18, opacity: 0.55 }, g);
   el('rect', { x: x0, y: y0, width: w, height: d, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, g);
@@ -195,6 +230,16 @@ function drawBoard() {
 
   // the board: just a clean edge
   el('polygon', { points: poly, fill: 'none', stroke: INK, 'stroke-width': 0.45, 'stroke-linejoin': 'miter' }, svg);
+
+  // links: from the organism's front face to each material it holds
+  state.mats.forEach(m => {
+    if (m.owner < 0 || m.owner >= n) return;
+    const f = block(g.seats[m.owner], sizes[m.owner], g.edge).front;
+    el('line', { x1: f[0], y1: f[1], x2: m.x, y2: m.y, stroke: MAT, 'stroke-width': 0.22, opacity: 0.55 }, svg);
+  });
+  // materials: single soft-yellow pixels; free ones dimmer, linked ones full
+  const mg = el('g', { 'shape-rendering': 'crispEdges' }, svg);
+  state.mats.forEach(m => el('rect', { x: m.x - 0.45, y: m.y - 0.45, width: 0.9, height: 0.9, fill: MAT, opacity: m.owner >= 0 ? 1 : 0.6 }, mg));
 
   // the centre: for now the middle of the board (later: the balance of the flows)
   el('circle', { cx: C, cy: C, r: 2.6, fill: 'none', stroke: INK, 'stroke-width': 0.35, 'stroke-dasharray': '0.8 0.6' }, svg);
@@ -225,34 +270,110 @@ function drawGraph() {
     const t = el('text', { x: L - 2, y: Y(v) + 0.7, 'font-size': 2.1, 'text-anchor': 'end' }, svg); t.textContent = v;
   }
   el('polyline', { points: `${L},${T} ${L},${B} ${R},${B}`, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, svg);
-  const yl = el('text', { x: L, y: T - 4, 'font-size': 2.1 }, svg); yl.textContent = 'organism size';
+  const yl = el('text', { x: L, y: T - 4, 'font-size': 2.1 }, svg); yl.textContent = 'links  (outline = capacity)';
   // one bar per player: outline, hatched body
   const slot = (R - L) / n, w = Math.min(10, slot * 0.5);
   for (let i = 0; i < n; i++) {
-    const x = L + slot * i + (slot - w) / 2, y = Y(sizes[i]);
-    el('rect', { x, y, width: w, height: B - y, fill: 'url(#graph-hatch)' }, svg);
-    el('rect', { x, y, width: w, height: B - y, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, svg);
+    const x = L + slot * i + (slot - w) / 2, yc = Y(capacity(i)), yl2 = Y(state.links[i]);
+    el('rect', { x, y: yl2, width: w, height: B - yl2, fill: 'url(#graph-hatch)' }, svg);
+    if (state.links[i]) el('line', { x1: x, x2: x + w, y1: yl2, y2: yl2, stroke: MAT, 'stroke-width': 0.5 }, svg);
+    el('rect', { x, y: yc, width: w, height: B - yc, fill: 'none', stroke: INK, 'stroke-width': 0.4 }, svg);
     const t = el('text', { x: x + w / 2, y: B + 4, 'font-size': 2.1, 'text-anchor': 'middle' }, svg);
     t.textContent = 'p' + String(i + 1).padStart(2, '0');
   }
 }
 
+function seeded(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---- the game ---------------------------------------------------- */
+const capacity = i => sizes[i];                 // placeholder: to be defined later
+const state = { turn: 0, mats: [], links: Array(12).fill(0), seed: 1 };
+
+// scatter materials inside the board, away from its edge and off the organisms
+function spawn() {
+  const n = +$('n').value, g = geometry(n), count = +$('mats').value, rnd = seeded(state.seed * 7919 + n);
+  const pts = g.pts, inside = (x, y) => pts.every((p, k) => {
+    const q = pts[(k + 1) % pts.length], ex = q[0] - p[0], ey = q[1] - p[1], l = Math.hypot(ex, ey);
+    const side = Math.sign((50 - p[0]) * ey - (50 - p[1]) * ex);           // the centre's side of this edge
+    return side * ((x - p[0]) * ey - (y - p[1]) * ex) / l > 1.2;            // same side, at least 1.2 in
+  });
+  const onOrganism = (x, y) => g.seats.some((s, i) => {
+    const b = block(s, 10, g.edge), [lx, ly] = b.toLocal(x, y);
+    return Math.abs(lx) < b.w / 2 + 0.8 && ly > 0 && ly < b.GAP + b.d + 0.8;
+  });
+  state.mats = [];
+  let tries = 0;
+  while (state.mats.length < count && tries++ < 20000) {
+    const x = 50 + (rnd() - 0.5) * 76, y = 50 + (rnd() - 0.5) * 76;
+    if (inside(x, y) && !onOrganism(x, y) && Math.hypot(x - 50, y - 50) > 3.5) state.mats.push({ x, y, owner: -1 });
+  }
+  state.turn = 0; state.links = Array(12).fill(0);
+}
+
+// one turn: in a shuffled order, each fed organism below capacity takes the nearest free material
+function step() {
+  const n = +$('n').value, g = geometry(n), need = +$('need').value;
+  const order = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+  order.forEach(i => {
+    if (foods[i] < need || state.links[i] >= capacity(i)) return;
+    const f = block(g.seats[i], sizes[i], g.edge).front;
+    let best = null, bd = Infinity;
+    state.mats.forEach(m => { if (m.owner < 0) { const d = Math.hypot(m.x - f[0], m.y - f[1]); if (d < bd) { bd = d; best = m; } } });
+    if (best) { best.owner = i; state.links[i]++; }
+  });
+  state.turn++;
+}
+
+// if a size goes down, the organism lets go of its newest links
+function trimLinks() {
+  for (let i = 0; i < 12; i++) {
+    while (state.links[i] > capacity(i)) {
+      const held = state.mats.filter(m => m.owner === i); held[held.length - 1].owner = -1; state.links[i]--;
+    }
+  }
+}
+
 /* ---- controls ---- */
-function buildSizeSliders() {
-  const n = +$('n').value, box = $('sizes');
+function sliderRows(boxId, arr, prefix, onChange) {
+  const n = +$('n').value, box = $(boxId);
   box.innerHTML = '';
   for (let i = 0; i < n; i++) {
     const row = document.createElement('div'); row.className = 'row';
-    row.innerHTML = `<label for="s${i}">player ${String(i + 1).padStart(2, '0')}</label>
-      <input type="range" id="s${i}" min="1" max="10" step="1" value="${sizes[i]}">
-      <output id="o-s${i}">${sizes[i]}</output>`;
+    row.innerHTML = `<label for="${prefix}${i}">player ${String(i + 1).padStart(2, '0')}</label>
+      <input type="range" id="${prefix}${i}" min="1" max="10" step="1" value="${arr[i]}">
+      <output id="o-${prefix}${i}">${arr[i]}</output>`;
     box.appendChild(row);
-    row.querySelector('input').addEventListener('input', e => { sizes[i] = +e.target.value; $('o-s' + i).textContent = sizes[i]; render(); });
+    row.querySelector('input').addEventListener('input', e => { arr[i] = +e.target.value; $('o-' + prefix + i).textContent = arr[i]; onChange(); render(); });
   }
 }
-function render() { drawBoard(); drawGraph(); }
+function buildSliders() {
+  sliderRows('sizes', sizes, 's', trimLinks);
+  sliderRows('foods', foods, 'f', () => {});
+}
+function render() {
+  drawBoard(); drawGraph();
+  const t = state.turn, held = state.mats.filter(m => m.owner >= 0).length;
+  $('graph-note').textContent = 'turn ' + t;
+  $('ruler-cap').textContent = t === 0 ? '— turn 0 · nothing has happened yet —' : `— turn ${t} · ${held} of ${state.mats.length} materials linked —`;
+  marker.setAttribute('transform', `translate(${1 + (Math.min(t, TURNS) / TURNS) * 998} 0)`);
+}
 
-$('n').addEventListener('input', () => { $('o-n').textContent = $('n').value; buildSizeSliders(); render(); });
+let timer = null;
+function stop() { clearInterval(timer); timer = null; $('play').textContent = 'play'; }
+function play() {
+  if (timer) return stop();
+  if (state.turn >= TURNS) return;
+  $('play').textContent = 'pause';
+  timer = setInterval(() => { step(); render(); if (state.turn >= TURNS) stop(); }, TICK_MS);
+}
+$('play').onclick = play;
+$('step').onclick = () => { stop(); if (state.turn < TURNS) { step(); render(); } };
+$('reset').onclick = () => { stop(); state.seed++; spawn(); render(); };
+
+$('n').addEventListener('input', () => { stop(); $('o-n').textContent = $('n').value; buildSliders(); spawn(); render(); });
+$('mats').addEventListener('input', () => { stop(); $('o-mats').textContent = $('mats').value; spawn(); render(); });
+$('need').addEventListener('input', () => { $('o-need').textContent = $('need').value; });
 
 /* ---- ruler ---- */
 (function ruler() {
@@ -268,8 +389,12 @@ $('n').addEventListener('input', () => { $('o-n').textContent = $('n').value; bu
       t.setAttribute('text-anchor', i === 0 ? 'start' : i === 200 ? 'end' : 'middle'); t.textContent = i / 2; svg.appendChild(t); }
   }
 })();
+const marker = el('g', {}, $('ruler'));
+el('path', { d: 'M-3 0 L3 0 L0 5 Z', fill: '#c9a227' }, marker);
+el('line', { x1: 0, x2: 0, y1: 0, y2: 18, stroke: '#c9a227', 'stroke-width': 1.2 }, marker);
 
-buildSizeSliders();
+buildSliders();
+spawn();
 render();
 </script>
 </body>
