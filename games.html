@@ -46,8 +46,7 @@
   }
   .sq.dark { background: var(--ink); }
   .sq svg { position: absolute; inset: 26%; width: 48%; height: 48%; display: block; }
-  .sq svg rect { fill: var(--ink); }
-  .sq.dark svg rect { fill: var(--paper); }
+  .sq svg rect { fill: #a3a29d; }          /* the pawn: one medium-light grey on any square */
   .sq.active { cursor: pointer; }
   .sq.active:hover, .sq.active:focus-visible { outline: 2px solid #c8e054; outline-offset: -2px; z-index: 1; }
 
@@ -88,10 +87,25 @@ const SVGNS = 'http://www.w3.org/2000/svg';
 const squares = [], coords = [];
 
 // small pixel pawn, same family as the experiments icon
-const PAWN = ['..###..', '.#...#.', '..###..', '..#.#..', '..#.#..', '.#...#.', '#######'];
+const PAWN = [
+  '.....###.....',
+  '....#...#....',
+  '...#.....#...',
+  '...#.....#...',
+  '....#...#....',
+  '...#######...',
+  '.....#.#.....',
+  '.....#.#.....',
+  '....#...#....',
+  '....#...#....',
+  '...#.....#...',
+  '..#.......#..',
+  '.###########.',
+  '.#.........#.',
+  '.###########.'];
 function pawn() {
   const svg = document.createElementNS(SVGNS, 'svg');
-  svg.setAttribute('viewBox', '0 0 7 7'); svg.setAttribute('shape-rendering', 'crispEdges'); svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('viewBox', '-1 0 15 15'); svg.setAttribute('shape-rendering', 'crispEdges'); svg.setAttribute('aria-hidden', 'true');
   PAWN.forEach((row, y) => [...row].forEach((ch, x) => {
     if (ch !== '#') return;
     const r = document.createElementNS(SVGNS, 'rect');
