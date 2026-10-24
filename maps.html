@@ -89,8 +89,8 @@ const OBJECTS = {
 
 const ACCENT = new THREE.Color('#c8e054');
 const [buf, countries] = await Promise.all([
-  fetch('maps/world_points.bin').then(r => r.arrayBuffer()),
-  fetch('maps/countries.json').then(r => r.json()),
+  fetch('world_points.bin').then(r => r.arrayBuffer()),
+  fetch('countries.json').then(r => r.json()),
 ]);
 document.getElementById('loading').remove();
 
