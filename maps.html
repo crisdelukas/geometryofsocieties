@@ -29,11 +29,11 @@
   #over { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   #over text { font-family: var(--mono); font-size: 10px; fill: var(--ink); paint-order: stroke; stroke: #000; stroke-width: 3px; stroke-linejoin: round; }
   #over .dim { fill: var(--muted); }
-  #over .box rect { fill: none; stroke: var(--ink); stroke-width: .75; }
+  #over .box path { fill: none; stroke: var(--ink); stroke-width: .75; }
   #over .box polyline { fill: none; stroke: var(--ink); stroke-width: .5; }
-  #over .box.sel rect { stroke: var(--accent); }
-  #over .box.quiet rect { stroke: var(--ink); }
-  #over .box.hov rect { stroke: var(--accent); }
+  #over .box.sel path { stroke: var(--accent); }
+  #over .box.quiet path { stroke: var(--ink); }
+  #over .box.hov path { stroke: var(--accent); }
   #over .box.quiet text:not(:nth-of-type(1)), #over .box.quiet polyline { display: none; }
   #over .box.quiet text { fill: var(--muted); }
   #over .plant line { stroke: var(--muted); stroke-width: .5; }
@@ -305,7 +305,7 @@ const boxes = countries.filter(c => c.bounds && ongoing(worldOf(c)) > 0).map(c =
   const corners = [];
   for (const x of [x0, x1]) for (const z of [-y0, -y1]) for (const y of [0, top]) corners.push(new THREE.Vector3(x, y, z));
   const g = el('g', { class: 'box' }, over);
-  const b = { c, g, corners, rect: el('rect', {}, g), lead: el('polyline', {}, g), head: el('text', { 'text-anchor': 'end' }, g),
+  const b = { c, g, corners, rect: el('path', { fill: 'none' }, g), lead: el('polyline', {}, g), head: el('text', { 'text-anchor': 'end' }, g),
     lines: [el('text', {}, g), el('text', { class: 'dim' }, g), el('text', { class: 'dim' }, g)],
     // the header cycles through these, typing itself in
     cycle: [plural(w.project_list.length, 'green steel project'), `${w.qualified} qualify as green`, plural(w.plants, 'steel plant'), `${w.plants_transition} in transition`] };
@@ -324,8 +324,16 @@ const clean = n => n.replace(/\s*\([^)]*\)/g, '')
 const plants = PLANTS.map(([name, iso, lat, lon, st, route, cap, parent, tr]) =>
   ({ name: clean(name), full: name, iso, st, route, cap, parent, tr, ground: new THREE.Vector3(lon, groundAt(lon, lat), -lat), sx: -1, sy: -1, on: false }));
 const ink = getComputedStyle(document.documentElement);
+// remove from [a, b] every part covered by the intervals in `cuts`
+function subtract(a, b, cuts) {
+  let parts = [[a, b]];
+  for (const [c0, c1] of cuts) parts = parts.flatMap(([p0, p1]) => c1 <= p0 || c0 >= p1 ? [[p0, p1]] : [[p0, Math.min(p1, c0)], [Math.max(p0, c1), p1]].filter(([q0, q1]) => q1 - q0 > .5));
+  return parts;
+}
+const camPos = new THREE.Vector3(), mid = new THREE.Vector3();
 function drawOverlay(t) {
-  const placed = [];
+  const placed = [], vis = [];
+  camera.getWorldPosition(camPos);
   for (const b of boxes) {
     b.g.style.display = layers.boxes ? '' : 'none';
     if (!layers.boxes) continue;
@@ -335,11 +343,28 @@ function drawOverlay(t) {
       minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x); minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
     }
     if (!ok || maxX < 0 || minX > innerWidth || maxY < 0 || minY > innerHeight || maxX - minX > innerWidth * .9) { b.g.style.display = 'none'; continue; }
+    const focus = uniforms.uSel.value === b.c.i || uniforms.uHover.value === b.c.i;
+    // depth: the box's nearest corner to the camera; a looked-at box always counts as nearest
+    const depth = focus ? -1 : Math.min(...b.corners.map(p => p.distanceTo(camPos)));
+    vis.push({ b, minX, minY, maxX, maxY, depth, focus });
+  }
+  // nearer boxes act as if filled: the edges of farther boxes are cut where they pass inside them
+  vis.sort((a, b) => a.depth - b.depth);
+  vis.forEach((r, i) => {
+    const front = vis.slice(0, i), inside = (x, y) => front.some(q => x > q.minX && x < q.maxX && y > q.minY && y < q.maxY);
+    let d = '';
+    for (const y of [r.minY, r.maxY])
+      for (const [a, c] of subtract(r.minX, r.maxX, front.filter(q => y > q.minY && y < q.maxY).map(q => [q.minX, q.maxX]))) d += `M${a},${y}H${c}`;
+    for (const x of [r.minX, r.maxX])
+      for (const [a, c] of subtract(r.minY, r.maxY, front.filter(q => x > q.minX && x < q.maxX).map(q => [q.minY, q.maxY]))) d += `M${x},${a}V${c}`;
+    r.b.rect.setAttribute('d', d);
+    r.hidden = inside(r.maxX - 2, r.minY - 6);        // the name label sits at the top-right corner
+  });
+  for (const { b, minX, minY, maxX, maxY, focus, hidden } of vis) {
     b.g.classList.toggle('sel', uniforms.uSel.value === b.c.i);
-    const focus = uniforms.uSel.value === b.c.i || uniforms.uHover.value === b.c.i;   // full label only when looked at
     b.g.classList.toggle('quiet', !focus);
     b.g.classList.toggle('hov', uniforms.uHover.value === b.c.i);
-    Object.entries({ x: minX, y: minY, width: maxX - minX, height: maxY - minY }).forEach(([k, val]) => b.rect.setAttribute(k, val));
+    b.head.style.display = hidden && !focus ? 'none' : '';
     if (!focus) { b.head.textContent = b.c.name.toLowerCase(); b.head.setAttribute('x', maxX); b.head.setAttribute('y', minY - 5); continue; }
     const phase = t / 2600, word = b.cycle[Math.floor(phase) % b.cycle.length];
     b.head.textContent = word.slice(0, Math.ceil(word.length * Math.min(1, (phase % 1) * 4)));
