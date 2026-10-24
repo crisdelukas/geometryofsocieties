@@ -1,0 +1,678 @@
+{
+ "sources": {
+  "bmw22": {
+   "t": "BMW Group",
+   "d": "Feb 2022",
+   "u": "https://www.press.bmwgroup.com/global/article/detail/T0366153EN/bmw-group-significantly-increases-use-of-low-carbon-steel-in-series-production-at-european-plants?language=en"
+  },
+  "icct24": {
+   "t": "ICCT, Which automakers are shifting to green steel?",
+   "d": "Sep 2024",
+   "u": "https://theicct.org/wp-content/uploads/2024/09/ICCT-Green-Steel-Supply.pdf"
+  },
+  "salz22": {
+   "t": "Salzgitter AG",
+   "d": "Mar 2022",
+   "u": "https://www.salzgitter-flachstahl.de/en/news/details/volkswagen-group-and-salzgitter-ag-sign-memorandum-of-understanding-on-supply-of-low-co2-steel-from-the-end-of-2025-19456.html"
+  },
+  "tk24": {
+   "t": "thyssenkrupp Steel",
+   "d": "Oct 2024",
+   "u": "https://www.thyssenkrupp-steel.com/en/newsroom/press-releases/thyssenkrupp-and-volkswagen-group-sign-memorandum-of-understanding.html"
+  },
+  "ssab_volvo25": {
+   "t": "SSAB",
+   "d": "Jun 2025",
+   "u": "https://www.ssab.com/en/news/2025/06/ssab-and-volvo-cars-sign-ssab-zero-supply-agreement-for-serial-production"
+  },
+  "ssab_vg": {
+   "t": "SSAB, customers: Volvo Group",
+   "d": "2026",
+   "u": "https://www.ssab.com/en/fossil-free-steel/ssab-zero/customers/volvo-group"
+  },
+  "ssab_scania23": {
+   "t": "SSAB",
+   "d": "Nov 2023",
+   "u": "https://www.ssab.com/en/news/2023/11/ssab-and-scania-agree-on-farreaching-steel-decarbonization"
+  },
+  "canary26": {
+   "t": "Canary Media",
+   "d": "Jan 2026",
+   "u": "https://www.canarymedia.com/articles/green-steel/stegra-lands-key-customer-steel-plant"
+  },
+  "canary25": {
+   "t": "Canary Media",
+   "d": "Sep 2025",
+   "u": "https://www.canarymedia.com/articles/green-steel/stegra-microsoft-data-center-deal"
+  },
+  "ikea23": {
+   "t": "Stegra (H2 Green Steel)",
+   "d": "Sep 2023",
+   "u": "https://news.cision.com/stegra/r/ingka-group--ikea--and-h2-green-steel-sign-agreement-for-the-supply-of-green-steel-across-its-wareho,c3834244"
+  },
+  "cargill23": {
+   "t": "Stegra (H2 Green Steel)",
+   "d": "Jun 2023",
+   "u": "https://news.cision.com/stegra/r/cargill-and-h2-green-steel-sign-multi-year-offtake-contract-to-supply-near-zero-emission-steel,c3789630"
+  },
+  "aws24": {
+   "t": "ESG Today",
+   "d": "Nov 2024",
+   "u": "https://www.esgtoday.com/aws-signs-deal-for-fossil-free-steel-for-data-center-with-ssab/"
+  },
+  "tata_ford22": {
+   "t": "Tata Steel",
+   "d": "Oct 2022",
+   "u": "https://www.tatasteeluk.com/corporate/news/tata-steel-and-ford-ink-mou-for-zeremis-green-steel-supply"
+  },
+  "yieh26": {
+   "t": "Yieh Corp",
+   "d": "Feb 2026",
+   "u": "https://yieh.com/en/News/toyota-adopts-low-emission-steel-for-automotive-manufacturing/159216"
+  }
+ },
+ "buyers": [
+  {
+   "name": "BMW Group",
+   "sector": "automotive",
+   "lat": 48.177,
+   "lon": 11.556,
+   "iso": "DEU",
+   "note": "Over 40% of steel for its EU plants low-carbon by 2030, from Stegra and Salzgitter.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2021,
+     "start": "from 2025–26",
+     "volume": null,
+     "src": [
+      "bmw22",
+      "icct24"
+     ]
+    },
+    {
+     "plant": 741,
+     "supplier": "Salzgitter Flachstahl steel plant",
+     "lat": 52.1618,
+     "lon": 10.4094,
+     "named": true,
+     "kind": "reduced",
+     "stage": "agreed",
+     "signed": 2022,
+     "start": "from 2026",
+     "volume": null,
+     "src": [
+      "bmw22"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mercedes-Benz",
+   "sector": "automotive",
+   "lat": 48.783,
+   "lon": 9.233,
+   "iso": "DEU",
+   "note": "Supply deals with four steelmakers in Europe and the US.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2021,
+     "start": "from 2025",
+     "volume": ">50,000 t/y",
+     "src": [
+      "icct24",
+      "canary26"
+     ]
+    },
+    {
+     "plant": null,
+     "supplier": "SSAB (plant not named)",
+     "lat": 59.334,
+     "lon": 18.063,
+     "named": false,
+     "kind": "h2",
+     "stage": "intent",
+     "signed": null,
+     "start": "from 2026",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    },
+    {
+     "plant": 896,
+     "supplier": "ThyssenKrupp Steel Duisburg steel plant",
+     "lat": 51.4916,
+     "lon": 6.7331,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": null,
+     "start": "from 2026",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    },
+    {
+     "plant": null,
+     "supplier": "Steel Dynamics (plant not named)",
+     "lat": 41.08,
+     "lon": -85.14,
+     "named": false,
+     "kind": "scrap",
+     "stage": "delivering",
+     "signed": 2023,
+     "start": "from Sep 2023",
+     "volume": ">50,000 t/y",
+     "src": [
+      "icct24"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Volkswagen Group",
+   "sector": "automotive",
+   "lat": 52.427,
+   "lon": 10.787,
+   "iso": "DEU",
+   "note": "Three letters of intent; none yet a binding purchase.",
+   "deals": [
+    {
+     "plant": 741,
+     "supplier": "Salzgitter Flachstahl steel plant",
+     "lat": 52.1618,
+     "lon": 10.4094,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2022,
+     "start": "from end 2025",
+     "volume": null,
+     "src": [
+      "salz22",
+      "icct24"
+     ]
+    },
+    {
+     "plant": 896,
+     "supplier": "ThyssenKrupp Steel Duisburg steel plant",
+     "lat": 51.4916,
+     "lon": 6.7331,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2024,
+     "start": "from 2028",
+     "volume": null,
+     "src": [
+      "tk24"
+     ]
+    },
+    {
+     "plant": 480,
+     "supplier": "Jindal Shadeed Iron & Steel Duqm plant",
+     "lat": 19.6403,
+     "lon": 57.6779,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2024,
+     "start": "from 2027",
+     "volume": "up to 300,000 t",
+     "src": [
+      "icct24"
+     ],
+     "label": "Vulcan Green Steel (Jindal), Duqm"
+    }
+   ]
+  },
+  {
+   "name": "Porsche",
+   "sector": "automotive",
+   "lat": 48.834,
+   "lon": 9.152,
+   "iso": "DEU",
+   "note": "CO₂-reduced steel in its sports cars.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2023,
+     "start": "from 2026",
+     "volume": "35,000 t/y",
+     "src": [
+      "icct24",
+      "canary26"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Volvo Cars",
+   "sector": "automotive",
+   "lat": 57.708,
+   "lon": 11.974,
+   "iso": "SWE",
+   "note": "First automaker to commit decarbonised steel to serial production (EX60, SPA3 cars).",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "SSAB (plant not named)",
+     "lat": 59.334,
+     "lon": 18.063,
+     "named": false,
+     "kind": "scrap",
+     "stage": "delivering",
+     "signed": 2025,
+     "start": "from 2025",
+     "volume": null,
+     "src": [
+      "ssab_volvo25",
+      "icct24"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Volvo Group",
+   "sector": "trucks & machines",
+   "lat": 57.72,
+   "lon": 11.85,
+   "iso": "SWE",
+   "note": "100% renewable steel in models launched from 2030.",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "SSAB (plant not named)",
+     "lat": 59.334,
+     "lon": 18.063,
+     "named": false,
+     "kind": "scrap",
+     "stage": "delivering",
+     "signed": null,
+     "start": "ongoing",
+     "volume": null,
+     "src": [
+      "ssab_vg"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Scania",
+   "sector": "trucks",
+   "lat": 59.196,
+   "lon": 17.626,
+   "iso": "SWE",
+   "note": "Aims to decarbonise all SSAB steel for its heavy trucks by 2030.",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "SSAB (plant not named)",
+     "lat": 59.334,
+     "lon": 18.063,
+     "named": false,
+     "kind": "h2",
+     "stage": "intent",
+     "signed": 2023,
+     "start": "ramp-up from 2026, 100% by 2030",
+     "volume": null,
+     "src": [
+      "ssab_scania23"
+     ]
+    },
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": null,
+     "start": "from plant start",
+     "volume": null,
+     "src": [
+      "canary26"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "IKEA (Ingka Group)",
+   "sector": "retail",
+   "lat": 52.16,
+   "lon": 4.49,
+   "iso": "NLD",
+   "note": "Green steel for half of its warehouse racking worldwide.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2023,
+     "start": "from 2026",
+     "volume": "50% of global racking",
+     "src": [
+      "ikea23"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Cargill",
+   "sector": "trading",
+   "lat": 44.97,
+   "lon": -93.5,
+   "iso": "USA",
+   "note": "Multi-year offtake, to distribute green steel through its metals trading arm.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2023,
+     "start": "multi-year",
+     "volume": null,
+     "src": [
+      "cargill23"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Microsoft",
+   "sector": "data centres",
+   "lat": 47.64,
+   "lon": -122.13,
+   "iso": "USA",
+   "note": "Investor and customer: steel for European data centres, certificates for the rest.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2025,
+     "start": "from plant start",
+     "volume": null,
+     "src": [
+      "canary25"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Amazon Web Services",
+   "sector": "data centres",
+   "lat": 47.62,
+   "lon": -122.34,
+   "iso": "USA",
+   "note": "Fossil-free steel for a Swedish data centre.",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "SSAB (plant not named)",
+     "lat": 59.334,
+     "lon": 18.063,
+     "named": false,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2024,
+     "start": "not stated",
+     "volume": null,
+     "src": [
+      "aws24"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "thyssenkrupp Materials Services",
+   "sector": "steel distribution",
+   "lat": 51.455,
+   "lon": 7.011,
+   "iso": "DEU",
+   "note": "Buys Stegra's non-prime steel; the green credits are sold separately.",
+   "deals": [
+    {
+     "plant": 849,
+     "supplier": "Stegra Boden steel plant",
+     "lat": 65.8054,
+     "lon": 21.7591,
+     "named": true,
+     "kind": "h2",
+     "stage": "agreed",
+     "signed": 2026,
+     "start": "multi-year",
+     "volume": "high six-digit tonnes",
+     "src": [
+      "canary26"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ford Europe",
+   "sector": "automotive",
+   "lat": 50.97,
+   "lon": 6.95,
+   "iso": "DEU",
+   "note": "Letters of intent with three European steelmakers.",
+   "deals": [
+    {
+     "plant": 873,
+     "supplier": "Tata Steel IJmuiden steel plant",
+     "lat": 52.4841,
+     "lon": 4.6156,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2022,
+     "start": "green steel after 2030",
+     "volume": null,
+     "src": [
+      "tata_ford22",
+      "icct24"
+     ]
+    },
+    {
+     "plant": 741,
+     "supplier": "Salzgitter Flachstahl steel plant",
+     "lat": 52.1618,
+     "lon": 10.4094,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2022,
+     "start": "not stated",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    },
+    {
+     "plant": 896,
+     "supplier": "ThyssenKrupp Steel Duisburg steel plant",
+     "lat": 51.4916,
+     "lon": 6.7331,
+     "named": true,
+     "kind": "reduced",
+     "stage": "intent",
+     "signed": 2022,
+     "start": "not stated",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "General Motors",
+   "sector": "automotive",
+   "lat": 42.33,
+   "lon": -83.04,
+   "iso": "USA",
+   "note": "Lower-carbon steel deals with three US producers.",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "Nucor (plant not named)",
+     "lat": 35.227,
+     "lon": -80.843,
+     "named": false,
+     "kind": "scrap",
+     "stage": "delivering",
+     "signed": 2021,
+     "start": "from 2022",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    },
+    {
+     "plant": null,
+     "supplier": "ArcelorMittal (plant not named)",
+     "lat": 49.611,
+     "lon": 6.13,
+     "named": false,
+     "kind": "scrap",
+     "stage": "agreed",
+     "signed": 2023,
+     "start": "from 2023",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    },
+    {
+     "plant": 932,
+     "supplier": "U.S. Steel Big River Steel plant",
+     "lat": 35.6443,
+     "lon": -89.9417,
+     "named": true,
+     "kind": "scrap",
+     "stage": "agreed",
+     "signed": 2024,
+     "start": "not stated",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Toyota",
+   "sector": "automotive",
+   "lat": 35.08,
+   "lon": 137.16,
+   "iso": "JPN",
+   "note": "Certified lower-CO₂ steel from all three big Japanese steelmakers; volumes private.",
+   "deals": [
+    {
+     "plant": null,
+     "supplier": "Nippon Steel (plant not named)",
+     "lat": 35.681,
+     "lon": 139.767,
+     "named": false,
+     "kind": "reduced",
+     "stage": "delivering",
+     "signed": 2025,
+     "start": "from late 2025",
+     "volume": null,
+     "src": [
+      "yieh26"
+     ]
+    },
+    {
+     "plant": null,
+     "supplier": "JFE Steel (plant not named)",
+     "lat": 35.688,
+     "lon": 139.745,
+     "named": false,
+     "kind": "reduced",
+     "stage": "delivering",
+     "signed": 2025,
+     "start": "from late 2025",
+     "volume": null,
+     "src": [
+      "yieh26"
+     ]
+    },
+    {
+     "plant": null,
+     "supplier": "Kobe Steel (plant not named)",
+     "lat": 34.69,
+     "lon": 135.196,
+     "named": false,
+     "kind": "reduced",
+     "stage": "delivering",
+     "signed": 2025,
+     "start": "from late 2025",
+     "volume": null,
+     "src": [
+      "yieh26"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Nissan",
+   "sector": "automotive",
+   "lat": 35.46,
+   "lon": 139.62,
+   "iso": "JPN",
+   "note": "Lower-CO₂ steel made in blast furnaces (allocated reduction); real cut unclear.",
+   "deals": [
+    {
+     "plant": 519,
+     "supplier": "Kobe Kakogawa Works steel plant",
+     "lat": 34.7203,
+     "lon": 134.8263,
+     "named": true,
+     "kind": "reduced",
+     "stage": "delivering",
+     "signed": 2022,
+     "start": "from 2023",
+     "volume": null,
+     "src": [
+      "icct24"
+     ]
+    }
+   ]
+  }
+ ]
+}
