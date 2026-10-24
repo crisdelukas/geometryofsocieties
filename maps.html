@@ -43,6 +43,55 @@
   .cell .v { font-size: 13px; font-variant-numeric: tabular-nums; }
   .title { font-family: var(--sans); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   #loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--muted); }
+  /* project markers */
+  #boxes .proj line   { stroke: var(--ink); stroke-width: .5; stroke-dasharray: 2 3; }
+  #boxes .proj circle { stroke-width: 1.2; fill: none; }
+  #boxes .proj text   { font-size: 9.5px; }
+  .st-operating { --st: #c8e054; } .st-announced { --st: #f2f2ee; } .st-paused { --st: #e0a84a; }
+  .st-cancelled { --st: #e05a4a; } .st-pilot { --st: #7c7c78; }
+
+  /* side panel */
+  #panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100vw); z-index: 5;
+    background: #000; border-left: .5px solid #3a3a38;
+    transform: translateX(100%); transition: transform .55s cubic-bezier(.2,.7,.1,1);
+    overflow-y: auto; padding: 18px 22px 48px; scrollbar-width: thin; scrollbar-color: #333 #000;
+  }
+  #panel.open { transform: none; }
+  #panel .bar { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 34px; }
+  #panel .bar button { all: unset; cursor: pointer; color: var(--ink); }
+  #panel .bar button:hover { color: var(--accent); }
+  #panel h2 { font-family: var(--sans); font-size: 22px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; margin: 0 0 4px; }
+  #panel .sub { color: var(--muted); margin-bottom: 22px; }
+  #panel .overall { border: .5px solid #3a3a38; padding: 12px; margin-bottom: 26px; font-family: var(--sans); font-size: 12.5px; line-height: 1.45; }
+  #panel .overall .k { font-family: var(--mono); font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  #panel .sec { margin-top: 28px; }
+  #panel .sec > .t { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; padding-bottom: 8px; border-bottom: .5px solid #3a3a38; }
+  #panel .row { padding: 10px 0; border-bottom: .5px solid #1d1d1c; }
+  #panel .row .k { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  #panel .row .v { font-family: var(--sans); font-size: 12.5px; line-height: 1.45; }
+  #panel sup a { color: var(--muted); font-family: var(--mono); font-size: 9px; margin-left: 2px; }
+  #panel sup a:hover { color: var(--accent); }
+  #panel .proj-row .v b { font-weight: 400; color: var(--st); }
+  #panel .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.2px solid var(--st); flex: none; }
+  #panel .st-operating .dot { background: var(--st); }
+  #panel .st-cancelled .dot { border-radius: 0; transform: rotate(45deg); }
+  #panel .st-pilot .dot { border-style: dashed; }
+  /* certainty: filled = high, half = medium, empty = low */
+  .cert { width: 7px; height: 7px; border: 1px solid var(--ink); flex: none; }
+  .cert.high { background: var(--ink); }
+  .cert.medium { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+  .cert.low { border-style: dotted; border-color: var(--muted); }
+  #panel .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 9.5px; margin-top: 10px; }
+  #panel .legend span { display: flex; align-items: center; gap: 6px; }
+  #panel .togs { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  #panel .tog { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+  #panel .tog::before { content: ''; width: 9px; height: 9px; border: 1px solid var(--ink); }
+  #panel .tog.on::before { background: var(--accent); border-color: var(--accent); }
+  #panel .tog:hover { color: var(--accent); }
+  #panel .src { font-size: 10px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+  #panel .src a:hover { color: var(--ink); }
+  #panel .empty { color: var(--muted); font-family: var(--sans); font-size: 12.5px; line-height: 1.5; }
   @media (max-width: 640px) { .cell { min-width: 0; } .cell.opt { display: none; } }
 </style>
 </head>
@@ -52,6 +101,7 @@
 <svg id="boxes"></svg>
 <div class="fade t"></div><div class="fade b"></div>
 <div id="loading">reading point cloud …</div>
+<aside id="panel" aria-hidden="true"></aside>
 
 <div class="hud top">
   <span><a href="experiments.html">← experiments</a> <em>//</em> geometry <em>of</em> societies <em>—</em> atlas_01</span>
@@ -92,6 +142,7 @@ const [buf, countries] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
 ]);
+const DATA = await fetch('atlas_data.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
 document.getElementById('loading').remove();
 
 /* ---------- land points ---------- */
@@ -119,20 +170,20 @@ for (let i = 0; i < D; i++) { dpos[i*3] = dust[i*5]; dpos[i*3+1] = dust[i*5+1]; 
 
 /* ---------- one shader for every dot ---------- */
 const uniforms = {
-  uSize: { value: POINT * devicePixelRatio }, uHover: { value: -9 }, uSweep: { value: -200 },
+  uSize: { value: POINT * devicePixelRatio }, uHover: { value: -9 }, uSel: { value: -9 }, uSweep: { value: -200 },
   uAccent: { value: ACCENT },
 };
 const material = new THREE.ShaderMaterial({
   uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   vertexShader: `
     attribute float elev; attribute float cidx;
-    uniform float uSize, uHover, uSweep;
+    uniform float uSize, uHover, uSel, uSweep;
     varying float vA; varying float vHot;
     void main() {
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       gl_Position = projectionMatrix * mv;
       float d = -mv.z;
-      float hot = abs(cidx - uHover) < .5 ? 1. : 0.;
+      float hot = (abs(cidx - uHover) < .5 || abs(cidx - uSel) < .5) ? 1. : 0.;
       float edge = smoothstep(0., 6., uSweep - position.x);          // scan front
       float front = 1. - smoothstep(0., 3., abs(uSweep - position.x));
       float a;
@@ -198,10 +249,21 @@ const objects = countries.filter(c => OBJECTS[c.id] && c.bounds).map((c, k) => {
     t1: el('text', { class: 'dim' }, g), t2: el('text', {}, g), t3: el('text', {}, g), t4: el('text', { class: 'dim' }, g),
   };
   o.lead.style.color = 'var(--ink)'; o.lead.setAttribute('stroke-width', '.5');
-  o.t1.textContent = `object (${String(k + 1).padStart(2, '0')})`;
-  o.t2.textContent = o.code + '.steel';
-  o.t3.textContent = c.name.toLowerCase();
-  o.t4.textContent = 'awaiting data';
+  const d = DATA[o.code];
+  o.data = d;
+  if (d) {
+    const st = d.label.status;
+    o.t1.textContent = 'capacity ' + d.label.capacity;
+    o.t2.textContent = o.code + '.steel';
+    o.t3.textContent = c.name.toLowerCase();
+    o.t4.textContent = `${st.operating} operating · ${st.announced} announced · ${st.paused} paused · ${st.cancelled} cancelled`;
+    o.head = `${d.label.projects} green steel projects`;
+  } else {
+    o.t1.textContent = `object (${String(k + 1).padStart(2, '0')})`;
+    o.t2.textContent = o.code + '.steel';
+    o.t3.textContent = c.name.toLowerCase();
+    o.t4.textContent = 'awaiting data';
+  }
   // the box is the country's main landmass, from sea level up to its highest dot
   let top = 0;
   for (let i = 0; i < N; i++) if (cidx[i] === c.i && pos[i*3+1] > top) top = pos[i*3+1];
@@ -227,14 +289,15 @@ function drawBoxes(t) {
     o.g.setAttribute('opacity', ok ? Math.min(1, (t - o.seen) / 600) : 0);
     if (!ok) continue;
     shown++;
-    o.g.classList.toggle('hot', uniforms.uHover.value === o.c.i);
+    o.g.classList.toggle('hot', uniforms.uHover.value === o.c.i || uniforms.uSel.value === o.c.i);
     o.rect.setAttribute('x', minX); o.rect.setAttribute('y', minY);
     o.rect.setAttribute('width', w); o.rect.setAttribute('height', h);
     // leader line out of the top-right corner, then the label
     placed.push({ o, ax: maxX, ay: minY, lx: maxX + 26, ly: minY - 18 });
     // a flicker of scanner glyphs along the top edge
-    if (Math.random() < .08) o.glyph.textContent = Array.from({ length: Math.max(2, Math.min(40, w / 7 | 0)) }, () => Math.random() < .6 ? ' ' : GLYPHS[Math.random() * GLYPHS.length | 0]).join('');
-    o.glyph.setAttribute('x', minX); o.glyph.setAttribute('y', minY - 4);
+    if (o.head) { if (Math.random() < .06) o.glyph.textContent = Array.from({ length: 4 }, () => GLYPHS[Math.random() * GLYPHS.length | 0]).join('') + ' ' + o.head; o.glyph.style.fill = 'var(--ink)'; }
+    else if (Math.random() < .08) o.glyph.textContent = Array.from({ length: Math.max(2, Math.min(40, w / 7 | 0)) }, () => Math.random() < .6 ? ' ' : GLYPHS[Math.random() * GLYPHS.length | 0]).join('');
+    o.glyph.setAttribute('x', o.head ? maxX : minX); o.glyph.setAttribute('text-anchor', o.head ? 'end' : 'start'); o.glyph.setAttribute('y', minY - 4);
   }
   // labels never overlap: push each one down until it clears the ones above it
   placed.sort((a, b) => a.ly - b.ly);
@@ -264,6 +327,136 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('country').textContent = c != null ? byIndex.get(c).name.toLowerCase() : '—';
 });
 
+/* ---------- green steel project markers ---------- */
+const state = { projects: true, interpretation: true };
+const markerLayer = el('g', {}, svg);
+const sites = [];                                  // projects grouped by location
+for (const [code, d] of Object.entries(DATA)) {
+  if (code.startsWith('_')) continue;
+  for (const p of d.projects || []) {
+    let s = sites.find(s => s.lat === p.lat && s.lon === p.lon);
+    if (!s) {
+      let gy = 0;
+      for (let i = 0; i < N; i++) if (Math.abs(pos[i*3] - p.lon) < .6 && Math.abs(-pos[i*3+2] - p.lat) < .6) gy = Math.max(gy, pos[i*3+1]);
+      s = { lat: p.lat, lon: p.lon, ground: new THREE.Vector3(p.lon, gy, -p.lat), list: [], g: el('g', { class: 'proj' }, markerLayer) };
+      s.stem = el('line', {}, s.g);
+      sites.push(s);
+    }
+    const m = { p, g: el('g', { class: 'st-' + p.status }, s.g) };
+    m.c = el('circle', { r: 5 }, m.g); m.c.style.stroke = 'var(--st)';
+    if (p.status === 'operating') m.c.style.fill = 'var(--st)';
+    if (p.status === 'pilot') m.c.setAttribute('stroke-dasharray', '2 2');
+    if (p.status === 'cancelled') { m.c.setAttribute('r', 0); m.x = el('path', { d: '' }, m.g); m.x.style.stroke = 'var(--st)'; }
+    m.t = el('text', {}, m.g); m.t.textContent = p.name.toLowerCase();
+    s.list.push(m);
+  }
+}
+function drawMarkers() {
+  markerLayer.style.display = state.projects && uniforms.uSweep.value > 150 ? '' : 'none';
+  for (const s of sites) {
+    v.copy(s.ground).project(camera);
+    const x = (v.x + 1) / 2 * innerWidth, y = (1 - v.y) / 2 * innerHeight;
+    const off = v.z > 1 || x < -50 || x > innerWidth + 50;
+    s.g.style.display = off ? 'none' : '';
+    if (off) continue;
+    const top = y - 46 - (s.list.length - 1) * 20;
+    Object.entries({ x1: x, y1: y, x2: x, y2: top }).forEach(([k, val]) => s.stem.setAttribute(k, val));
+    s.list.forEach((m, k) => {
+      const my = y - 46 - k * 20;
+      m.c.setAttribute('cx', x); m.c.setAttribute('cy', my);
+      if (m.x) m.x.setAttribute('d', `M${x-4},${my-4}L${x+4},${my+4}M${x+4},${my-4}L${x-4},${my+4}`);
+      m.t.setAttribute('x', x - 12); m.t.setAttribute('y', my + 3); m.t.setAttribute('text-anchor', 'end');
+    });
+  }
+}
+
+/* ---------- side panel ---------- */
+const panel = document.getElementById('panel');
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const CERT = { high: 'high — official or primary source', medium: 'medium — reported, estimated or disputed', low: 'low — interpretation' };
+const STATUS = ['operating', 'announced', 'paused', 'cancelled', 'pilot'];
+let current = null;
+
+function renderPanel() {
+  const c = current; if (!c) return;
+  const code = Object.entries(OBJECTS).find(([id]) => id === c.id)?.[1];
+  const d = code && DATA[code];
+  const bar = `<div class="bar"><span>${code || '···'}.steel // ${d ? 'updated ' + d.updated : 'no record'}</span><button id="close">close ✕</button></div>`;
+  if (!d) {
+    panel.innerHTML = bar + `<h2>${esc(c.name)}</h2><div class="sub">object awaiting data</div>
+      <p class="empty">Nothing collected for this country yet. The atlas grows one country at a time.</p>`;
+  } else {
+    const srcIds = Object.keys(d.sources);
+    const refs = ids => (ids || []).map(id => `<sup><a href="${esc(d.sources[id].u)}" target="_blank" rel="noopener" title="${esc(d.sources[id].t)}">[${srcIds.indexOf(id) + 1}]</a></sup>`).join('');
+    const row = r => (!state.interpretation && r.c === 'low') ? '' :
+      `<div class="row"><div class="k"><span class="cert ${r.c}" title="certainty: ${CERT[r.c]}"></span>${esc(r.k)}</div><div class="v">${esc(r.v)}${refs(r.src)}</div></div>`;
+    const projRows = d.projects.map(p => (!state.interpretation && p.certainty === 'low') ? '' :
+      `<div class="row proj-row st-${p.status}"><div class="k"><span class="dot"></span>${esc(p.name)} <span class="cert ${p.certainty}" title="certainty: ${CERT[p.certainty]}"></span></div>
+       <div class="v"><b>${p.status}</b> · ${esc(p.site)} — ${esc(p.detail)}${refs(p.src)}</div></div>`).join('');
+    panel.innerHTML = bar + `
+      <h2>${esc(c.name)}</h2>
+      <div class="sub">${d.label.projects} green steel projects · capacity ${esc(d.label.capacity)}</div>
+      <div class="overall"><div class="k"><span class="cert ${d.overall.certainty}"></span>overall certainty — ${d.overall.certainty}</div>${esc(d.overall.text)}</div>
+      <div class="sec"><div class="t">play</div>
+        <div class="togs">
+          <button class="tog ${state.projects ? 'on' : ''}" data-k="projects">green steel projects on the map</button>
+          <button class="tog ${state.interpretation ? 'on' : ''}" data-k="interpretation">show interpretation (low certainty)</button>
+        </div>
+        <div class="legend">${STATUS.map(st => `<span class="st-${st}"><span class="dot"></span>${st}</span>`).join('')}</div>
+        <div class="legend"><span><span class="cert high"></span>high</span><span><span class="cert medium"></span>medium</span><span><span class="cert low"></span>low / interpretation</span></div>
+      </div>
+      <div class="sec"><div class="t">green steel projects</div>${projRows}</div>
+      ${d.sections.map(sec => `<div class="sec"><div class="t">${esc(sec.title)}</div>${sec.rows.map(row).join('')}</div>`).join('')}
+      <div class="sec"><div class="t">sources</div><div class="src">${srcIds.map((id, i) => `[${i + 1}] <a href="${esc(d.sources[id].u)}" target="_blank" rel="noopener">${esc(d.sources[id].t)}</a>`).join('<br>')}</div></div>`;
+    panel.querySelectorAll('.tog').forEach(b => b.onclick = () => { state[b.dataset.k] = !state[b.dataset.k]; renderPanel(); });
+  }
+  panel.querySelector('#close').onclick = closePanel;
+}
+
+const fly = { on: false, target: new THREE.Vector3(), dist: 70, offset: 0, offsetTo: 0 };
+function openPanel(c) {
+  current = c; uniforms.uSel.value = c.i; renderPanel();
+  panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); panel.scrollTop = 0;
+  if (c.centroid) {
+    fly.target.set(c.centroid[0], 0, -c.centroid[1]); fly.on = true;
+    const size = c.bounds ? Math.max(Math.abs(c.bounds[1][0] - c.bounds[0][0]) % 360, c.bounds[1][1] - c.bounds[0][1]) : 10;
+    fly.dist = Math.min(140, Math.max(22, size * 5));           // small countries: come closer
+  }
+  fly.offsetTo = innerWidth > 640 ? panel.offsetWidth / 2 : 0;
+}
+function closePanel() {
+  current = null; uniforms.uSel.value = -9;
+  panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true');
+  fly.offsetTo = 0;
+}
+addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+controls.addEventListener('start', () => fly.on = false);    // the user takes over the camera
+
+function stepCamera() {
+  if (fly.on) {
+    const delta = fly.target.clone().sub(controls.target).multiplyScalar(.06);
+    controls.target.add(delta); camera.position.add(delta);
+    const dir = camera.position.clone().sub(controls.target), d = dir.length();
+    camera.position.copy(controls.target).add(dir.setLength(d + (fly.dist - d) * .05));
+    if (delta.length() < .01 && Math.abs(d - fly.dist) < .2) fly.on = false;
+  }
+  fly.offset += (fly.offsetTo - fly.offset) * .08;
+  if (Math.abs(fly.offset) > .5) camera.setViewOffset(innerWidth, innerHeight, fly.offset, 0, innerWidth, innerHeight);
+  else camera.clearViewOffset();
+}
+
+// a click is a press that barely moves (otherwise it was a drag to rotate)
+let down = null;
+renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+  mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  if (!ray.ray.intersectPlane(plane, hit)) return;
+  const ci = grid.get(Math.floor(hit.x) + ',' + Math.floor(-hit.z));
+  if (ci != null) openPanel(byIndex.get(ci)); else closePanel();
+});
+
 /* ---------- loop ---------- */
 addEventListener('resize', resize); resize();
 const t0 = performance.now();
@@ -271,9 +464,11 @@ renderer.setAnimationLoop(t => {
   const s = Math.min(1, (t - t0) / (SCAN_SEC * 1000));
   uniforms.uSweep.value = -190 + s * 400;
   document.getElementById('scan').textContent = (s * 360).toFixed(1).padStart(5, '0') + '°';
+  stepCamera();
   controls.update();
   renderer.render(scene, camera);
   drawBoxes(t);
+  drawMarkers();
 });
 </script>
 </body>
