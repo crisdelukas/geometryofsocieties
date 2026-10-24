@@ -1,123 +1,109 @@
 {
- "_about": "Country data for maps.html. certainty: high = official or primary source; medium = reported, estimated or sources disagree; low = interpretation (my reading of the evidence, not a fact). Each row lists source ids from 'sources'.",
+ "_about": "Deep panels (research, per country). Figures for plants and projects come from atlas_world.json (GEM + LeadIT). certainty: high = official or primary source; medium = reported, estimated or disputed; low = interpretation.",
  "NLD": {
   "updated": "2026-10-24",
   "overall": {
    "certainty": "medium",
    "text": "The single decision that shapes everything — the state agreement with Tata Steel — is not signed. Its deadline moved to 1 March 2027."
   },
-  "label": {
-   "projects": 3,
-   "capacity": "7.5 Mt/y",
-   "production": "6.8 Mt (2024)",
-   "plants": 1,
-   "in_transition": 1,
-   "status": {
-    "operating": 0,
-    "announced": 2,
-    "paused": 0,
-    "cancelled": 0,
-    "pilot": 1
+  "sources": {
+   "gem": {
+    "t": "Global Energy Monitor, IJmuiden",
+    "d": "2026",
+    "u": "https://www.gem.wiki/Tata_Steel_IJmuiden_steel_plant"
+   },
+   "eurometal24": {
+    "t": "Eurometal",
+    "d": "May 2024",
+    "u": "https://eurometal.net/tata-steel-moves-forward-with-first-phase-of-green-steel-plan-in-the-netherlands/"
+   },
+   "danieli24": {
+    "t": "Danieli",
+    "d": "Jun 2024",
+    "u": "https://www.danieli.com/en/news-media/news/danieli-provide-direct-reduction-technology-tata-steel-new-investment_37_901.htm"
+   },
+   "tpo26": {
+    "t": "TPO",
+    "d": "Sep 2026",
+    "u": "https://tpo.nl/2026/09/25/tata-steel-maatwerkafspraak-uitstel-miljardensteun/"
+   },
+   "linqs26": {
+    "t": "Industrielinqs",
+    "d": "Jul 2026",
+    "u": "https://www.industrielinqs.nl/staalindustrie/2026/07/kabinet-mag-onderhandelingen-over-maatwerksteun-aan-tata-steel-voortzetten/"
+   },
+   "accountant26": {
+    "t": "Accountant.nl",
+    "d": "Sep 2026",
+    "u": "https://www.accountant.nl/nieuws/2026/9/subsidie-voor-tata-steel-wordt-mogelijk-vijf-keer-hoger-dan-gedacht/"
+   },
+   "linqs25": {
+    "t": "Industrylinqs",
+    "d": "Sep 2025",
+    "u": "https://www.industrylinqs.com/industry/2025/09/dutch-national-co2-levy-for-industry-suspended/"
+   },
+   "nltimes26": {
+    "t": "NL Times",
+    "d": "May 2026",
+    "u": "https://nltimes.nl/2026/05/17/industrial-co2-tax-brings-money-dutch-state-first-time"
+   },
+   "porthos26": {
+    "t": "S&P Global",
+    "d": "Jun 2026",
+    "u": "https://www.spglobal.com/energy/en/news-research/latest-news/energy-transition/061726-dutch-porthos-ccs-project-marks-construction-progress-despite-delays"
+   },
+   "zeremis23": {
+    "t": "Tata Steel",
+    "d": "Feb 2023",
+    "u": "https://www.tatasteelnederland.com/nieuws/en/tata-steel-signs-zeremis-carbon-lite-deals-with-wuppermann-bilstein-group-emw-stahl-service-and-grupo-arania"
+   },
+   "leadit": {
+    "t": "SEI / LeadIT",
+    "d": "Feb 2026",
+    "u": "https://www.sei.org/about-sei/press-room/critical-year-for-green-steel-in-2026/"
+   },
+   "cbam": {
+    "t": "European Commission, CBAM",
+    "d": "2026",
+    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
+   },
+   "smm26": {
+    "t": "SMM, EU steel safeguard",
+    "d": "Jul 2026",
+    "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47"
+   },
+   "cew26": {
+    "t": "Clean Energy Wire",
+    "d": "Jun 2026",
+    "u": "https://www.cleanenergywire.org/news/green-steel-projects-threatened-eu-carbon-market-reform-plans-german-state-premier"
    }
   },
-  "projects": [
-   {
-    "name": "Green Steel plan · phase 1",
-    "site": "Tata Steel IJmuiden",
-    "lat": 52.47,
-    "lon": 4.6,
-    "status": "announced",
-    "detail": "DRI plant 2.5 Mt/y (Energiron, gas first, 'H2-ready') + electric arc furnace ~3 Mt/y, replacing blast furnace 7 and a coke plant. Target 2030. Waiting on the state agreement and EU state-aid approval.",
-    "certainty": "medium",
-    "src": [
-     "danieli24",
-     "eurometal24",
-     "linqs26"
-    ]
-   },
-   {
-    "name": "Green Steel plan · phase 2",
-    "site": "Tata Steel IJmuiden",
-    "lat": 52.47,
-    "lon": 4.6,
-    "status": "announced",
-    "detail": "Close blast furnace 6 and the remaining coke plants; CO₂ neutrality targeted by 2045. Second DRI + EAF listed by GEM for ~2035.",
-    "certainty": "low",
-    "src": [
-     "eurometal24",
-     "gem"
-    ]
-   },
-   {
-    "name": "HIsarna pilot",
-    "site": "Tata Steel IJmuiden",
-    "lat": 52.47,
-    "lon": 4.6,
-    "status": "pilot",
-    "detail": "Coal-based smelting-reduction pilot (Rio Tinto, EU ULCOS). 2018 endurance run: 19 days, 2,000 t of iron. Testing finished.",
-    "certainty": "high",
-    "src": [
-     "gem"
-    ]
-   }
-  ],
   "sections": [
-   {
-    "title": "production",
-    "rows": [
-     {
-      "k": "main producer",
-      "v": "Tata Steel Nederland, IJmuiden — the country's only integrated steelworks. Parent: Tata Steel Ltd (India).",
-      "c": "high",
-      "src": [
-       "gem"
-      ]
-     },
-     {
-      "k": "crude steel capacity",
-      "v": "7.5 Mt/y, all blast furnace → basic oxygen furnace",
-      "c": "high",
-      "src": [
-       "gem",
-       "eurometal24"
-      ]
-     },
-     {
-      "k": "production",
-      "v": "6.8 Mt (2024) · 6.3 Mt (2023) · 6.3 Mt (2022)",
-      "c": "high",
-      "src": [
-       "gem"
-      ]
-     },
-     {
-      "k": "blast furnaces",
-      "v": "BF6 (1967, 2.5 Mt/y) · BF7 (1992, 4.0 Mt/y)",
-      "c": "high",
-      "src": [
-       "gem"
-      ]
-     },
-     {
-      "k": "jobs",
-      "v": "~9,000 at IJmuiden",
-      "c": "medium",
-      "src": [
-       "tpo26",
-       "gem"
-      ]
-     }
-    ]
-   },
    {
     "title": "regulation & tax pressure",
     "rows": [
      {
       "k": "EU ETS + CBAM",
-      "v": "CBAM's definitive (paying) phase began 1 Jan 2026; free ETS allowances for steel are phased out in parallel through 2034.",
+      "v": "CBAM's paying phase began 1 Jan 2026; free ETS allowances for steel are being phased out through 2034.",
       "c": "high",
       "src": [
        "cbam"
+      ]
+     },
+     {
+      "k": "free allowances debate",
+      "v": "The EU is weighing an extension of free allowances beyond the agreed phase-out — which would weaken the economics of green steel.",
+      "c": "medium",
+      "src": [
+       "cew26"
+      ]
+     },
+     {
+      "k": "trade protection",
+      "v": "Permanent EU safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024.",
+      "c": "high",
+      "src": [
+       "smm26"
       ]
      },
      {
@@ -136,14 +122,6 @@
       "src": [
        "tpo26",
        "linqs26"
-      ]
-     },
-     {
-      "k": "trade protection",
-      "v": "New permanent EU steel safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024. Shields EU producers from imports.",
-      "c": "high",
-      "src": [
-       "smm26"
       ]
      },
      {
@@ -313,71 +291,809 @@
      }
     ]
    }
-  ],
+  ]
+ },
+ "SWE": {
+  "updated": "2026-10-24",
+  "overall": {
+   "certainty": "medium",
+   "text": "The furthest along in the world: every Swedish steel plant has a green project. But the flagship, Stegra, needed new money twice in 2026 as costs rose."
+  },
   "sources": {
-   "gem": {
-    "t": "GEM — Tata Steel IJmuiden steel plant",
-    "u": "https://www.gem.wiki/Tata_Steel_IJmuiden_steel_plant"
-   },
-   "eurometal24": {
-    "t": "Eurometal — first phase of Green Steel plan (May 2024)",
-    "u": "https://eurometal.net/tata-steel-moves-forward-with-first-phase-of-green-steel-plan-in-the-netherlands/"
-   },
-   "danieli24": {
-    "t": "Danieli — DRI technology for Tata Steel (Jun 2024)",
-    "u": "https://www.danieli.com/en/news-media/news/danieli-provide-direct-reduction-technology-tata-steel-new-investment_37_901.htm"
-   },
-   "tpo26": {
-    "t": "TPO — decision on state aid postponed to March (Sep 2026)",
-    "u": "https://tpo.nl/2026/09/25/tata-steel-maatwerkafspraak-uitstel-miljardensteun/"
-   },
-   "linqs26": {
-    "t": "Industrielinqs — court lets negotiations continue (Jul 2026)",
-    "u": "https://www.industrielinqs.nl/staalindustrie/2026/07/kabinet-mag-onderhandelingen-over-maatwerksteun-aan-tata-steel-voortzetten/"
-   },
-   "accountant26": {
-    "t": "Accountant.nl — subsidy possibly five times higher (Sep 2026)",
-    "u": "https://www.accountant.nl/nieuws/2026/9/subsidie-voor-tata-steel-wordt-mogelijk-vijf-keer-hoger-dan-gedacht/"
-   },
-   "linqs25": {
-    "t": "Industrylinqs — Dutch CO₂ levy suspended (Sep 2025)",
-    "u": "https://www.industrylinqs.com/industry/2025/09/dutch-national-co2-levy-for-industry-suspended/"
-   },
-   "nltimes26": {
-    "t": "NL Times — industrial CO₂ tax brings in money (May 2026)",
-    "u": "https://nltimes.nl/2026/05/17/industrial-co2-tax-brings-money-dutch-state-first-time"
+   "cbam": {
+    "t": "European Commission, CBAM",
+    "d": "2026",
+    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
    },
    "smm26": {
-    "t": "SMM — EU permanent steel safeguard (Jul 2026)",
+    "t": "SMM, EU steel safeguard",
+    "d": "Jul 2026",
     "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47"
    },
-   "porthos26": {
-    "t": "S&P Global — Porthos construction progress (Jun 2026)",
-    "u": "https://www.spglobal.com/energy/en/news-research/latest-news/energy-transition/061726-dutch-porthos-ccs-project-marks-construction-progress-despite-delays"
+   "cew26": {
+    "t": "Clean Energy Wire",
+    "d": "Jun 2026",
+    "u": "https://www.cleanenergywire.org/news/green-steel-projects-threatened-eu-carbon-market-reform-plans-german-state-premier"
    },
-   "zeremis23": {
-    "t": "Tata Steel — Zeremis Carbon Lite deals (Feb 2023)",
-    "u": "https://www.tatasteelnederland.com/nieuws/en/tata-steel-signs-zeremis-carbon-lite-deals-with-wuppermann-bilstein-group-emw-stahl-service-and-grupo-arania"
+   "smm_stegra": {
+    "t": "SMM",
+    "d": "Apr 2026",
+    "u": "https://news.metal.com/newscontent/103858225-smm-iron-steel-stegra-secures-%E2%82%AC14-billion-financing-for-boden-green-steel-plant"
    },
-   "leadit": {
-    "t": "SEI / LeadIT — Green Steel Tracker, 2025 review",
-    "u": "https://www.sei.org/about-sei/press-room/critical-year-for-green-steel-in-2026/"
+   "esg_stegra": {
+    "t": "ESG Today",
+    "d": "Oct 2026",
+    "u": "https://www.esgtoday.com/stegra-seeks-more-capital-to-build-green-steel-megaplant-on-significantly-higher-than-assumed-costs/"
    },
-   "cbam": {
-    "t": "European Commission — Carbon Border Adjustment Mechanism",
-    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
+   "eurometal_ssab": {
+    "t": "Eurometal",
+    "d": "Apr 2024",
+    "u": "https://eurometal.net/ssab-proceeds-with-lulea-zero-emission-eaf-conversion/"
+   },
+   "cleantech26": {
+    "t": "CleanTechnica",
+    "d": "Feb 2026",
+    "u": "https://cleantechnica.com/2026/02/05/swedens-journey-to-producing-100-fossil-free-steel-for-volvo-beyond/"
    }
   },
-  "plants": [
+  "sections": [
    {
-    "name": "Tata Steel IJmuiden",
-    "lat": 52.47,
-    "lon": 4.6,
-    "route": "blast furnace → BOF",
-    "capacity": "7.5 Mt/y",
-    "transition": true,
-    "src": [
-     "gem"
+    "title": "regulation & tax pressure",
+    "rows": [
+     {
+      "k": "EU ETS + CBAM",
+      "v": "CBAM's paying phase began 1 Jan 2026; free ETS allowances for steel are being phased out through 2034.",
+      "c": "high",
+      "src": [
+       "cbam"
+      ]
+     },
+     {
+      "k": "free allowances debate",
+      "v": "The EU is weighing an extension of free allowances beyond the agreed phase-out — which would weaken the economics of green steel.",
+      "c": "medium",
+      "src": [
+       "cew26"
+      ]
+     },
+     {
+      "k": "trade protection",
+      "v": "Permanent EU safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024.",
+      "c": "high",
+      "src": [
+       "smm26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "competitiveness",
+    "rows": [
+     {
+      "k": "green premium",
+      "v": "Fossil-free steel reportedly costs 15–25% more than conventional steel for Volvo.",
+      "c": "medium",
+      "src": [
+       "cleantech26"
+      ]
+     },
+     {
+      "k": "cost overrun",
+      "v": "Stegra says its costs are 'significantly higher than assumed' and seeks more capital (Oct 2026), months after a €1.4 bn round led by Wallenberg Investments (Apr 2026).",
+      "c": "high",
+      "src": [
+       "esg_stegra",
+       "smm_stegra"
+      ]
+     },
+     {
+      "k": "projected competitiveness",
+      "v": "Strong if the plants start on time: cheap fossil-free power plus domestic ore. The risk is financial, not technical.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "strategy",
+    "rows": [
+     {
+      "k": "apparent strategy",
+      "v": "Go straight to hydrogen-DRI and electric furnaces, skipping gas as a bridge; secure premium buyers early.",
+      "c": "low",
+      "src": []
+     },
+     {
+      "k": "first moves",
+      "v": "SSAB: Oxelösund conversion decided in 2023; Luleå €4.5 bn EAF mini-mill (2.5 Mt/y), start-up targeted late 2028. Stegra Boden: 5 Mt/y of green steel, under construction.",
+      "c": "high",
+      "src": [
+       "eurometal_ssab",
+       "esg_stegra"
+      ]
+     },
+     {
+      "k": "timeline drift",
+      "v": "HYBRIT's demonstration plant in Gällivare slipped to late 2027, with risk of 2028 (permitting).",
+      "c": "medium",
+      "src": [
+       "eurometal_ssab"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "advantages",
+    "rows": [
+     {
+      "k": "fossil-free power",
+      "v": "Hydropower and wind in the north supply electricity and green hydrogen.",
+      "c": "medium",
+      "src": [
+       "cleantech26"
+      ]
+     },
+     {
+      "k": "ore at home",
+      "v": "LKAB's iron ore and the HYBRIT alliance (SSAB, LKAB, Vattenfall) keep the value chain in one country.",
+      "c": "medium",
+      "src": [
+       "cleantech26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "disadvantages",
+    "rows": [
+     {
+      "k": "financing fragility",
+      "v": "A first-of-a-kind plant financed mostly privately: cost overruns hit hard.",
+      "c": "high",
+      "src": [
+       "esg_stegra"
+      ]
+     },
+     {
+      "k": "small home market",
+      "v": "Most output must be exported, so it depends on buyers abroad paying a premium.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "demand pressure",
+    "rows": [
+     {
+      "k": "committed buyers",
+      "v": "Volvo Cars targets 100% renewable steel in models launched from 2030; Volvo Group the same for its trucks and machines.",
+      "c": "medium",
+      "src": [
+       "cleantech26"
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "DEU": {
+  "updated": "2026-10-24",
+  "overall": {
+   "certainty": "medium",
+   "text": "Europe's largest producer, with the most plans and the most mixed signals: one cancellation despite €1.3 bn of aid, Salzgitter delayed, thyssenkrupp building — but on gas first."
+  },
+  "sources": {
+   "cbam": {
+    "t": "European Commission, CBAM",
+    "d": "2026",
+    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
+   },
+   "smm26": {
+    "t": "SMM, EU steel safeguard",
+    "d": "Jul 2026",
+    "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47"
+   },
+   "cew26": {
+    "t": "Clean Energy Wire",
+    "d": "Jun 2026",
+    "u": "https://www.cleanenergywire.org/news/green-steel-projects-threatened-eu-carbon-market-reform-plans-german-state-premier"
+   },
+   "eurometal_tk26": {
+    "t": "Eurometal",
+    "d": "Aug 2026",
+    "u": "https://eurometal.net/thyssenkrupps-duisburg-dri-plant-could-initially-operate-without-hydrogen/"
+   },
+   "eurometal_salz25": {
+    "t": "Eurometal / S&P Global",
+    "d": "Sep 2025",
+    "u": "https://eurometal.net/salzgitter-delays-salcos-hydrogen-steel-project-by-three-years/"
+   },
+   "rw25": {
+    "t": "Renewable Watch",
+    "d": "Jun 2025",
+    "u": "https://renewablewatch.in/2025/06/26/arcelormittal-cancels-plans-for-green-steel-plants-in-germany-due-to-high-energy-costs/"
+   },
+   "fps26": {
+    "t": "FPS Law",
+    "d": "Apr 2026",
+    "u": "https://fps-law.de/en/fps-blog/green-light-germanys-industrial-electricity-price"
+   }
+  },
+  "sections": [
+   {
+    "title": "regulation & tax pressure",
+    "rows": [
+     {
+      "k": "EU ETS + CBAM",
+      "v": "CBAM's paying phase began 1 Jan 2026; free ETS allowances for steel are being phased out through 2034.",
+      "c": "high",
+      "src": [
+       "cbam"
+      ]
+     },
+     {
+      "k": "free allowances debate",
+      "v": "The EU is weighing an extension of free allowances beyond the agreed phase-out — which would weaken the economics of green steel.",
+      "c": "medium",
+      "src": [
+       "cew26"
+      ]
+     },
+     {
+      "k": "trade protection",
+      "v": "Permanent EU safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024.",
+      "c": "high",
+      "src": [
+       "smm26"
+      ]
+     },
+     {
+      "k": "industrial power price",
+      "v": "Subsidised industrial electricity price approved by Brussels (Apr 2026) for 2026–2028; floor of 5 ct/kWh; half the aid must go into decarbonisation.",
+      "c": "high",
+      "src": [
+       "fps26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "competitiveness",
+    "rows": [
+     {
+      "k": "energy costs",
+      "v": "High electricity prices and an uncertain energy mix were the reported reasons ArcelorMittal dropped its German plans.",
+      "c": "medium",
+      "src": [
+       "rw25"
+      ]
+     },
+     {
+      "k": "subsidy dependence",
+      "v": "thyssenkrupp's Duisburg DRI (~€3 bn) is about two-thirds publicly funded.",
+      "c": "high",
+      "src": [
+       "eurometal_tk26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "strategy",
+    "rows": [
+     {
+      "k": "apparent strategy",
+      "v": "State-backed DRI conversions that start on natural gas; hydrogen postponed until it is cheaper.",
+      "c": "low",
+      "src": []
+     },
+     {
+      "k": "first moves",
+      "v": "thyssenkrupp: Brussels approved changed funding conditions so Duisburg can start without hydrogen (Aug 2026). Salzgitter: SALCOS phase 1 on track for 2027, phases 2–3 decision moved to 2028/29.",
+      "c": "high",
+      "src": [
+       "eurometal_tk26",
+       "eurometal_salz25"
+      ]
+     },
+     {
+      "k": "withdrawal",
+      "v": "ArcelorMittal cancelled Bremen and Eisenhüttenstadt (Jun 2025), declining €1.3 bn of subsidies.",
+      "c": "high",
+      "src": [
+       "rw25"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "advantages",
+    "rows": [
+     {
+      "k": "industrial demand",
+      "v": "Large domestic buyers (automotive, machinery) close to the mills.",
+      "c": "low",
+      "src": []
+     },
+     {
+      "k": "public money",
+      "v": "Federal and state funding already committed to several conversions.",
+      "c": "high",
+      "src": [
+       "eurometal_tk26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "disadvantages",
+    "rows": [
+     {
+      "k": "policy signals",
+      "v": "Salzgitter blamed deteriorating economic and regulatory conditions since 2022 for its delay.",
+      "c": "high",
+      "src": [
+       "eurometal_salz25"
+      ]
+     },
+     {
+      "k": "hydrogen",
+      "v": "No affordable hydrogen yet; the first DRI plants will burn gas.",
+      "c": "high",
+      "src": [
+       "eurometal_tk26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "demand pressure",
+    "rows": [
+     {
+      "k": "green lead markets",
+      "v": "Lead markets and a green steel label are discussed but not yet binding on buyers.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   }
+  ]
+ },
+ "ESP": {
+  "updated": "2026-10-24",
+  "overall": {
+   "certainty": "medium",
+   "text": "The incumbent's flagship — ArcelorMittal's hydrogen DRI in Gijón, backed by €450 M of public money — is suspended. A newcomer, Hydnum, is raising capital in Puertollano."
+  },
+  "sources": {
+   "cbam": {
+    "t": "European Commission, CBAM",
+    "d": "2026",
+    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
+   },
+   "smm26": {
+    "t": "SMM, EU steel safeguard",
+    "d": "Jul 2026",
+    "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47"
+   },
+   "cew26": {
+    "t": "Clean Energy Wire",
+    "d": "Jun 2026",
+    "u": "https://www.cleanenergywire.org/news/green-steel-projects-threatened-eu-carbon-market-reform-plans-german-state-premier"
+   },
+   "eurometal_am24": {
+    "t": "Eurometal",
+    "d": "Nov 2024",
+    "u": "https://eurometal.net/arcelormittal-suspends-final-investment-decision-on-spanish-dri/"
+   },
+   "steelorbis_hyd26": {
+    "t": "SteelOrbis",
+    "d": "Aug 2026",
+    "u": "https://www.steelorbis.com/steel-news/latest-news/hydnum-steel-secures-150-million-funding-commitment-for-puertollano-green-steel-project-1469308.htm"
+   }
+  },
+  "sections": [
+   {
+    "title": "regulation & tax pressure",
+    "rows": [
+     {
+      "k": "EU ETS + CBAM",
+      "v": "CBAM's paying phase began 1 Jan 2026; free ETS allowances for steel are being phased out through 2034.",
+      "c": "high",
+      "src": [
+       "cbam"
+      ]
+     },
+     {
+      "k": "free allowances debate",
+      "v": "The EU is weighing an extension of free allowances beyond the agreed phase-out — which would weaken the economics of green steel.",
+      "c": "medium",
+      "src": [
+       "cew26"
+      ]
+     },
+     {
+      "k": "trade protection",
+      "v": "Permanent EU safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024.",
+      "c": "high",
+      "src": [
+       "smm26"
+      ]
+     },
+     {
+      "k": "public aid",
+      "v": "€450 M from Spain's recovery funds approved for the Gijón low-carbon project (2024).",
+      "c": "high",
+      "src": [
+       "eurometal_am24"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "competitiveness",
+    "rows": [
+     {
+      "k": "why the pause",
+      "v": "ArcelorMittal cited deficiencies in CBAM, no domestic green hydrogen framework, and energy-market developments.",
+      "c": "high",
+      "src": [
+       "eurometal_am24"
+      ]
+     },
+     {
+      "k": "electric already",
+      "v": "About 70% of Spanish steel capacity is already electric-arc, so the transition is mostly about the remaining blast furnaces.",
+      "c": "high",
+      "src": [
+       "gem"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "strategy",
+    "rows": [
+     {
+      "k": "incumbent",
+      "v": "Build the electric furnaces in Gijón and Sestao now; hold the DRI decision (2.3 Mt/y) until rules improve.",
+      "c": "high",
+      "src": [
+       "eurometal_am24"
+      ]
+     },
+     {
+      "k": "newcomer",
+      "v": "Hydnum Steel: hydrogen + renewable-powered steel in Puertollano; €150 M from the state co-investment fund (Aug 2026), >€1.5 bn package; construction to begin end 2026.",
+      "c": "high",
+      "src": [
+       "steelorbis_hyd26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "advantages",
+    "rows": [
+     {
+      "k": "renewables",
+      "v": "Strong solar and wind resources for cheap power and hydrogen.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "disadvantages",
+    "rows": [
+     {
+      "k": "decisions taken abroad",
+      "v": "The largest primary producer decides at group level, weighing Spain against other countries.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "demand pressure",
+    "rows": [
+     {
+      "k": "buyers",
+      "v": "No large public offtake commitments found.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   }
+  ]
+ },
+ "FRA": {
+  "updated": "2026-10-24",
+  "overall": {
+   "certainty": "medium",
+   "text": "ArcelorMittal confirmed a €1.3 bn electric furnace in Dunkirk (2 Mt/y, 2029) once CBAM and new tariffs were in place. GravitHy is permitting a 2 Mt/y hydrogen-iron plant in Fos."
+  },
+  "sources": {
+   "cbam": {
+    "t": "European Commission, CBAM",
+    "d": "2026",
+    "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en"
+   },
+   "smm26": {
+    "t": "SMM, EU steel safeguard",
+    "d": "Jul 2026",
+    "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47"
+   },
+   "cew26": {
+    "t": "Clean Energy Wire",
+    "d": "Jun 2026",
+    "u": "https://www.cleanenergywire.org/news/green-steel-projects-threatened-eu-carbon-market-reform-plans-german-state-premier"
+   },
+   "euronews26": {
+    "t": "Euronews",
+    "d": "Feb 2026",
+    "u": "https://www.euronews.com/my-europe/2026/02/11/arcelormittal-invests-13-billion-to-produce-green-steel-at-its-dunkirk-plant"
+   },
+   "smm_grav26": {
+    "t": "SMM",
+    "d": "Jul 2026",
+    "u": "https://news.metal.com/en/newscontent/104025671-gravithy-files-permits-for-2-million-tonne-hydrogen-based-dri-plant-in-france"
+   }
+  },
+  "sections": [
+   {
+    "title": "regulation & tax pressure",
+    "rows": [
+     {
+      "k": "EU ETS + CBAM",
+      "v": "CBAM's paying phase began 1 Jan 2026; free ETS allowances for steel are being phased out through 2034.",
+      "c": "high",
+      "src": [
+       "cbam"
+      ]
+     },
+     {
+      "k": "free allowances debate",
+      "v": "The EU is weighing an extension of free allowances beyond the agreed phase-out — which would weaken the economics of green steel.",
+      "c": "medium",
+      "src": [
+       "cew26"
+      ]
+     },
+     {
+      "k": "trade protection",
+      "v": "Permanent EU safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024.",
+      "c": "high",
+      "src": [
+       "smm26"
+      ]
+     },
+     {
+      "k": "public aid",
+      "v": "Up to half of the Dunkirk furnace funded through energy-savings certificates; €850 M confirmed in 2023 for Dunkirk and Fos.",
+      "c": "high",
+      "src": [
+       "euronews26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "competitiveness",
+    "rows": [
+     {
+      "k": "trigger",
+      "v": "ArcelorMittal named CBAM's definitive phase and the new tariff quota as conditions that made Dunkirk possible.",
+      "c": "high",
+      "src": [
+       "euronews26"
+      ]
+     },
+     {
+      "k": "weight",
+      "v": "Dunkirk alone emits about 15% of French industrial CO₂.",
+      "c": "high",
+      "src": [
+       "euronews26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "strategy",
+    "rows": [
+     {
+      "k": "apparent strategy",
+      "v": "Electrify first with scrap-fed furnaces; leave hydrogen iron to specialised newcomers.",
+      "c": "low",
+      "src": []
+     },
+     {
+      "k": "first moves",
+      "v": "Dunkirk EAF confirmed 10 Feb 2026, start 2029. GravitHy filed building and environmental permits in Fos (Jul 2026).",
+      "c": "high",
+      "src": [
+       "euronews26",
+       "smm_grav26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "advantages",
+    "rows": [
+     {
+      "k": "low-carbon grid",
+      "v": "Nuclear-heavy electricity makes electric furnaces low-carbon.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "disadvantages",
+    "rows": [
+     {
+      "k": "waiting game",
+      "v": "Decisions waited for EU trade protection: the Dunkirk confirmation took almost two years.",
+      "c": "high",
+      "src": [
+       "euronews26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "demand pressure",
+    "rows": [
+     {
+      "k": "buyers",
+      "v": "No large public offtake commitments found.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   }
+  ]
+ },
+ "CHN": {
+  "updated": "2026-10-24",
+  "overall": {
+   "certainty": "medium",
+   "text": "Over half the world's steel, mostly from blast furnaces. A few large hydrogen-DRI demonstrations run, and the carbon market covers steel — with free allowances and a low price."
+  },
+  "sources": {
+   "gmk26": {
+    "t": "GMK Center / NBS",
+    "d": "Jan 2026",
+    "u": "https://gmk.center/en/news/steel-production-in-china-fell-to-a-seven-year-low-in-2025/"
+   },
+   "tei26": {
+    "t": "Transition Economics Institute",
+    "d": "Sep 2026",
+    "u": "https://tei-energy.org/articles/2026-09-22-china-carbon-market-progress-report-2026"
+   },
+   "chinah2": {
+    "t": "China Hydrogen",
+    "d": "2023",
+    "u": "https://chinahydrogen.substack.com/p/chinas-first-1-million-ton-hydrogen"
+   }
+  },
+  "sections": [
+   {
+    "title": "production",
+    "rows": [
+     {
+      "k": "output",
+      "v": "960.8 Mt of crude steel in 2025, down 4.4% — a seven-year low.",
+      "c": "high",
+      "src": [
+       "gmk26"
+      ]
+     },
+     {
+      "k": "exports",
+      "v": "Record exports of over 119 Mt in 2025.",
+      "c": "high",
+      "src": [
+       "gmk26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "regulation & tax pressure",
+    "rows": [
+     {
+      "k": "national carbon market",
+      "v": "Steel joined the national ETS in 2025. Allowances are free and intensity-based; each firm's surplus or shortfall is capped at ±3%.",
+      "c": "high",
+      "src": [
+       "tei26"
+      ]
+     },
+     {
+      "k": "carbon price",
+      "v": "About CNY 94 per tonne (Sep 2026) — a fraction of the EU price.",
+      "c": "high",
+      "src": [
+       "tei26"
+      ]
+     },
+     {
+      "k": "next step",
+      "v": "Absolute caps for some sectors planned from around 2027; paid auctioning later.",
+      "c": "medium",
+      "src": [
+       "tei26"
+      ]
+     }
+    ]
+   },
+   {
+    "title": "competitiveness",
+    "rows": [
+     {
+      "k": "cost gap",
+      "v": "With cheap, free carbon at home, the main pressure on emissions comes from abroad (CBAM on exports).",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "strategy",
+    "rows": [
+     {
+      "k": "first moves",
+      "v": "Baowu's Zhanjiang works runs a 1 Mt/y hydrogen-based shaft furnace since Dec 2023, using hydrogen-rich coke-oven gas.",
+      "c": "high",
+      "src": [
+       "chinah2"
+      ]
+     },
+     {
+      "k": "apparent strategy",
+      "v": "Large state-led demonstrations and a soft carbon market first; tighten later as output falls.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "advantages",
+    "rows": [
+     {
+      "k": "scale",
+      "v": "Unmatched scale and supply chains, including electrolysers and renewables.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "disadvantages",
+    "rows": [
+     {
+      "k": "lock-in",
+      "v": "A large, relatively young blast-furnace fleet makes fast change expensive.",
+      "c": "low",
+      "src": []
+     }
+    ]
+   },
+   {
+    "title": "demand pressure",
+    "rows": [
+     {
+      "k": "domestic demand",
+      "v": "Falling domestic production and record exports point to weak demand at home.",
+      "c": "medium",
+      "src": [
+       "gmk26"
+      ]
+     }
     ]
    }
   ]
