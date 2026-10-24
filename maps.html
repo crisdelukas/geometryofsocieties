@@ -78,6 +78,12 @@
   .key i.ln { width: 14px; height: 0; border: 0; border-top: 1.5px solid var(--ink); vertical-align: 3px; }
   .key i.ln.g { border-top-color: var(--accent); }
   .key i.ring { border-radius: 50%; border-color: var(--accent); background: none; }
+  .key i.ring.w { border-color: var(--ink); }
+  .key i.ln.d { border-top-style: dashed; }
+  .key i.dia { transform: rotate(45deg) scale(.8); border-color: var(--muted); }
+  .dl { width: 12px; height: 0; border-top: 1.6px solid var(--ink); flex: none; }
+  .dl.h2 { border-top-color: var(--accent); }
+  .dl.intent { border-top-style: dashed; }
   summary i { font-style: normal; color: var(--muted); margin-left: 6px; }
   .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
   .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
@@ -127,7 +133,7 @@
 <canvas id="plantsCanvas"></canvas>
 <svg id="over"></svg>
 <a class="back" href="experiments.html">← experiments</a>
-<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span></div>
+<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span><span id="buyerHover"></span></div>
 
 <button id="tab" aria-label="toggle menu" title="layers">
   <svg viewBox="0 0 12 12"><path d="M1 3h10M1 6h10M1 9h10"/></svg>
@@ -140,6 +146,8 @@
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
     <button class="check" data-layer="trade">steel exports</button>
     <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
+    <button class="check" data-layer="demand">green steel buyers</button>
+    <div class="key col" id="demandKey" hidden><span><i class="ring w"></i>buyer, at headquarters</span><span><i class="ln g"></i>hydrogen / fossil-free steel</span><span><i class="ln"></i>recycled or lower-CO₂ steel</span><span><i class="ln d"></i>letter of intent only</span><span><i class="dia"></i>supplier, plant not named</span></div>
   </div>
   <div id="country"><div class="grp hint">select a country on the map</div></div>
 </aside>
@@ -172,13 +180,14 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
   json('atlas_plants.json', []),                          // every operating / building steel plant
   json('atlas_data.json', {}),                            // researched panels, country by country
   json('atlas_trade.json', { flows: [], countries: {} }), // UN Comtrade steel trade
+  json('atlas_demand.json', { buyers: [], sources: {} }), // green steel buyers and their deals
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -280,7 +289,7 @@ function clampView() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -447,6 +456,92 @@ function drawTrade(t) {
   }
 }
 
+/* ---------- demand: buyers at headquarters, deal lines to the plant they buy from ---------- */
+const dealGroup = new THREE.Group(); dealGroup.visible = false; scene.add(dealGroup);
+const DS = DEMAND.sources || {};
+const KIND = { h2: 'hydrogen / fossil-free steel', scrap: 'recycled steel, electric furnace', reduced: 'lower-CO₂ steel' };
+const STAGE = { delivering: 'delivering', agreed: 'agreed purchase', intent: 'letter of intent' };
+const buyers = (DEMAND.buyers || []).map(b => {
+  const at = new THREE.Vector3(b.lon, groundAt(b.lon, b.lat), -b.lat);
+  const deals = b.deals.map(d => {
+    const to = new THREE.Vector3(d.lon, groundAt(d.lon, d.lat), -d.lat);
+    const dist = at.distanceTo(to), h = 1.5 + dist * .12, pts = [];
+    for (let k = 0; k <= 40; k++) { const t = k / 40, p = at.clone().lerp(to, t); p.y = at.y * (1 - t) + to.y * t + h * 4 * t * (1 - t); pts.push(p); }
+    const geo = new LineGeometry(); geo.setPositions(pts.flatMap(p => [p.x, p.y, p.z]));
+    // solid = delivering or agreed, dashed = only a letter of intent; green = hydrogen / fossil-free steel
+    const mat = new LineMaterial({ color: d.kind === 'h2' ? 0xc8e054 : 0xffffff, linewidth: d.stage === 'intent' ? 1 : 1.6, transparent: true, opacity: .8,
+      dashed: d.stage === 'intent', dashSize: .6, gapSize: .6, depthWrite: false });
+    const line = new Line2(geo, mat); line.computeLineDistances(); dealGroup.add(line);
+    return { ...d, to, pts, mat };
+  });
+  return { ...b, at, deals, sx: -1, sy: -1 };
+});
+let hotBuyer = null, pickedBuyer = null;
+function buyerAt(x, y) {
+  if (!layers.demand) return null;
+  let best = null, bd = 100;
+  for (const b of buyers) { const dd = (b.sx - x) ** 2 + (b.sy - y) ** 2; if (dd < bd) { bd = dd; best = b; } }
+  return best;
+}
+function drawDemand() {
+  dealGroup.visible = layers.demand;
+  if (!layers.demand) return;
+  const focus = hotBuyer || pickedBuyer;
+  for (const b of buyers) for (const d of b.deals) {
+    d.mat.resolution.set(innerWidth, innerHeight);
+    d.mat.opacity = !focus ? .8 : b === focus ? 1 : .12;
+  }
+  const dpr = devicePixelRatio; px.setTransform(dpr, 0, 0, dpr, 0, 0);
+  px.font = '10px ui-monospace, Menlo, monospace';
+  const ends = new Map(), taken = [];
+  for (const b of buyers) {
+    const s = toScreen(b.at); b.sx = s.behind ? -99 : s.x; b.sy = s.behind ? -99 : s.y;
+    if (s.behind) continue;
+    // buyer: a ring on the ground
+    px.lineWidth = 1.4; px.strokeStyle = '#ffffff'; px.fillStyle = '#000';
+    px.beginPath(); px.arc(s.x, s.y, b === focus ? 6 : 4.5, 0, 7); px.fill(); px.stroke();
+    const t = b.name.toLowerCase(), w = px.measureText(t).width + 4, box = [s.x + 8, s.y - 6, w, 13];
+    const free = !taken.some(q => box[0] < q[0] + q[2] && q[0] < box[0] + box[2] && box[1] < q[1] + q[3] + 2 && q[1] < box[1] + box[3] + 2);
+    if (b === focus || (!focus && b.deals.length > 1 && free)) {
+      taken.push(box);
+      px.fillStyle = '#000'; px.globalAlpha = .75; px.fillRect(s.x + 8, s.y - 6, w, 13); px.globalAlpha = 1;
+      px.fillStyle = '#ffffff'; px.fillText(t, s.x + 10, s.y + 4);
+    }
+    for (const d of b.deals) ends.set(d.supplier, d);
+  }
+  // suppliers with no named plant: a small hollow diamond at the company's headquarters
+  for (const d of ends.values()) {
+    if (d.named) continue;
+    const s = toScreen(d.to); if (s.behind) continue;
+    px.strokeStyle = 'rgba(255,255,255,.7)'; px.lineWidth = 1;
+    px.beginPath(); px.moveTo(s.x, s.y - 4); px.lineTo(s.x + 4, s.y); px.lineTo(s.x, s.y + 4); px.lineTo(s.x - 4, s.y); px.closePath(); px.stroke();
+  }
+}
+const plantName = d => (d.label || (d.named ? clean(d.supplier) : d.supplier)).toLowerCase();
+function showBuyer(b) {
+  const used = [];
+  const ref = id => { if (!DS[id]) return ''; if (!used.includes(id)) used.push(id); const s = DS[id];
+    return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
+  const rows = b.deals.map(d => `<div class="row"><div class="k"><span class="dl ${d.kind} ${d.stage}"></span>${esc(STAGE[d.stage])}${d.signed ? ' · signed ' + d.signed : ''}</div>
+    <div class="v">${esc(plantName(d))} <span class="m">— ${esc(KIND[d.kind])}, ${esc(d.start)}${d.volume ? ', ' + esc(d.volume) : ''}</span>${d.src.map(ref).join('')}</div></div>`).join('');
+  const n = k => b.deals.filter(d => d.stage === k).length;
+  countryBox.innerHTML = `<div class="grp"><div class="name">${esc(b.name)}</div>
+    <div class="figs">
+      <div class="fig"><div class="k">sector</div><div class="v">${esc(b.sector)}</div></div>
+      <div class="fig"><div class="k">headquarters</div><div class="v">${esc((T[b.iso]?.name || b.iso).toLowerCase())}</div></div>
+      <div class="fig"><div class="k">deals</div><div class="v">${b.deals.length}</div></div>
+      <div class="fig"><div class="k">stage</div><div class="v">${[['delivering', n('delivering')], ['agreed', n('agreed')], ['intent', n('intent')]].filter(x => x[1]).map(x => x[1] + ' ' + x[0]).join(' · ')}</div></div>
+      <div class="fig" style="grid-column:1/-1"><div class="k">commitment</div><div class="v txt">${esc(b.note)}</div></div>
+    </div></div>
+    <details open><summary><span>green steel deals <i>${b.deals.length}</i></span></summary><div class="rows">${rows}</div></details>
+    ${credit(used.map(id => DS[id]))}`;
+}
+function selectBuyer(b) {
+  pickedBuyer = b; picked = null; uniforms.uSel.value = -9; selected = null;
+  showBuyer(b); setMenu(true); menu.scrollTop = 0;
+  fly.target.copy(b.at).setY(0); fly.on = true; fly.dist = Math.min(260, Math.max(90, Math.max(...b.deals.map(d => b.at.distanceTo(d.to)), 10) * 2.2));
+}
+
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
 const setMenu = open => { document.body.classList.toggle('menu', open); fly.offsetTo = open && innerWidth > 640 ? menu.offsetWidth / 2 : 0; };
@@ -456,6 +551,7 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   btn.classList.toggle('on', layers[btn.dataset.layer]);
   document.getElementById('plantKey').hidden = !layers.plants;
   document.getElementById('tradeKey').hidden = !layers.trade;
+  document.getElementById('demandKey').hidden = !layers.demand;
 });
 
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -507,6 +603,7 @@ const fly = { on: false, target: new THREE.Vector3(), dist: 90, offset: 0, offse
 let selected = null;
 function select(c) {
   uniforms.uSel.value = c ? c.i : -9; selected = c;
+  if (c) pickedBuyer = null;
   if (c) { const caps = plants.filter(f => f.iso === isoOf(c)).map(f => f.cap).sort((a, b) => b - a); labelMin = caps.length > 8 ? caps[7] : 0; }
   if (!c) { countryBox.innerHTML = '<div class="grp hint">select a country on the map</div>'; return; }
   showCountry(c); setMenu(true); menu.scrollTop = 0;
@@ -544,10 +641,12 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
   document.getElementById('hover').textContent = p.c != null ? byIndex.get(p.c).name.toLowerCase() : '—';
-  hotArc = arcAt(e.clientX, e.clientY);
+  hotBuyer = buyerAt(e.clientX, e.clientY);
+  document.getElementById('buyerHover').innerHTML = hotBuyer ? `buyer<b>${esc(hotBuyer.name.toLowerCase())} · ${hotBuyer.deals.length} deal${hotBuyer.deals.length > 1 ? 's' : ''} · ${esc(hotBuyer.sector)}</b>` : '';
+  hotArc = hotBuyer ? null : arcAt(e.clientX, e.clientY);
   document.getElementById('tradeHover').innerHTML = hotArc ? `export<b>${esc(cname(hotArc.o))} → ${esc(cname(hotArc.d))} · ${fmt$(hotArc.val)} · ${TRADE.year}${hotArc.mirror ? ' · reported by importer' : ''}</b>` : '';
   const best = plantAt(e.clientX, e.clientY);
-  renderer.domElement.style.cursor = best || hotArc ? 'pointer' : '';
+  renderer.domElement.style.cursor = best || hotArc || hotBuyer ? 'pointer' : '';
   const ph = document.getElementById('plantHover');
   ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
@@ -577,6 +676,9 @@ function selectPlant(f) {
 }
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // that was a drag
+  const bu = buyerAt(e.clientX, e.clientY);
+  if (bu) return selectBuyer(bu);
+  pickedBuyer = null;
   const f = plantAt(e.clientX, e.clientY);
   if (f) return selectPlant(f);
   const a = arcAt(e.clientX, e.clientY);
@@ -604,6 +706,7 @@ renderer.setAnimationLoop(t => {
   renderer.render(scene, camera);
   drawOverlay(t);
   drawTrade(t);
+  drawDemand();
 });
 </script>
 </body>
