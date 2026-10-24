@@ -73,6 +73,11 @@
   .hint { color: var(--muted); }
   #plantsCanvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .key i.c { border-style: dotted; border-color: var(--muted); }
+  .key.col { flex-direction: column; gap: 5px; }
+  .key em { font-style: normal; }
+  .key i.ln { width: 14px; height: 0; border: 0; border-top: 1.5px solid var(--ink); vertical-align: 3px; }
+  .key i.ln.g { border-top-color: var(--accent); }
+  .key i.ring { border-radius: 50%; border-color: var(--accent); background: none; }
   summary i { font-style: normal; color: var(--muted); margin-left: 6px; }
   .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
   .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
@@ -122,7 +127,7 @@
 <canvas id="plantsCanvas"></canvas>
 <svg id="over"></svg>
 <a class="back" href="experiments.html">← experiments</a>
-<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span></div>
+<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span></div>
 
 <button id="tab" aria-label="toggle menu" title="layers">
   <svg viewBox="0 0 12 12"><path d="M1 3h10M1 6h10M1 9h10"/></svg>
@@ -133,6 +138,8 @@
     <button class="check on" data-layer="boxes">countries with ongoing projects</button>
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
+    <button class="check" data-layer="trade">steel exports</button>
+    <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
   </div>
   <div id="country"><div class="grp hint">select a country on the map</div></div>
 </aside>
@@ -146,6 +153,9 @@
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 
 /* ---- settings you can edit ---------------------------------------- */
 const HEIGHT = 12;      // how tall the mountains are
@@ -162,12 +172,13 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
   json('atlas_plants.json', []),                          // every operating / building steel plant
   json('atlas_data.json', {}),                            // researched panels, country by country
+  json('atlas_trade.json', { flows: [], countries: {} }), // UN Comtrade steel trade
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -269,7 +280,7 @@ function clampView() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false };
+const layers = { boxes: true, plants: false, trade: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -346,8 +357,8 @@ function drawOverlay(t) {
     f.on = !s.behind && s.x > -10 && s.x < innerWidth + 10 && s.y > -10 && s.y < innerHeight + 10;
     if (!f.on) continue;
     f.sx = s.x; f.sy = s.y - 22; f.lbl = null;
-    const size = f.cap > 5000 ? 9 : f.cap > 1500 ? 7 : 6; f.size = size;
-    px.strokeStyle = '#ffffff'; px.lineWidth = 1.4; px.beginPath(); px.moveTo(s.x, s.y); px.lineTo(s.x, f.sy); px.stroke(); px.lineWidth = 1;
+    const size = 6; f.size = size;                      // same size for every factory
+    px.strokeStyle = '#ffffff'; px.lineWidth = 1; px.beginPath(); px.moveTo(s.x, s.y); px.lineTo(s.x, f.sy); px.stroke(); px.lineWidth = 1;
     if (f.tr) { px.fillStyle = '#c8e054'; px.fillRect(s.x - size / 2, f.sy - size, size, size); }
     else {
       px.fillStyle = '#000'; px.fillRect(s.x - size / 2, f.sy - size, size, size);
@@ -368,6 +379,74 @@ function drawOverlay(t) {
 }
 let labelMin = 0, picked = null;                                 // in a big country, only label the larger plants
 
+/* ---------- exports: flight-path arcs between steel heartlands ---------- */
+const arcs = [], arcGroup = new THREE.Group(); arcGroup.visible = false; scene.add(arcGroup);
+const T = TRADE.countries || {};
+const numOf = {}; for (const [n, i] of Object.entries(WORLD._ids)) numOf[i] = n;
+const centreOf = {};                                   // capacity-weighted centre of a country's plants, else its centroid
+function heartland(i) {
+  if (centreOf[i]) return centreOf[i];
+  const mine = plants.filter(f => f.iso === i);
+  let p = null;
+  if (mine.length) {
+    const w = mine.reduce((s, f) => s + Math.max(f.cap, 1), 0);
+    p = new THREE.Vector3(mine.reduce((s, f) => s + f.ground.x * Math.max(f.cap, 1), 0) / w, 0, mine.reduce((s, f) => s + f.ground.z * Math.max(f.cap, 1), 0) / w);
+  } else {
+    const c = countries.find(c => c.id === numOf[i] && c.centroid);
+    if (c) p = new THREE.Vector3(c.centroid[0], 0, -c.centroid[1]);
+  }
+  return centreOf[i] = p;
+}
+const maxV = Math.max(1, ...(TRADE.flows || []).map(f => f[2]));
+for (const [o, d, val, mirror] of TRADE.flows || []) {
+  const a = heartland(o), b = heartland(d);
+  if (!a || !b) continue;
+  const dist = a.distanceTo(b), h = 2 + dist * .15, pts = [];
+  for (let k = 0; k <= 48; k++) {
+    const t = k / 48, p = a.clone().lerp(b, t);
+    p.y = HEIGHT * .35 + h * 4 * t * (1 - t);
+    pts.push(p);
+  }
+  const geo = new LineGeometry(); geo.setPositions(pts.flatMap(p => [p.x, p.y, p.z]));
+  const full = T[o]?.green === 2;
+  const mat = new LineMaterial({ color: full ? 0xc8e054 : 0xffffff, linewidth: .6 + 3.4 * Math.sqrt(val / maxV), transparent: true, opacity: .55,
+    dashed: true, dashSize: 1.4, gapSize: .7, dashScale: 1, depthWrite: false });
+  const line = new Line2(geo, mat); line.computeLineDistances(); arcGroup.add(line);
+  arcs.push({ o, d, val, mirror, pts, mat, line });
+}
+const fmt$ = v => v >= 1e9 ? '$' + (v / 1e9).toFixed(1) + ' bn' : '$' + Math.round(v / 1e6) + ' M';
+const cname = i => (T[i]?.name || i).toLowerCase();
+let hotArc = null;
+function arcAt(x, y) {
+  if (!layers.trade) return null;
+  let best = null, bd = 36;
+  for (const a of arcs) for (let k = 2; k < a.pts.length - 2; k += 2) {
+    const s = toScreen(a.pts[k]); if (s.behind) continue;
+    const dd = (s.x - x) ** 2 + (s.y - y) ** 2; if (dd < bd) { bd = dd; best = a; }
+  }
+  return best;
+}
+function drawTrade(t) {
+  arcGroup.visible = layers.trade;
+  if (!layers.trade) return;
+  const selIso = selected ? isoOf(selected) : null;
+  for (const a of arcs) {
+    a.mat.resolution.set(innerWidth, innerHeight);
+    a.mat.dashOffset = -t * .004;                       // a slow drift from exporter to importer
+    const lit = a === hotArc || (selIso && (a.o === selIso || a.d === selIso));
+    a.mat.opacity = lit ? 1 : (hotArc || selIso) ? .18 : .55;
+  }
+  // origin marks: a small green ring where the exporter runs a qualifying green pilot
+  const dpr = devicePixelRatio; px.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const done = new Set();
+  for (const a of arcs) {
+    if (done.has(a.o)) continue; done.add(a.o);
+    const s = toScreen(a.pts[0]); if (s.behind) continue;
+    if (T[a.o]?.green === 1) { px.strokeStyle = '#c8e054'; px.lineWidth = 1.2; px.beginPath(); px.arc(s.x, s.y, 5, 0, 7); px.stroke(); }
+    px.fillStyle = '#ffffff'; px.fillRect(s.x - 1.5, s.y - 1.5, 3, 3);
+  }
+}
+
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
 const setMenu = open => { document.body.classList.toggle('menu', open); fly.offsetTo = open && innerWidth > 640 ? menu.offsetWidth / 2 : 0; };
@@ -376,6 +455,7 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   layers[btn.dataset.layer] = !layers[btn.dataset.layer];
   btn.classList.toggle('on', layers[btn.dataset.layer]);
   document.getElementById('plantKey').hidden = !layers.plants;
+  document.getElementById('tradeKey').hidden = !layers.trade;
 });
 
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -383,9 +463,9 @@ const CERT = { high: 'official or primary source', medium: 'reported, estimated 
 const META = WORLD._meta;
 function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
-  if (!w && !d) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  if (!w && !d && !T[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
-  const srcs = { ...(d?.sources || {}), gem: META.gem, leadit: META.leadit };
+  const srcs = { ...(d?.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source };
   const used = [];
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
@@ -405,6 +485,12 @@ function showCountry(c) {
       <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span></div></div>`).join(''), pl.length);
     const mine = plants.filter(f => f.iso === w.iso).sort((a, b) => b.cap - a.cap);
     folds += fold('steel plants', mine.map(f => `<div class="row" id="plant-${plants.indexOf(f)}"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
+  }
+  const tr = T[isoOf(c)];
+  if (tr) {
+    figs += fig(`steel exports ${TRADE.year}`, `${fmt$(tr.exp)}${ref('comtrade')}`) + fig(`steel imports ${TRADE.year}`, fmt$(tr.imp));
+    const list = (arr, arrow) => arr.map(([i, v]) => `<div class="row"><div class="v">${arrow} ${esc(cname(i))} <span class="m">— ${fmt$(v)}</span></div></div>`).join('');
+    folds += fold('steel trade', `<div class="row"><div class="k">largest destinations${tr.mirror ? ' · reported by importers' : ''}</div></div>${list(tr.to, '→')}<div class="row"><div class="k">largest suppliers</div></div>${list(tr.from, '←')}`);
   }
   let head = '';
   if (d) {
@@ -458,8 +544,10 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
   document.getElementById('hover').textContent = p.c != null ? byIndex.get(p.c).name.toLowerCase() : '—';
+  hotArc = arcAt(e.clientX, e.clientY);
+  document.getElementById('tradeHover').innerHTML = hotArc ? `export<b>${esc(cname(hotArc.o))} → ${esc(cname(hotArc.d))} · ${fmt$(hotArc.val)} · ${TRADE.year}${hotArc.mirror ? ' · reported by importer' : ''}</b>` : '';
   const best = plantAt(e.clientX, e.clientY);
-  renderer.domElement.style.cursor = best ? 'pointer' : '';
+  renderer.domElement.style.cursor = best || hotArc ? 'pointer' : '';
   const ph = document.getElementById('plantHover');
   ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
@@ -491,6 +579,8 @@ renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // that was a drag
   const f = plantAt(e.clientX, e.clientY);
   if (f) return selectPlant(f);
+  const a = arcAt(e.clientX, e.clientY);
+  if (a) { const c = countries.find(c => isoOf(c) === a.o && c.bounds); if (c) return select(c); }
   picked = null;
   const p = pick(e);
   select(p && p.c != null ? byIndex.get(p.c) : null);
@@ -505,6 +595,7 @@ function resize() {
   pc.width = innerWidth * devicePixelRatio; pc.height = innerHeight * devicePixelRatio;
 }
 addEventListener('resize', resize); resize();
+document.getElementById('tradeYear').textContent = TRADE.year || '';
 const t0 = performance.now();
 renderer.setAnimationLoop(t => {
   const k = Math.min(1, (t - t0) / 1400);
@@ -512,6 +603,7 @@ renderer.setAnimationLoop(t => {
   stepCamera(); clampView(); controls.update();
   renderer.render(scene, camera);
   drawOverlay(t);
+  drawTrade(t);
 });
 </script>
 </body>
