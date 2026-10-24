@@ -81,6 +81,11 @@
   .key i.ring.w { border-color: var(--ink); }
   .key i.ln.d { border-top-style: dashed; }
   .key i.dia { transform: rotate(45deg) scale(.8); border-color: var(--muted); }
+  .key .ramp { display: flex; align-items: center; gap: 6px; }
+  .key .ramp i { width: 70px; height: 6px; border: 0; margin: 0; background: linear-gradient(90deg, #8a6f63, #f08a4b); }
+  .key i.pl { background: #4a3a33; border-color: #6f564a; }
+  .key i.np { background: #10141c; border-color: #2a2f3a; }
+  .key .fine { font-size: 9px; opacity: .8; }
   .dl { width: 12px; height: 0; border-top: 1.6px solid var(--ink); flex: none; }
   .dl.h2 { border-top-color: var(--accent); }
   .dl.intent { border-top-style: dashed; }
@@ -146,6 +151,8 @@
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
     <button class="check" data-layer="trade">steel exports</button>
     <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
+    <button class="check" data-layer="pressure">carbon price on steel</button>
+    <div class="key col" id="pressureKey" hidden><span class="ramp">€0 <i></i> €90 per tonne CO₂</span><span><i class="pl"></i>pilot, no price yet</span><span><i class="np"></i>no carbon price</span><span class="fine">headline price · free allowances lower what steel actually pays</span></div>
     <button class="check" data-layer="demand">green steel buyers</button>
     <div class="key col" id="demandKey" hidden><span><i class="ring w"></i>buyer, at headquarters</span><span><i class="ln g"></i>hydrogen / fossil-free steel</span><span><i class="ln"></i>recycled or lower-CO₂ steel</span><span><i class="ln d"></i>letter of intent only</span><span><i class="dia"></i>supplier, plant not named</span></div>
   </div>
@@ -180,7 +187,7 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
@@ -188,6 +195,7 @@ const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND] = await Promise.all([
   json('atlas_data.json', {}),                            // researched panels, country by country
   json('atlas_trade.json', { flows: [], countries: {} }), // UN Comtrade steel trade
   json('atlas_demand.json', { buyers: [], sources: {} }), // green steel buyers and their deals
+  json('atlas_policy.json', { countries: {}, cbam: {}, sources: {} }), // carbon prices and trade pressure
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -210,13 +218,13 @@ const groundAt = (lon, lat) => {               // height of the cloud near a pla
   return y;
 };
 
-const uniforms = { uSize: { value: POINT * devicePixelRatio }, uRise: { value: 0 }, uHover: { value: -9 }, uSel: { value: -9 }, uAccent: { value: new THREE.Color('#c8e054') }, uLow: { value: new THREE.Color(TONE[0]) }, uHigh: { value: new THREE.Color(TONE[1]) } };
+const uniforms = { uSize: { value: POINT * devicePixelRatio }, uRise: { value: 0 }, uHover: { value: -9 }, uSel: { value: -9 }, uAccent: { value: new THREE.Color('#c8e054') }, uLow: { value: new THREE.Color(TONE[0]) }, uHigh: { value: new THREE.Color(TONE[1]) }, uPolicy: { value: 0 }, uWarm: { value: new THREE.Color('#f08a4b') } };
 const material = new THREE.ShaderMaterial({
   uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   vertexShader: `
-    attribute float elev; attribute float cidx;
-    uniform float uSize, uRise, uHover, uSel;
-    varying float vA; varying float vSel; varying float vE;
+    attribute float elev; attribute float cidx; attribute float pv;
+    uniform float uSize, uRise, uHover, uSel, uPolicy;
+    varying float vA; varying float vSel; varying float vE; varying float vP;
     void main() {
       vE = elev;
       vec3 p = position; p.y *= uRise;                       // dots rise to their height on load
@@ -227,21 +235,30 @@ const material = new THREE.ShaderMaterial({
       float hov = abs(cidx - uHover) < .5 ? 1. : 0.;
       float a = (.48 + .52 * elev) * clamp(1.6 - d / 520., .35, 1.) * smoothstep(0., .35, uRise);
       a = mix(a, min(1., a + .25), max(hov, sel));
-      vA = a; vSel = sel;
+      a *= mix(1., pv > 0. ? 1. : .45, uPolicy);              // pressure layer: unpriced land recedes
+      vA = a; vSel = sel; vP = pv * uPolicy;
       gl_PointSize = clamp(uSize * (1. + elev) * 260. / d, 1., 5.);
     }`,
   fragmentShader: `
-    uniform vec3 uAccent, uLow, uHigh; varying float vA; varying float vSel; varying float vE;
+    uniform vec3 uAccent, uLow, uHigh, uWarm; varying float vA; varying float vSel; varying float vE; varying float vP;
     void main() {
       vec2 c = gl_PointCoord - .5;
       if (dot(c, c) > .25) discard;
-      gl_FragColor = vec4(mix(mix(uLow, uHigh, pow(vE, .6)), uAccent, vSel), vA);
+      vec3 base = mix(mix(uLow, uHigh, pow(vE, .6)), uWarm, vP);
+      gl_FragColor = vec4(mix(base, uAccent, vSel), vA);
     }`,
 });
 const geo = new THREE.BufferGeometry();
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('elev', new THREE.BufferAttribute(elev, 1));
 geo.setAttribute('cidx', new THREE.BufferAttribute(cidx, 1));
+// carbon pressure per point: 0 = no price, 0.08 = pilot without a price yet, up to 1 = €90+ per tonne
+const pvOf = new Map(countries.map(c => {
+  const q = POLICY.countries[WORLD._ids[c.id]];
+  return [c.i, !q ? 0 : q.status === 'pilot' ? .08 : q.status === 'price' ? .2 + .8 * Math.sqrt(Math.min(q.eur, 90) / 90) : 0];
+}));
+const pv = new Float32Array(N); for (let i = 0; i < N; i++) pv[i] = pvOf.get(cidx[i]) || 0;
+geo.setAttribute('pv', new THREE.BufferAttribute(pv, 1));
 
 /* ---------- scene ---------- */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -289,7 +306,7 @@ function clampView() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false, demand: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false, pressure: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -577,6 +594,8 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   document.getElementById('plantKey').hidden = !layers.plants;
   document.getElementById('tradeKey').hidden = !layers.trade;
   document.getElementById('demandKey').hidden = !layers.demand;
+  document.getElementById('pressureKey').hidden = !layers.pressure;
+  uniforms.uPolicy.value = layers.pressure ? 1 : 0;
 });
 
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -584,9 +603,9 @@ const CERT = { high: 'official or primary source', medium: 'reported, estimated 
 const META = WORLD._meta;
 function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
-  if (!w && !d && !T[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
-  const srcs = { ...(d?.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source };
+  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source };
   const used = [];
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
@@ -606,6 +625,18 @@ function showCountry(c) {
       <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span></div></div>`).join(''), pl.length);
     const mine = plants.filter(f => f.iso === w.iso).sort((a, b) => b.cap - a.cap);
     folds += fold('steel plants', mine.map(f => `<div class="row" id="plant-${plants.indexOf(f)}"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
+  }
+  const iso = isoOf(c), pol = POLICY.countries[iso], cb = POLICY.cbam[iso];
+  const isEU = (POLICY.eu || []).includes(iso), exempt = ['NOR', 'ISL', 'LIE', 'CHE'].includes(iso);
+  if (pol || cb) {
+    figs += fig('carbon price', !pol || pol.status === 'none' ? 'none' : pol.status === 'pilot' ? 'pilot · no price yet' : `~€${Math.round(pol.eur)} / t CO₂${pol.src.map(ref).join('')}`);
+    let rows = '';
+    if (pol && pol.status !== 'none') rows += row(pol.instrument, pol.price_text + (pol.note ? '. ' + pol.note : ''), pol.c, pol.src);
+    if (exempt) rows += row('CBAM', 'Exempt: linked to the EU carbon market.', 'medium', ['cbam']);
+    else if (cb) rows += row('CBAM exposure', `${Math.round(cb.share * 100)}% of its steel exports go to the EU (${fmt$(cb.usd)} in ${POLICY.cbam_year}). EU importers pay CBAM on them since Jan 2026.`, 'high', ['comtrade', 'cbam']);
+    if (pol?.trade) rows += row(isEU ? 'trade protection' : 'tariffs on imports', pol.trade, 'high', pol.trade_src);
+    if (!pol || pol.status === 'none') rows = row('carbon price', 'No national carbon price on steel.', 'medium', []) + rows;
+    folds += fold('carbon & trade pressure', rows);
   }
   const tr = T[isoOf(c)];
   if (tr) {
@@ -665,7 +696,8 @@ renderer.domElement.addEventListener('pointermove', e => {
   const f = (n, a, b) => Math.abs(n).toFixed(2) + '°' + (n >= 0 ? a : b);
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
-  document.getElementById('hover').textContent = p.c != null ? byIndex.get(p.c).name.toLowerCase() : '—';
+  const hc = p.c != null ? byIndex.get(p.c) : null, hp = hc && POLICY.countries[isoOf(hc)];
+  document.getElementById('hover').textContent = !hc ? '—' : hc.name.toLowerCase() + (layers.pressure ? ' · ' + (!hp || hp.status === 'none' ? 'no carbon price' : hp.status === 'pilot' ? 'pilot, no price yet' : '~€' + Math.round(hp.eur) + '/t') : '');
   hotBuyer = buyerAt(e.clientX, e.clientY);
   document.getElementById('buyerHover').innerHTML = hotBuyer ? `buyer<b>${esc(hotBuyer.name.toLowerCase())} · ${hotBuyer.deals.length} deal${hotBuyer.deals.length > 1 ? 's' : ''} · ${esc(hotBuyer.sector)}</b>` : '';
   hotArc = hotBuyer ? null : arcAt(e.clientX, e.clientY);
