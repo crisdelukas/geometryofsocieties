@@ -1,0 +1,80 @@
+{
+  "_about": "Country data for maps.html. certainty: high = official or primary source; medium = reported, estimated or sources disagree; low = interpretation (my reading of the evidence, not a fact). Each row lists source ids from 'sources'.",
+  "NLD": {
+    "updated": "2026-10-24",
+    "overall": { "certainty": "medium", "text": "The single decision that shapes everything — the state agreement with Tata Steel — is not signed. Its deadline moved to 1 March 2027." },
+    "label": {
+      "projects": 3,
+      "capacity": "7.5 Mt/y",
+      "status": { "operating": 0, "announced": 2, "paused": 0, "cancelled": 0, "pilot": 1 }
+    },
+    "projects": [
+      { "name": "Green Steel plan · phase 1", "site": "Tata Steel IJmuiden", "lat": 52.47, "lon": 4.60, "status": "announced",
+        "detail": "DRI plant 2.5 Mt/y (Energiron, gas first, 'H2-ready') + electric arc furnace ~3 Mt/y, replacing blast furnace 7 and a coke plant. Target 2030. Waiting on the state agreement and EU state-aid approval.",
+        "certainty": "medium", "src": ["danieli24", "eurometal24", "linqs26"] },
+      { "name": "Green Steel plan · phase 2", "site": "Tata Steel IJmuiden", "lat": 52.47, "lon": 4.60, "status": "announced",
+        "detail": "Close blast furnace 6 and the remaining coke plants; CO₂ neutrality targeted by 2045. Second DRI + EAF listed by GEM for ~2035.",
+        "certainty": "low", "src": ["eurometal24", "gem"] },
+      { "name": "HIsarna pilot", "site": "Tata Steel IJmuiden", "lat": 52.47, "lon": 4.60, "status": "pilot",
+        "detail": "Coal-based smelting-reduction pilot (Rio Tinto, EU ULCOS). 2018 endurance run: 19 days, 2,000 t of iron. Testing finished.",
+        "certainty": "high", "src": ["gem"] }
+    ],
+    "sections": [
+      { "title": "production", "rows": [
+        { "k": "main producer", "v": "Tata Steel Nederland, IJmuiden — the country's only integrated steelworks. Parent: Tata Steel Ltd (India).", "c": "high", "src": ["gem"] },
+        { "k": "crude steel capacity", "v": "7.5 Mt/y, all blast furnace → basic oxygen furnace", "c": "high", "src": ["gem", "eurometal24"] },
+        { "k": "production", "v": "6.8 Mt (2024) · 6.3 Mt (2023) · 6.3 Mt (2022)", "c": "high", "src": ["gem"] },
+        { "k": "blast furnaces", "v": "BF6 (1967, 2.5 Mt/y) · BF7 (1992, 4.0 Mt/y)", "c": "high", "src": ["gem"] },
+        { "k": "jobs", "v": "~9,000 at IJmuiden", "c": "medium", "src": ["tpo26", "gem"] }
+      ]},
+      { "title": "regulation & tax pressure", "rows": [
+        { "k": "EU ETS + CBAM", "v": "CBAM's definitive (paying) phase began 1 Jan 2026; free ETS allowances for steel are phased out in parallel through 2034.", "c": "high", "src": ["cbam"] },
+        { "k": "Dutch CO₂ levy", "v": "Formally still exists, but neutralised in Sept 2025: companies get an exempt amount most already stay under. Abolition planned, timing open (May 2026). Effective rate ~€21/t; €37–97M paid by all industry for 2025.", "c": "medium", "src": ["linqs25", "nltimes26"] },
+        { "k": "state agreement", "v": "Letter of intent (2025) for a 'maatwerkafspraak'. Deadline moved from 30 Sept 2026 to 1 March 2027. Up to €2 bn from the state; needs European Commission approval.", "c": "high", "src": ["tpo26", "linqs26"] },
+        { "k": "trade protection", "v": "New permanent EU steel safeguard since 1 Jul 2026: 50% duty above quota, quotas ~47% below 2024. Shields EU producers from imports.", "c": "high", "src": ["smm26"] },
+        { "k": "legal pressure", "v": "Public Prosecution announced criminal prosecution of Tata Steel (July 2026). Province wants to revoke permits for the two coke plants.", "c": "high", "src": ["tpo26"] }
+      ]},
+      { "title": "competitiveness", "rows": [
+        { "k": "projected competitiveness", "v": "Phase 1 (gas DRI + carbon capture) cuts ~40% CO₂ — below LeadIT's 85% 'green' threshold. It is a lower-carbon plant, not yet a green one.", "c": "low", "src": ["eurometal24", "leadit"] },
+        { "k": "cost gap", "v": "Hydrogen at €5–8/kg vs €2.5–3/kg needed for viability (2024 figure). The full H₂ switch depends on closing this gap.", "c": "medium", "src": ["eurometal24"] },
+        { "k": "subsidy dependence", "v": "State says max €2 bn. Milieudefensie & SOMO estimate up to €10.8 bn including CCS, biomethane, grid and slag costs to 2045 (disputed by state and Tata). Court flagged risk of lasting subsidy dependence.", "c": "medium", "src": ["accountant26", "linqs26"] }
+      ]},
+      { "title": "strategy", "rows": [
+        { "k": "apparent strategy", "v": "Stepwise and gas-first: build 'H2-ready' DRI, run it on gas with carbon capture, raise scrap from 17% to 30%, switch to hydrogen/biomethane later. Make the state co-own the risk.", "c": "low", "src": ["eurometal24", "linqs26"] },
+        { "k": "first moves", "v": "May–June 2024: engineering contracts to Danieli & Tenova. 2025: letter of intent with the state. Sept 2026: CEO says engineering is nearly complete.", "c": "high", "src": ["eurometal24", "danieli24", "tpo26"] },
+        { "k": "selling low-CO₂ now", "v": "Zeremis Carbon Lite (since 2022): an allocated 'up to 90%' footprint reduction, verified by DNV — a book-keeping model, not physically green steel. Sold to processors Wuppermann, Bilstein, EMW, Arania.", "c": "high", "src": ["zeremis23"] }
+      ]},
+      { "title": "advantages", "rows": [
+        { "k": "location & logistics", "v": "Coastal site at IJmuiden on the North Sea — direct access for ore and coal ships.", "c": "high", "src": ["gem"] },
+        { "k": "CO₂ storage nearby", "v": "Porthos (Rotterdam) stores 2.5 Mt CO₂/y from 2027 — enables the carbon-capture route.", "c": "medium", "src": ["porthos26"] },
+        { "k": "consolidated value chain", "v": "Iron, steel and finishing (coated & automotive-grade coil) on one site.", "c": "high", "src": ["eurometal24"] },
+        { "k": "offshore wind", "v": "North Sea wind as a future source of green power and hydrogen.", "c": "low", "src": [] }
+      ]},
+      { "title": "disadvantages", "rows": [
+        { "k": "energy prices", "v": "Expensive hydrogen and electricity compared with Nordic competitors (e.g. Stegra, HYBRIT in Sweden).", "c": "medium", "src": ["eurometal24"] },
+        { "k": "single site", "v": "One plant carries the whole national transition — no portfolio to spread the risk.", "c": "low", "src": [] },
+        { "k": "social license", "v": "Health complaints, prosecution, permit disputes, a growing slag stockpile.", "c": "high", "src": ["tpo26", "linqs26"] },
+        { "k": "timeline drift", "v": "Agreement deadlines keep moving; long-lead equipment orders wait for the deal.", "c": "high", "src": ["tpo26", "eurometal24"] }
+      ]},
+      { "title": "demand pressure", "rows": [
+        { "k": "who buys low-CO₂", "v": "Steel processors supplying automotive & industry (Zeremis deals). No named carmaker offtake found yet.", "c": "medium", "src": ["zeremis23"] },
+        { "k": "market shield", "v": "CBAM + safeguard make high-carbon imports dearer — a protected market, but not yet a premium for green.", "c": "low", "src": ["cbam", "smm26"] }
+      ]}
+    ],
+    "sources": {
+      "gem": { "t": "GEM — Tata Steel IJmuiden steel plant", "u": "https://www.gem.wiki/Tata_Steel_IJmuiden_steel_plant" },
+      "eurometal24": { "t": "Eurometal — first phase of Green Steel plan (May 2024)", "u": "https://eurometal.net/tata-steel-moves-forward-with-first-phase-of-green-steel-plan-in-the-netherlands/" },
+      "danieli24": { "t": "Danieli — DRI technology for Tata Steel (Jun 2024)", "u": "https://www.danieli.com/en/news-media/news/danieli-provide-direct-reduction-technology-tata-steel-new-investment_37_901.htm" },
+      "tpo26": { "t": "TPO — decision on state aid postponed to March (Sep 2026)", "u": "https://tpo.nl/2026/09/25/tata-steel-maatwerkafspraak-uitstel-miljardensteun/" },
+      "linqs26": { "t": "Industrielinqs — court lets negotiations continue (Jul 2026)", "u": "https://www.industrielinqs.nl/staalindustrie/2026/07/kabinet-mag-onderhandelingen-over-maatwerksteun-aan-tata-steel-voortzetten/" },
+      "accountant26": { "t": "Accountant.nl — subsidy possibly five times higher (Sep 2026)", "u": "https://www.accountant.nl/nieuws/2026/9/subsidie-voor-tata-steel-wordt-mogelijk-vijf-keer-hoger-dan-gedacht/" },
+      "linqs25": { "t": "Industrylinqs — Dutch CO₂ levy suspended (Sep 2025)", "u": "https://www.industrylinqs.com/industry/2025/09/dutch-national-co2-levy-for-industry-suspended/" },
+      "nltimes26": { "t": "NL Times — industrial CO₂ tax brings in money (May 2026)", "u": "https://nltimes.nl/2026/05/17/industrial-co2-tax-brings-money-dutch-state-first-time" },
+      "smm26": { "t": "SMM — EU permanent steel safeguard (Jul 2026)", "u": "https://news.metal.com/newscontent/104018661-eus-permanent-steel-safeguard-takes-hold-50-out-of-quota-duty-quotas-cut-47" },
+      "porthos26": { "t": "S&P Global — Porthos construction progress (Jun 2026)", "u": "https://www.spglobal.com/energy/en/news-research/latest-news/energy-transition/061726-dutch-porthos-ccs-project-marks-construction-progress-despite-delays" },
+      "zeremis23": { "t": "Tata Steel — Zeremis Carbon Lite deals (Feb 2023)", "u": "https://www.tatasteelnederland.com/nieuws/en/tata-steel-signs-zeremis-carbon-lite-deals-with-wuppermann-bilstein-group-emw-stahl-service-and-grupo-arania" },
+      "leadit": { "t": "SEI / LeadIT — Green Steel Tracker, 2025 review", "u": "https://www.sei.org/about-sei/press-room/critical-year-for-green-steel-in-2026/" },
+      "cbam": { "t": "European Commission — Carbon Border Adjustment Mechanism", "u": "https://taxation-customs.ec.europa.eu/carbon-border-adjustment-mechanism_en" }
+    }
+  }
+}
