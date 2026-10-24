@@ -32,6 +32,9 @@
   #over .box rect { fill: none; stroke: var(--ink); stroke-width: .75; }
   #over .box polyline { fill: none; stroke: var(--ink); stroke-width: .5; }
   #over .box.sel rect { stroke: var(--accent); }
+  #over .box.quiet rect { stroke: #5a5a57; }
+  #over .box.quiet text:not(:nth-of-type(1)), #over .box.quiet polyline { display: none; }
+  #over .box.quiet text { fill: var(--muted); }
   #over .plant line { stroke: var(--muted); stroke-width: .5; }
   #over .plant rect { fill: #000; stroke: var(--ink); stroke-width: 1; }
   #over .plant.transition rect { fill: var(--accent); stroke: var(--accent); }
@@ -67,6 +70,25 @@
   .key i { display: inline-block; width: 7px; height: 7px; border: 1px solid var(--ink); margin-right: 6px; vertical-align: -1px; }
   .key i.t { background: var(--accent); border-color: var(--accent); }
   .hint { color: var(--muted); }
+  #plantsCanvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .key i.c { border-style: dotted; border-color: var(--muted); }
+  summary i { font-style: normal; color: var(--muted); margin-left: 6px; }
+  .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
+  .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
+  .row .m { color: var(--muted); }
+  .st { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink); flex: none; }
+  .st.operating { background: var(--accent); border-color: var(--accent); }
+  .st.construction { background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); border-color: var(--accent); }
+  .st.announced { border-color: var(--ink); }
+  .st.paused { border-color: #e0a84a; }
+  .st.cancelled { border-color: #e05a4a; border-radius: 0; transform: rotate(45deg) scale(.85); }
+  .st.finalized { border-style: dotted; border-color: var(--muted); }
+  .sq { width: 6px; height: 6px; border: 1px solid var(--ink); flex: none; }
+  .sq.t { background: var(--accent); border-color: var(--accent); }
+  .sq.c { border-style: dotted; border-color: var(--muted); }
+  .credit { padding: 14px 16px 28px; color: var(--muted); font-size: 9.5px; line-height: 1.8; display: flex; flex-direction: column; }
+  .credit b { font-weight: 400; display: inline-block; width: 16px; }
+  .credit a:hover { color: var(--ink); }
 
   .name { font-family: var(--sans); font-size: 15px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
   .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; margin-top: 14px; }
@@ -95,9 +117,10 @@
 <body>
 
 <div id="stage"></div>
+<canvas id="plantsCanvas"></canvas>
 <svg id="over"></svg>
 <a class="back" href="experiments.html">← experiments</a>
-<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span></div>
+<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span></div>
 
 <button id="tab" aria-label="toggle menu" title="layers">
   <svg viewBox="0 0 12 12"><path d="M1 3h10M1 6h10M1 9h10"/></svg>
@@ -107,7 +130,7 @@
     <div class="h">layers</div>
     <button class="check" data-layer="boxes">countries with ongoing projects</button>
     <button class="check" data-layer="plants">steel factories</button>
-    <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span></div>
+    <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
   </div>
   <div id="country"><div class="grp hint">select a country on the map</div></div>
 </aside>
@@ -126,20 +149,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const HEIGHT = 12;      // how tall the mountains are
 const POINT  = 1.0;     // dot size
 const LENS   = 28;      // camera lens (smaller = flatter, more axonometric)
-// ISO numeric id → ISO3 code, for countries that can hold data
-const ISO3 = {
-  '528': 'NLD', '276': 'DEU', '752': 'SWE', '156': 'CHN', '356': 'IND', '392': 'JPN',
-  '840': 'USA', '410': 'KOR', '643': 'RUS', '076': 'BRA', '792': 'TUR',
-};
 /* -------------------------------------------------------------------- */
 
-const [buf, countries, DATA] = await Promise.all([
+const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
+const [buf, countries, WORLD, PLANTS, DEEP] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
-  fetch('atlas_data.json').then(r => r.ok ? r.json() : {}).catch(() => ({})),
+  json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
+  json('atlas_plants.json', []),                          // every operating / building steel plant
+  json('atlas_data.json', {}),                            // researched panels, country by country
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
-const dataOf = c => DATA[ISO3[c.id]];
+const isoOf = c => WORLD._ids[c.id];
+const worldOf = c => { const w = WORLD[isoOf(c)]; return w && { ...w, iso: isoOf(c) }; };
+const deepOf = c => DEEP[isoOf(c)];
 
 /* ---------- points ---------- */
 const raw = new Int16Array(buf), N = raw.length / 4;
@@ -226,43 +249,48 @@ document.getElementById('stage').addEventListener('wheel', e => {
   camera.position.add(right); controls.target.add(right);
 }, { capture: true, passive: false });
 
+// never let the view drift off the edge of the world
+function clampView() {
+  const t = controls.target, cx = Math.max(-180, Math.min(180, t.x)) - t.x, cz = Math.max(-85, Math.min(58, t.z)) - t.z;
+  if (cx || cz) { t.x += cx; t.z += cz; camera.position.x += cx; camera.position.z += cz; }
+}
+
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
 const layers = { boxes: false, plants: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
+const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const statusText = (st, short) => [['operating', 'op'], ['construction', 'constr'], ['announced', 'ann'], ['paused', 'paused'], ['cancelled', 'canc'], ['finalized', 'R&D done']]
+  .filter(([k]) => st[k]).map(([k, s]) => st[k] + ' ' + (short ? s : k === 'finalized' ? 'R&D finished' : k)).join(' · ');
 
-// boxes: only countries that have green steel projects
-const boxes = countries.filter(c => c.bounds && dataOf(c)?.label?.projects > 0).map(c => {
-  const d = dataOf(c), L = d.label;
+// boxes: countries with ongoing green steel projects
+const boxes = countries.filter(c => c.bounds && ongoing(worldOf(c)) > 0).map(c => {
+  const w = worldOf(c);
   let [[x0, y0], [x1, y1]] = c.bounds; if (x1 < x0) x1 = 180;
   let top = 0; for (let i = 0; i < N; i++) if (cidx[i] === c.i && pos[i*3+1] > top) top = pos[i*3+1];
   const corners = [];
   for (const x of [x0, x1]) for (const z of [-y0, -y1]) for (const y of [0, top]) corners.push(new THREE.Vector3(x, y, z));
   const g = el('g', { class: 'box' }, over);
-  const st = L.status, statusLine = [['operating', st.operating], ['announced', st.announced], ['paused', st.paused], ['cancelled', st.cancelled]]
-    .filter(([, n]) => n).map(([k, n]) => n + ' ' + k).join(' · ');
   const b = { c, g, corners, rect: el('rect', {}, g), lead: el('polyline', {}, g), head: el('text', { 'text-anchor': 'end' }, g),
     lines: [el('text', {}, g), el('text', { class: 'dim' }, g), el('text', { class: 'dim' }, g)],
     // the header cycles through these, typing itself in
-    cycle: [`${L.projects} green steel projects`, `${L.plants} steel plant${L.plants === 1 ? '' : 's'}`, `${L.in_transition} in transition`] };
+    cycle: [plural(w.project_list.length, 'green steel project'), `${w.qualified} qualify as green`, plural(w.plants, 'steel plant'), `${w.plants_transition} in transition`] };
   b.lines[0].textContent = c.name.toLowerCase();
-  b.lines[1].textContent = 'capacity ' + L.capacity;
-  b.lines[2].textContent = statusLine;
+  b.lines[1].textContent = `capacity ${w.capacity_mt} Mt/y`;
+  b.lines[2].textContent = statusText(w.projects);
   return b;
 });
 
-// factories
-const plants = [];
-for (const c of countries) for (const p of dataOf(c)?.plants || []) {
-  const g = el('g', { class: 'plant' + (p.transition ? ' transition' : '') }, over);
-  plants.push({ p, g, ground: new THREE.Vector3(p.lon, groundAt(p.lon, p.lat), -p.lat),
-    stem: el('line', {}, g), sq: el('rect', { width: 7, height: 7 }, g), t: el('text', {}, g) });
-  plants.at(-1).t.textContent = p.name.toLowerCase();
-}
-
+// factories: drawn on a canvas (≈1,000 of them)
+const pc = document.getElementById('plantsCanvas'), px = pc.getContext('2d');
+const plants = PLANTS.map(([name, iso, lat, lon, st, route, cap, parent, tr]) =>
+  ({ name, iso, st, route, cap, parent, tr, ground: new THREE.Vector3(lon, groundAt(lon, lat), -lat), sx: -1, sy: -1, on: false }));
+const ink = getComputedStyle(document.documentElement);
 function drawOverlay(t) {
+  const placed = [];
   for (const b of boxes) {
     b.g.style.display = layers.boxes ? '' : 'none';
     if (!layers.boxes) continue;
@@ -271,26 +299,56 @@ function drawOverlay(t) {
       const s = toScreen(p); if (s.behind) { ok = false; break; }
       minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x); minY = Math.min(minY, s.y); maxY = Math.max(maxY, s.y);
     }
-    if (!ok || maxX < 0 || minX > innerWidth) { b.g.style.display = 'none'; continue; }
+    if (!ok || maxX < 0 || minX > innerWidth || maxY < 0 || minY > innerHeight || maxX - minX > innerWidth * .9) { b.g.style.display = 'none'; continue; }
     b.g.classList.toggle('sel', uniforms.uSel.value === b.c.i);
+    const focus = uniforms.uSel.value === b.c.i || uniforms.uHover.value === b.c.i;   // full label only when looked at
+    b.g.classList.toggle('quiet', !focus);
     Object.entries({ x: minX, y: minY, width: maxX - minX, height: maxY - minY }).forEach(([k, val]) => b.rect.setAttribute(k, val));
-    const lx = maxX + 24, ly = minY - 16;
-    b.lead.setAttribute('points', `${maxX},${minY} ${lx},${ly} ${lx + 14},${ly}`);
-    b.lines.forEach((n, k) => { n.setAttribute('x', lx + 20); n.setAttribute('y', ly + 3 + k * 13); });
+    if (!focus) { b.head.textContent = b.c.name.toLowerCase(); b.head.setAttribute('x', maxX); b.head.setAttribute('y', minY - 5); continue; }
     const phase = t / 2600, word = b.cycle[Math.floor(phase) % b.cycle.length];
     b.head.textContent = word.slice(0, Math.ceil(word.length * Math.min(1, (phase % 1) * 4)));
     b.head.setAttribute('x', maxX); b.head.setAttribute('y', minY - 5);
+    placed.push({ b, ax: maxX, ay: minY, lx: maxX + 24, ly: minY - 16 });
   }
-  for (const f of plants) {
-    const s = toScreen(f.ground), show = layers.plants && !s.behind;
-    f.g.style.display = show ? '' : 'none';
-    if (!show) continue;
-    const top = s.y - 58;                  // tall stem: clears the box header
-    Object.entries({ x1: s.x, y1: s.y, x2: s.x, y2: top }).forEach(([k, val]) => f.stem.setAttribute(k, val));
-    f.sq.setAttribute('x', s.x - 3.5); f.sq.setAttribute('y', top - 7);
-    f.t.setAttribute('x', s.x + 9); f.t.setAttribute('y', top - 1);
+  // labels never overlap: push each one down until it clears the ones above it
+  placed.sort((a, b) => a.ly - b.ly).forEach((p, i) => {
+    for (let j = 0; j < i; j++) { const q = placed[j]; if (Math.abs(p.lx - q.lx) < 170 && p.ly < q.ly + 44) p.ly = q.ly + 44; }
+    p.b.lead.setAttribute('points', `${p.ax},${p.ay} ${p.lx},${p.ly} ${p.lx + 14},${p.ly}`);
+    p.b.lines.forEach((n, k) => { n.setAttribute('x', p.lx + 20); n.setAttribute('y', p.ly + 3 + k * 13); });
+  });
+
+  // factories
+  const dpr = devicePixelRatio;
+  px.setTransform(dpr, 0, 0, dpr, 0, 0); px.clearRect(0, 0, innerWidth, innerHeight);
+  if (!layers.plants) return;
+  const selIso = selected ? isoOf(selected) : null;
+  px.font = '10px ui-monospace, Menlo, monospace'; px.lineWidth = 1;
+  const labels = [];                                   // label boxes already drawn — skip any that would overlap
+  const order = selIso ? plants.slice().sort((a, b) => (a.iso === selIso) - (b.iso === selIso) || (a.tr - b.tr) * -1 || b.cap - a.cap) : plants;
+  for (const f of order) {
+    const s = toScreen(f.ground);
+    f.on = !s.behind && s.x > -10 && s.x < innerWidth + 10 && s.y > -10 && s.y < innerHeight + 10;
+    if (!f.on) continue;
+    f.sx = s.x; f.sy = s.y - 12;
+    const size = f.cap > 5000 ? 6 : f.cap > 1500 ? 5 : 4;
+    px.strokeStyle = 'rgba(232,232,228,.35)'; px.beginPath(); px.moveTo(s.x + .5, s.y); px.lineTo(s.x + .5, f.sy); px.stroke();
+    if (f.tr) { px.fillStyle = '#c8e054'; px.fillRect(s.x - size / 2, f.sy - size, size, size); }
+    else {
+      px.fillStyle = '#000'; px.fillRect(s.x - size / 2, f.sy - size, size, size);
+      px.strokeStyle = f.st === 'c' ? 'rgba(232,232,228,.45)' : '#e8e8e4';
+      px.setLineDash(f.st === 'c' ? [1.5, 1.5] : []); px.strokeRect(s.x - size / 2 + .5, f.sy - size + .5, size - 1, size - 1); px.setLineDash([]);
+    }
+    if (selIso && f.iso === selIso && (f.cap >= labelMin || f.tr)) {
+      const wdt = px.measureText(f.name.toLowerCase()).width + 4, box = [s.x + 6, f.sy - 10, wdt, 12];
+      if (!labels.some(b => box[0] < b[0] + b[2] && b[0] < box[0] + box[2] && box[1] < b[1] + b[3] + 2 && b[1] < box[1] + box[3] + 2)) {
+        labels.push(box);
+        px.fillStyle = '#000'; px.globalAlpha = .75; px.fillRect(...box); px.globalAlpha = 1;
+        px.fillStyle = f.tr ? '#c8e054' : '#e8e8e4'; px.fillText(f.name.toLowerCase(), s.x + 8, f.sy - 1);
+      }
+    }
   }
 }
+let labelMin = 0;                                  // in a big country, only label the larger plants
 
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
@@ -302,36 +360,50 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   document.getElementById('plantKey').hidden = !layers.plants;
 });
 
-const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const CERT = { high: 'official or primary source', medium: 'reported, estimated or disputed', low: 'interpretation' };
+const META = WORLD._meta;
 function showCountry(c) {
-  const d = dataOf(c);
-  if (!d) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no data yet</div></div>`; return; }
-  const L = d.label, ids = Object.keys(d.sources);
-  const refs = r => (r || []).map(id => `<sup><a href="${esc(d.sources[id].u)}" target="_blank" rel="noopener" title="${esc(d.sources[id].t)}">${ids.indexOf(id) + 1}</a></sup>`).join('');
-  const row = (k, val, c, src) => `<div class="row"><div class="k"><span class="c ${c}" title="${CERT[c]}"></span>${esc(k)}</div><div class="v">${esc(val)}${refs(src)}</div></div>`;
-  const fold = (title, inner) => `<details><summary>${esc(title)}</summary><div class="rows">${inner}</div></details>`;
-  const st = L.status;
-  countryBox.innerHTML = `
-    <div class="grp">
-      <div class="name">${esc(c.name)}</div>
-      <div class="figs">
-        <div class="fig"><div class="k">capacity</div><div class="v">${esc(L.capacity)}</div></div>
-        <div class="fig"><div class="k">production</div><div class="v">${esc(L.production)}</div></div>
-        <div class="fig"><div class="k">steel plants</div><div class="v">${L.plants} · ${L.in_transition} in transition</div></div>
-        <div class="fig"><div class="k">green projects</div><div class="v">${Object.entries(st).filter(([, n]) => n).map(([k, n]) => n + ' ' + k).join(' · ') || 'none'}</div></div>
-        <div class="fig" style="grid-column:1/-1"><div class="k"><span class="c ${d.overall.certainty}"></span> certainty · ${d.overall.certainty}</div><div class="v" style="font-family:var(--sans);font-size:11.5px;line-height:1.45">${esc(d.overall.text)}</div></div>
-      </div>
-    </div>
-    ${fold('projects', d.projects.map(p => row(p.name + ' · ' + p.status, p.detail, p.certainty, p.src)).join(''))}
-    ${d.sections.map(s => fold(s.title, s.rows.map(r => row(r.k, r.v, r.c, r.src)).join(''))).join('')}
-    ${fold('sources', `<div class="src">${ids.map((id, i) => `${i + 1} <a href="${esc(d.sources[id].u)}" target="_blank" rel="noopener">${esc(d.sources[id].t)}</a>`).join('<br>')}</div>`)}`;
+  const w = worldOf(c), d = deepOf(c);
+  if (!w && !d) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  // sources: dataset credits first, then the research sources, numbered in order of use
+  const srcs = { ...(d?.sources || {}), gem: META.gem, leadit: META.leadit };
+  const used = [];
+  const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
+    return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
+  const row = (k, val, c, src) => `<div class="row"><div class="k"><span class="c ${c}" title="${CERT[c]}"></span>${esc(k)}</div><div class="v">${esc(val)}${(src || []).map(ref).join('')}</div></div>`;
+  const fold = (title, inner, n) => inner ? `<details><summary><span>${esc(title)}${n != null ? ` <i>${n}</i>` : ''}</span></summary><div class="rows">${inner}</div></details>` : '';
+  const fig = (k, val, wide) => `<div class="fig"${wide ? ' style="grid-column:1/-1"' : ''}><div class="k">${k}</div><div class="v">${val}</div></div>`;
+
+  let figs = '', folds = '';
+  if (w) {
+    const bf = w.capacity_mt ? Math.round(w.bof_mt / w.capacity_mt * 100) : 0, eaf = w.capacity_mt ? Math.round(w.eaf_mt / w.capacity_mt * 100) : 0;
+    figs += fig('capacity', `${w.capacity_mt} Mt/y${ref('gem')}`) + fig('route mix', `${bf}% blast furnace · ${eaf}% electric`);
+    figs += fig('steel plants', `${w.plants}${w.plants_transition ? ` · ${w.plants_transition} in transition` : ''}${w.plants_construction ? ` · ${w.plants_construction} building` : ''}`);
+    figs += fig('green projects', w.project_list.length ? `${w.project_list.length} · ${w.qualified} qualify${ref('leadit')}` : 'none tracked');
+    if (w.project_list.length) figs += fig('project status', statusText(w.projects), true);
+    const pl = w.project_list.slice().sort((a, b) => ['operating', 'construction', 'announced', 'paused', 'cancelled', 'finalized'].indexOf(a.status) - ['operating', 'construction', 'announced', 'paused', 'cancelled', 'finalized'].indexOf(b.status));
+    folds += fold('green steel projects', pl.map(p => `<div class="row"><div class="k"><span class="st ${p.status}"></span>${esc(p.status === 'finalized' ? 'R&D finished' : p.status)}${p.qualified ? ' · qualifies as green' : ''}</div>
+      <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span></div></div>`).join(''), pl.length);
+    const mine = plants.filter(f => f.iso === w.iso).sort((a, b) => b.cap - a.cap);
+    folds += fold('steel plants', mine.map(f => `<div class="row"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
+  }
+  let head = '';
+  if (d) {
+    head = `<div class="fig" style="grid-column:1/-1"><div class="k"><span class="c ${d.overall.certainty}" title="${CERT[d.overall.certainty]}"></span> certainty · ${d.overall.certainty}</div><div class="v txt">${esc(d.overall.text)}</div></div>`;
+    folds += d.sections.map(s => fold(s.title, s.rows.map(r => row(r.k, r.v, r.c, r.src)).join(''))).join('');
+  }
+  countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="figs">${head}${figs}</div></div>${folds}${credit(used.map(id => srcs[id]))}`;
 }
+// elegant source line: publisher · date, numbered as cited
+const credit = list => `<div class="credit">${list.length ? list.map((s, i) => `<span><b>${i + 1}</b><a href="${esc(s.u)}" target="_blank" rel="noopener">${esc(s.t)}</a> · ${esc(s.d)}</span>`).join('') : ''}</div>`;
 
 /* ---------- camera flight ---------- */
 const fly = { on: false, target: new THREE.Vector3(), dist: 90, offset: 0, offsetTo: 0 };
+let selected = null;
 function select(c) {
-  uniforms.uSel.value = c ? c.i : -9;
+  uniforms.uSel.value = c ? c.i : -9; selected = c;
+  if (c) { const caps = plants.filter(f => f.iso === isoOf(c)).map(f => f.cap).sort((a, b) => b - a); labelMin = caps.length > 8 ? caps[7] : 0; }
   if (!c) { countryBox.innerHTML = '<div class="grp hint">select a country on the map</div>'; return; }
   showCountry(c); setMenu(true); menu.scrollTop = 0;
   if (c.centroid) {
@@ -368,6 +440,10 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
   document.getElementById('hover').textContent = p.c != null ? byIndex.get(p.c).name.toLowerCase() : '—';
+  let best = null, bd = 64;
+  if (layers.plants) for (const f of plants) if (f.on) { const d = (f.sx - e.clientX) ** 2 + (f.sy - 3 - e.clientY) ** 2; if (d < bd) { bd = d; best = f; } }
+  const ph = document.getElementById('plantHover');
+  ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
 let down = null;
 renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
@@ -383,13 +459,14 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
   over.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
+  pc.width = innerWidth * devicePixelRatio; pc.height = innerHeight * devicePixelRatio;
 }
 addEventListener('resize', resize); resize();
 const t0 = performance.now();
 renderer.setAnimationLoop(t => {
   const k = Math.min(1, (t - t0) / 1400);
   uniforms.uRise.value = 1 - Math.pow(1 - k, 3);               // quick ease-out
-  stepCamera(); controls.update();
+  stepCamera(); clampView(); controls.update();
   renderer.render(scene, camera);
   drawOverlay(t);
 });
