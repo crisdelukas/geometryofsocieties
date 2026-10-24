@@ -32,7 +32,8 @@
   #over .box rect { fill: none; stroke: var(--ink); stroke-width: .75; }
   #over .box polyline { fill: none; stroke: var(--ink); stroke-width: .5; }
   #over .box.sel rect { stroke: var(--accent); }
-  #over .box.quiet rect { stroke: #5a5a57; }
+  #over .box.quiet rect { stroke: var(--ink); }
+  #over .box.hov rect { stroke: var(--accent); }
   #over .box.quiet text:not(:nth-of-type(1)), #over .box.quiet polyline { display: none; }
   #over .box.quiet text { fill: var(--muted); }
   #over .plant line { stroke: var(--muted); stroke-width: .5; }
@@ -76,6 +77,7 @@
   .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
   .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
   .row .m { color: var(--muted); }
+  .row.hl { box-shadow: inset 2px 0 0 var(--accent); padding-left: 10px; margin-left: -10px; transition: box-shadow .3s; }
   .st { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink); flex: none; }
   .st.operating { background: var(--accent); border-color: var(--accent); }
   .st.construction { background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); border-color: var(--accent); }
@@ -128,7 +130,7 @@
 <aside id="menu" aria-label="layers and country details">
   <div class="grp">
     <div class="h">layers</div>
-    <button class="check" data-layer="boxes">countries with ongoing projects</button>
+    <button class="check on" data-layer="boxes">countries with ongoing projects</button>
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
   </div>
@@ -149,6 +151,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const HEIGHT = 12;      // how tall the mountains are
 const POINT  = 1.0;     // dot size
 const LENS   = 28;      // camera lens (smaller = flatter, more axonometric)
+// dot colour from low ground → high peaks. pick one tone (or try ?tone=b in the address bar)
+const TONES = {
+  a: ['#5f7fae', '#f4f6fa'],   // steel blue
+  b: ['#3557c9', '#eef2ff'],   // deep blue
+  c: ['#3f8fb4', '#f2f8fa'],   // cyan
+  d: ['#97abc9', '#ffffff'],   // faint blue
+};
+const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
@@ -180,14 +190,15 @@ const groundAt = (lon, lat) => {               // height of the cloud near a pla
   return y;
 };
 
-const uniforms = { uSize: { value: POINT * devicePixelRatio }, uRise: { value: 0 }, uHover: { value: -9 }, uSel: { value: -9 }, uAccent: { value: new THREE.Color('#c8e054') } };
+const uniforms = { uSize: { value: POINT * devicePixelRatio }, uRise: { value: 0 }, uHover: { value: -9 }, uSel: { value: -9 }, uAccent: { value: new THREE.Color('#c8e054') }, uLow: { value: new THREE.Color(TONE[0]) }, uHigh: { value: new THREE.Color(TONE[1]) } };
 const material = new THREE.ShaderMaterial({
   uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   vertexShader: `
     attribute float elev; attribute float cidx;
     uniform float uSize, uRise, uHover, uSel;
-    varying float vA; varying float vSel;
+    varying float vA; varying float vSel; varying float vE;
     void main() {
+      vE = elev;
       vec3 p = position; p.y *= uRise;                       // dots rise to their height on load
       vec4 mv = modelViewMatrix * vec4(p, 1.0);
       gl_Position = projectionMatrix * mv;
@@ -200,11 +211,11 @@ const material = new THREE.ShaderMaterial({
       gl_PointSize = clamp(uSize * (1. + elev) * 260. / d, 1., 5.);
     }`,
   fragmentShader: `
-    uniform vec3 uAccent; varying float vA; varying float vSel;
+    uniform vec3 uAccent, uLow, uHigh; varying float vA; varying float vSel; varying float vE;
     void main() {
       vec2 c = gl_PointCoord - .5;
       if (dot(c, c) > .25) discard;
-      gl_FragColor = vec4(mix(vec3(1.,1.,.98), uAccent, vSel), vA);
+      gl_FragColor = vec4(mix(mix(uLow, uHigh, pow(vE, .6)), uAccent, vSel), vA);
     }`,
 });
 const geo = new THREE.BufferGeometry();
@@ -258,7 +269,7 @@ function clampView() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: false, plants: false };
+const layers = { boxes: true, plants: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -286,8 +297,12 @@ const boxes = countries.filter(c => c.bounds && ongoing(worldOf(c)) > 0).map(c =
 
 // factories: drawn on a canvas (≈1,000 of them)
 const pc = document.getElementById('plantsCanvas'), px = pc.getContext('2d');
+const clean = n => n.replace(/\s*\([^)]*\)/g, '')
+  .replace(/\b(integrated )?(iron (and|&) steel|steel|iron|metallurgical|stainless|special steel)?\s*(plant|works|steelworks|mill|complex|combine|factory|site|facility)s?\b/gi, '')
+  .replace(/([,.]?\s+(co\.?,? ?ltd\.?|company limited|limited|ltd\.?|llc|inc\.?|corp\.?|corporation|s\.?a\.?|gmbh|ag|plc|jsc|pjsc|ojsc)\.?)+$/i, '')
+  .replace(/\s{2,}/g, ' ').replace(/[\s,–-]+$/, '').trim() || n;
 const plants = PLANTS.map(([name, iso, lat, lon, st, route, cap, parent, tr]) =>
-  ({ name, iso, st, route, cap, parent, tr, ground: new THREE.Vector3(lon, groundAt(lon, lat), -lat), sx: -1, sy: -1, on: false }));
+  ({ name: clean(name), full: name, iso, st, route, cap, parent, tr, ground: new THREE.Vector3(lon, groundAt(lon, lat), -lat), sx: -1, sy: -1, on: false }));
 const ink = getComputedStyle(document.documentElement);
 function drawOverlay(t) {
   const placed = [];
@@ -303,6 +318,7 @@ function drawOverlay(t) {
     b.g.classList.toggle('sel', uniforms.uSel.value === b.c.i);
     const focus = uniforms.uSel.value === b.c.i || uniforms.uHover.value === b.c.i;   // full label only when looked at
     b.g.classList.toggle('quiet', !focus);
+    b.g.classList.toggle('hov', uniforms.uHover.value === b.c.i);
     Object.entries({ x: minX, y: minY, width: maxX - minX, height: maxY - minY }).forEach(([k, val]) => b.rect.setAttribute(k, val));
     if (!focus) { b.head.textContent = b.c.name.toLowerCase(); b.head.setAttribute('x', maxX); b.head.setAttribute('y', minY - 5); continue; }
     const phase = t / 2600, word = b.cycle[Math.floor(phase) % b.cycle.length];
@@ -329,26 +345,28 @@ function drawOverlay(t) {
     const s = toScreen(f.ground);
     f.on = !s.behind && s.x > -10 && s.x < innerWidth + 10 && s.y > -10 && s.y < innerHeight + 10;
     if (!f.on) continue;
-    f.sx = s.x; f.sy = s.y - 12;
-    const size = f.cap > 5000 ? 6 : f.cap > 1500 ? 5 : 4;
-    px.strokeStyle = 'rgba(232,232,228,.35)'; px.beginPath(); px.moveTo(s.x + .5, s.y); px.lineTo(s.x + .5, f.sy); px.stroke();
+    f.sx = s.x; f.sy = s.y - 22; f.lbl = null;
+    const size = f.cap > 5000 ? 9 : f.cap > 1500 ? 7 : 6; f.size = size;
+    px.strokeStyle = '#ffffff'; px.lineWidth = 1.4; px.beginPath(); px.moveTo(s.x, s.y); px.lineTo(s.x, f.sy); px.stroke(); px.lineWidth = 1;
     if (f.tr) { px.fillStyle = '#c8e054'; px.fillRect(s.x - size / 2, f.sy - size, size, size); }
     else {
       px.fillStyle = '#000'; px.fillRect(s.x - size / 2, f.sy - size, size, size);
-      px.strokeStyle = f.st === 'c' ? 'rgba(232,232,228,.45)' : '#e8e8e4';
+      px.strokeStyle = f.st === 'c' ? 'rgba(255,255,255,.55)' : '#ffffff';
       px.setLineDash(f.st === 'c' ? [1.5, 1.5] : []); px.strokeRect(s.x - size / 2 + .5, f.sy - size + .5, size - 1, size - 1); px.setLineDash([]);
     }
-    if (selIso && f.iso === selIso && (f.cap >= labelMin || f.tr)) {
-      const wdt = px.measureText(f.name.toLowerCase()).width + 4, box = [s.x + 6, f.sy - 10, wdt, 12];
+    if (selIso && f.iso === selIso && (f.cap >= labelMin || f.tr || f === picked)) {
+      const wdt = px.measureText(f.name.toLowerCase()).width + 4, box = [s.x + size / 2 + 5, f.sy - size / 2 - 7, wdt, 13];
       if (!labels.some(b => box[0] < b[0] + b[2] && b[0] < box[0] + box[2] && box[1] < b[1] + b[3] + 2 && b[1] < box[1] + box[3] + 2)) {
-        labels.push(box);
+        labels.push(box); f.lbl = box;
         px.fillStyle = '#000'; px.globalAlpha = .75; px.fillRect(...box); px.globalAlpha = 1;
-        px.fillStyle = f.tr ? '#c8e054' : '#e8e8e4'; px.fillText(f.name.toLowerCase(), s.x + 8, f.sy - 1);
+        px.fillStyle = '#ffffff'; px.fillText(f.name.toLowerCase(), box[0] + 2, box[1] + 9.5);
+        if (f.tr) { px.fillStyle = '#c8e054'; px.fillRect(box[0] + 2, box[1] + 12, wdt - 4, 1.2); }   // discreet green underline
+        if (f === picked) { px.strokeStyle = '#c8e054'; px.strokeRect(s.x - size / 2 - 2.5, f.sy - size - 2.5, size + 5, size + 5); }
       }
     }
   }
 }
-let labelMin = 0;                                  // in a big country, only label the larger plants
+let labelMin = 0, picked = null;                                 // in a big country, only label the larger plants
 
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
@@ -386,7 +404,7 @@ function showCountry(c) {
     folds += fold('green steel projects', pl.map(p => `<div class="row"><div class="k"><span class="st ${p.status}"></span>${esc(p.status === 'finalized' ? 'R&D finished' : p.status)}${p.qualified ? ' · qualifies as green' : ''}</div>
       <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span></div></div>`).join(''), pl.length);
     const mine = plants.filter(f => f.iso === w.iso).sort((a, b) => b.cap - a.cap);
-    folds += fold('steel plants', mine.map(f => `<div class="row"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
+    folds += fold('steel plants', mine.map(f => `<div class="row" id="plant-${plants.indexOf(f)}"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
   }
   let head = '';
   if (d) {
@@ -440,15 +458,40 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
   document.getElementById('hover').textContent = p.c != null ? byIndex.get(p.c).name.toLowerCase() : '—';
-  let best = null, bd = 64;
-  if (layers.plants) for (const f of plants) if (f.on) { const d = (f.sx - e.clientX) ** 2 + (f.sy - 3 - e.clientY) ** 2; if (d < bd) { bd = d; best = f; } }
+  const best = plantAt(e.clientX, e.clientY);
+  renderer.domElement.style.cursor = best ? 'pointer' : '';
   const ph = document.getElementById('plantHover');
   ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
 let down = null;
 renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+function plantAt(x, y) {
+  if (!layers.plants) return null;
+  let best = null, bd = 100;
+  for (const f of plants) {
+    if (!f.on) continue;
+    if (f.lbl && x >= f.lbl[0] && x <= f.lbl[0] + f.lbl[2] && y >= f.lbl[1] && y <= f.lbl[1] + f.lbl[3]) return f;
+    const d = (f.sx - x) ** 2 + (f.sy - f.size / 2 - y) ** 2; if (d < bd) { bd = d; best = f; }
+  }
+  return best;
+}
+function selectPlant(f) {
+  const c = countries.find(c => isoOf(c) === f.iso && c.bounds);
+  if (!c) return;
+  picked = f;
+  if (selected !== c) select(c); else setMenu(true);
+  const row = document.getElementById('plant-' + plants.indexOf(f));
+  if (!row) return;
+  row.closest('details').open = true;
+  countryBox.querySelectorAll('.row.hl').forEach(r => r.classList.remove('hl'));
+  row.classList.add('hl');
+  row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
 renderer.domElement.addEventListener('pointerup', e => {
   if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;  // that was a drag
+  const f = plantAt(e.clientX, e.clientY);
+  if (f) return selectPlant(f);
+  picked = null;
   const p = pick(e);
   select(p && p.c != null ? byIndex.get(p.c) : null);
 });
