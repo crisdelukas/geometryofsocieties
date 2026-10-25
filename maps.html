@@ -16,6 +16,7 @@
     --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); overflow: hidden; }
   body { font-family: var(--mono); font-size: 11px; letter-spacing: .02em; }
   a { color: inherit; text-decoration: none; }
@@ -86,6 +87,19 @@
   .key i.pl { background: #4a3a33; border-color: #6f564a; }
   .key i.np { background: #10141c; border-color: #2a2f3a; }
   .key .fine { font-size: 9px; opacity: .8; }
+  .radio, .hatch { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+  .radio::before { content: ''; width: 9px; height: 9px; border: 1px solid var(--muted); border-radius: 50%; flex: none; }
+  .radio.on::before { background: var(--ink); border-color: var(--ink); box-shadow: inset 0 0 0 2px #000; }
+  .hatch::before { content: ''; width: 12px; height: 12px; border: 1px solid var(--muted); flex: none; opacity: .45; }
+  .hatch.on::before { opacity: 1; border-color: var(--ink); }
+  .radio:hover, .hatch:hover { color: var(--accent); }
+  .hatch .m { color: var(--muted); font-size: 9.5px; }
+  .h-cbam::before    { background: repeating-linear-gradient(45deg, #e8e8e4 0 1px, transparent 1px 4px); }
+  .h-carbon::before  { background: repeating-linear-gradient(-45deg, #e8e8e4 0 1px, transparent 1px 4px); }
+  .h-granted::before { background: repeating-linear-gradient(0deg, #e8e8e4 0 1px, transparent 1px 4px); }
+  .h-funds::before   { background: repeating-linear-gradient(90deg, #e8e8e4 0 1px, transparent 1px 4px); }
+  .h-caps::before    { background: radial-gradient(circle, #e8e8e4 0 1px, transparent 1.4px) 0 0 / 4px 4px; }
+  .key em { font-style: normal; }
   .dl { width: 12px; height: 0; border-top: 1.6px solid var(--ink); flex: none; }
   .dl.h2 { border-top-color: var(--accent); }
   .dl.intent { border-top-style: dashed; }
@@ -151,10 +165,25 @@
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
     <button class="check" data-layer="trade">steel exports</button>
     <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
-    <button class="check" data-layer="pressure">carbon price on steel</button>
-    <div class="key col" id="pressureKey" hidden><span class="ramp">€0 <i></i> €90 per tonne CO₂</span><span><i class="pl"></i>pilot, no price yet</span><span><i class="np"></i>no carbon price</span><span class="fine">headline price · free allowances lower what steel actually pays</span></div>
     <button class="check" data-layer="demand">green steel buyers</button>
     <div class="key col" id="demandKey" hidden><span><i class="ring w"></i>buyer, at headquarters</span><span><i class="ln g"></i>hydrogen / fossil-free steel</span><span><i class="ln"></i>recycled or lower-CO₂ steel</span><span><i class="ln d"></i>letter of intent only</span><span><i class="dia"></i>supplier, plant not named</span></div>
+  </div>
+  <div class="grp">
+    <div class="h">colour the land by</div>
+    <button class="radio on" data-mode="elev">elevation</button>
+    <button class="radio" data-mode="steel">steel price</button>
+    <button class="radio" data-mode="carbon">carbon price</button>
+    <button class="radio" data-mode="pct">carbon cost, % of steel price</button>
+    <div class="key col" id="modeKey" hidden><span class="ramp"><em id="rampLo"></em> <i></i> <em id="rampHi"></em></span><span id="modePilot"><i class="pl"></i>pilot, no price yet</span><span><i class="np"></i>no data</span><span class="fine" id="modeNote"></span></div>
+  </div>
+  <div class="grp">
+    <div class="h">pressure &amp; support</div>
+    <button class="hatch h-cbam" data-hatch="cbam">exposed to CBAM <span class="m">≥10% of steel exports to the EU</span></button>
+    <button class="hatch h-carbon" data-hatch="carbon">carbon price in force <span class="m">sparse: pilot</span></button>
+    <button class="hatch h-granted" data-hatch="granted">green steel subsidies granted</button>
+    <button class="hatch h-funds" data-hatch="funds">subsidy funds available</button>
+    <button class="hatch h-caps" data-hatch="caps">carbon price caps</button>
+    <div class="key fine" id="hatchNote" hidden>hatches overlap: a cross-hatched country is under several pressures at once</div>
   </div>
   <div id="country"><div class="grp hint">select a country on the map</div></div>
 </aside>
@@ -187,7 +216,7 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
@@ -195,7 +224,8 @@ const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY] = await Promi
   json('atlas_data.json', {}),                            // researched panels, country by country
   json('atlas_trade.json', { flows: [], countries: {} }), // UN Comtrade steel trade
   json('atlas_demand.json', { buyers: [], sources: {} }), // green steel buyers and their deals
-  json('atlas_policy.json', { countries: {}, cbam: {}, sources: {} }), // carbon prices and trade pressure
+  json('atlas_policy.json', { countries: {}, cbam: {}, sources: {}, markets: {} }), // carbon prices, markets, subsidies
+  json('atlas_shapes.json', {}),                           // country outlines for the hatched ground
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -235,8 +265,9 @@ const material = new THREE.ShaderMaterial({
       float hov = abs(cidx - uHover) < .5 ? 1. : 0.;
       float a = (.48 + .52 * elev) * clamp(1.6 - d / 520., .35, 1.) * smoothstep(0., .35, uRise);
       a = mix(a, min(1., a + .25), max(hov, sel));
-      a *= mix(1., pv > 0. ? 1. : .45, uPolicy);              // pressure layer: unpriced land recedes
-      vA = a; vSel = sel; vP = pv * uPolicy;
+      a *= mix(1., pv >= 0. ? 1. : .4, uPolicy);              // colour modes: land without data recedes
+      if (uPolicy > .5 && pv >= 0.) a = max(a, .45 + .5 * pv); // …and land with data comes forward
+      vA = a; vSel = sel; vP = max(pv, 0.) * uPolicy;
       gl_PointSize = clamp(uSize * (1. + elev) * 260. / d, 1., 5.);
     }`,
   fragmentShader: `
@@ -252,13 +283,29 @@ const geo = new THREE.BufferGeometry();
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('elev', new THREE.BufferAttribute(elev, 1));
 geo.setAttribute('cidx', new THREE.BufferAttribute(cidx, 1));
-// carbon pressure per point: 0 = no price, 0.08 = pilot without a price yet, up to 1 = €90+ per tonne
-const pvOf = new Map(countries.map(c => {
-  const q = POLICY.countries[WORLD._ids[c.id]];
-  return [c.i, !q ? 0 : q.status === 'pilot' ? .08 : q.status === 'price' ? .2 + .8 * Math.sqrt(Math.min(q.eur, 90) / 90) : 0];
-}));
-const pv = new Float32Array(N); for (let i = 0; i < N; i++) pv[i] = pvOf.get(cidx[i]) || 0;
+// colour modes: each country gets a value 0.15–1 on the warm ramp, 0.04 = pilot, -1 = no data
+const MODES = {
+  steel:  { lo: '$480', hi: '$1,400 per tonne', note: 'regional hot-rolled coil benchmark, Oct 2026', pilot: false,
+            val: q => { const m = POLICY.markets[q]; return m ? .15 + .85 * Math.min(1, Math.max(0, (m.usd - 480) / 920)) : -1; },
+            txt: q => { const m = POLICY.markets[q]; return m ? '$' + m.usd.toLocaleString('en') + '/t steel' : 'no benchmark'; } },
+  carbon: { lo: '€0', hi: '€90 per tonne CO₂', note: 'headline price · free allowances lower what steel actually pays', pilot: true,
+            val: q => { const p = POLICY.countries[q]; return !p ? -1 : p.status === 'pilot' ? .04 : p.status === 'price' ? .2 + .8 * Math.sqrt(Math.min(p.eur, 90) / 90) : -1; },
+            txt: q => { const p = POLICY.countries[q]; return !p || p.status === 'none' ? 'no carbon price' : p.status === 'pilot' ? 'pilot, no price yet' : '~€' + Math.round(p.eur) + '/t CO₂'; } },
+  pct:    { lo: '0%', hi: '25% of the steel price', note: 'carbon price × CO₂ per tonne of steel ÷ steel price · before free allowances', pilot: true,
+            val: q => { const p = POLICY.countries[q]; if (p?.carbon_cost) return .15 + .85 * Math.min(1, p.carbon_cost.pct / .25); return p?.status === 'pilot' ? .04 : -1; },
+            txt: q => { const p = POLICY.countries[q]; return p?.carbon_cost ? `≈${Math.round(p.carbon_cost.pct * 100)}% of steel price (€${p.carbon_cost.eur_per_t}/t)` : p?.status === 'pilot' ? 'pilot, no price yet' : 'no estimate'; } },
+};
+let mode = 'elev';
+const pv = new Float32Array(N).fill(-1);
 geo.setAttribute('pv', new THREE.BufferAttribute(pv, 1));
+function setMode(m) {
+  mode = m; uniforms.uPolicy.value = m === 'elev' ? 0 : 1;
+  if (m !== 'elev') {
+    const byC = new Map(countries.map(c => [c.i, MODES[m].val(WORLD._ids[c.id])]));
+    for (let i = 0; i < N; i++) pv[i] = byC.get(cidx[i]) ?? -1;
+    geo.attributes.pv.needsUpdate = true;
+  }
+}
 
 /* ---------- scene ---------- */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -303,10 +350,63 @@ function clampView() {
   if (cx || cz) { t.x += cx; t.z += cz; camera.position.x += cx; camera.position.z += cz; }
 }
 
+/* ---------- hatched ground: one line direction per pressure, so they combine into cross-hatching ---------- */
+const hatch = { cbam: false, carbon: false, granted: false, funds: false, caps: false };
+const flagsOf = iso => {
+  const p = POLICY.countries[iso] || {}, eu = (POLICY.eu || []).includes(iso), exempt = ['NOR', 'ISL', 'LIE', 'CHE'].includes(iso);
+  return { cbam: !eu && !exempt && (POLICY.cbam[iso]?.share || 0) >= .1, carbon: p.status === 'price', pilot: p.status === 'pilot',
+           granted: !!p.support?.granted?.length, funds: !!p.support?.funds?.length, caps: !!p.cap };
+};
+const hPos = [], hC = [];
+for (const [id, polys] of Object.entries(SHAPES)) {
+  const c = countries.find(c => c.id === id); if (!c) continue;
+  for (const poly of polys) {
+    const rings = poly.map(r => { const v = []; for (let k = 0; k < r.length; k += 2) v.push(new THREE.Vector2(r[k], r[k + 1])); return v; });
+    const tris = THREE.ShapeUtils.triangulateShape(rings[0], rings.slice(1)), all = rings.flat();
+    for (const t of tris) for (const k of t) { hPos.push(all[k].x, -.46, -all[k].y); hC.push(c.i); }
+  }
+}
+const hGeo = new THREE.BufferGeometry();
+hGeo.setAttribute('position', new THREE.Float32BufferAttribute(hPos, 3));
+const hMask = new Float32Array(hC.length); hGeo.setAttribute('mask', new THREE.BufferAttribute(hMask, 1));
+const hMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, extensions: { derivatives: true },
+  vertexShader: `attribute float mask; varying float vM; varying vec2 vW;
+    void main() { vM = mask; vW = vec2(position.x, -position.z); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
+  fragmentShader: `varying float vM; varying vec2 vW;
+    float bit(float k) { return mod(floor(vM / k + .01), 2.); }
+    // thin lines (~0.7 px) that fade out where they would crowd closer than ~4 px, so the distance stays calm
+    float lines(float u, float sp) { float t = u / sp, w = max(fwidth(t), 1e-4); float f = abs(fract(t - .5) - .5) / w;
+      return (1. - smoothstep(.2, .9, f)) * (1. - smoothstep(.15, .3, w)); }
+    void main() {
+      float a = 0.;
+      a = max(a, bit(1.) * lines(vW.x + vW.y, 1.7));          // CBAM          /
+      a = max(a, bit(2.) * lines(vW.x - vW.y, 1.7));          // carbon price  \
+      a = max(a, bit(4.) * lines(vW.x - vW.y, 3.4) * .7);     // pilot         \ sparse
+      a = max(a, bit(8.) * lines(vW.y, 1.2));                 // subsidies     —
+      a = max(a, bit(16.) * lines(vW.x, 1.2));                // funds         |
+      vec2 g = fract(vW / 1.2) - .5; float r = length(g) * 1.2;
+      a = max(a, bit(32.) * (1. - smoothstep(.11, .11 + 1.5 * fwidth(r), r)));   // caps  ·
+      if (a < .02) discard;
+      gl_FragColor = vec4(.93, .94, .96, a * .42);
+    }`,
+});
+const hMesh = new THREE.Mesh(hGeo, hMat); hMesh.renderOrder = -1; scene.add(hMesh);
+const flagCache = new Map(countries.map(c => [c.i, flagsOf(WORLD._ids[c.id])]));
+function updateHatch() {
+  for (let k = 0; k < hC.length; k++) {
+    const f = flagCache.get(hC[k]);
+    hMask[k] = (hatch.cbam && f.cbam ? 1 : 0) + (hatch.carbon && f.carbon ? 2 : 0) + (hatch.carbon && f.pilot ? 4 : 0)
+             + (hatch.granted && f.granted ? 8 : 0) + (hatch.funds && f.funds ? 16 : 0) + (hatch.caps && f.caps ? 32 : 0);
+  }
+  hGeo.attributes.mask.needsUpdate = true;
+  document.getElementById('hatchNote').hidden = Object.values(hatch).filter(Boolean).length < 2;
+}
+
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false, demand: false, pressure: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -594,8 +694,18 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   document.getElementById('plantKey').hidden = !layers.plants;
   document.getElementById('tradeKey').hidden = !layers.trade;
   document.getElementById('demandKey').hidden = !layers.demand;
-  document.getElementById('pressureKey').hidden = !layers.pressure;
-  uniforms.uPolicy.value = layers.pressure ? 1 : 0;
+});
+document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick = () => {
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b === btn));
+  setMode(btn.dataset.mode);
+  const M = MODES[mode];
+  document.getElementById('modeKey').hidden = !M;
+  if (M) { rampLo.textContent = M.lo; rampHi.textContent = M.hi; modeNote.textContent = M.note; modePilot.hidden = !M.pilot; }
+});
+document.querySelectorAll('[data-hatch]').forEach(btn => btn.onclick = () => {
+  hatch[btn.dataset.hatch] = !hatch[btn.dataset.hatch];
+  btn.classList.toggle('on', hatch[btn.dataset.hatch]);
+  updateHatch();
 });
 
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -603,7 +713,7 @@ const CERT = { high: 'official or primary source', medium: 'reported, estimated 
 const META = WORLD._meta;
 function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
-  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
   const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source };
   const used = [];
@@ -628,15 +738,28 @@ function showCountry(c) {
   }
   const iso = isoOf(c), pol = POLICY.countries[iso], cb = POLICY.cbam[iso];
   const isEU = (POLICY.eu || []).includes(iso), exempt = ['NOR', 'ISL', 'LIE', 'CHE'].includes(iso);
+  const mk = POLICY.markets[iso];
+  if (mk) {
+    figs += fig('steel price', `$${mk.usd.toLocaleString('en')} / t${mk.src.map(ref).join('')}`);
+    folds += fold('steel market', row('benchmark', `${mk.basis}: $${mk.usd.toLocaleString('en')} per tonne (Oct 2026).`, mk.c, mk.src)
+      + (mk.premium ? row('green premium', mk.premium.text + '.', mk.premium.c, mk.premium.src) : row('green premium', 'No stated premium found for this market.', 'medium', [])));
+  }
   if (pol || cb) {
-    figs += fig('carbon price', !pol || pol.status === 'none' ? 'none' : pol.status === 'pilot' ? 'pilot · no price yet' : `~€${Math.round(pol.eur)} / t CO₂${pol.src.map(ref).join('')}`);
+    figs += fig('carbon price', !pol || pol.status === 'none' ? 'none' : pol.status === 'pilot' ? 'pilot · no price yet' : `~€${Math.round(pol.eur)} / t CO₂${pol.src.map(ref).join('')}${pol.carbon_cost ? `<br><span class="m">≈${Math.round(pol.carbon_cost.pct * 100)}% of steel price</span>` : ''}`);
     let rows = '';
     if (pol && pol.status !== 'none') rows += row(pol.instrument, pol.price_text + (pol.note ? '. ' + pol.note : ''), pol.c, pol.src);
+    if (pol?.carbon_cost) rows += row('carbon cost per tonne of steel', `≈€${pol.carbon_cost.eur_per_t} per tonne of steel, ≈${Math.round(pol.carbon_cost.pct * 100)}% of its price, at ≈${pol.carbon_cost.t_co2} t CO₂ per tonne (capacity mix). Before free allowances.`, 'low', ['gem']);
+    if (pol?.cap) rows += row('price cap', pol.cap[0] + '.', pol.cap[2], [pol.cap[1]]);
     if (exempt) rows += row('CBAM', 'Exempt: linked to the EU carbon market.', 'medium', ['cbam']);
     else if (cb) rows += row('CBAM exposure', `${Math.round(cb.share * 100)}% of its steel exports go to the EU (${fmt$(cb.usd)} in ${POLICY.cbam_year}). EU importers pay CBAM on them since Jan 2026.`, 'high', ['comtrade', 'cbam']);
     if (pol?.trade) rows += row(isEU ? 'trade protection' : 'tariffs on imports', pol.trade, 'high', pol.trade_src);
     if (!pol || pol.status === 'none') rows = row('carbon price', 'No national carbon price on steel.', 'medium', []) + rows;
     folds += fold('carbon & trade pressure', rows);
+    const sup = pol?.support;
+    if (sup) folds += fold('subsidies',
+      (sup.granted || []).map(([v, s, c]) => row('granted', v + '.', c, [s])).join('')
+      + (sup.funds || []).map(([v, s, c]) => row('available on paper', v + '.', c, [s])).join('')
+      + (sup.withdrawn || []).map(([v, s, c]) => row('declined or redirected', v + '.', c, [s])).join(''));
   }
   const tr = T[isoOf(c)];
   if (tr) {
@@ -697,7 +820,7 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('cursor').textContent = Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180 ? '—' : f(p.lat, 'N', 'S') + ' ' + f(p.lon, 'E', 'W');
   uniforms.uHover.value = p.c ?? -9;
   const hc = p.c != null ? byIndex.get(p.c) : null, hp = hc && POLICY.countries[isoOf(hc)];
-  document.getElementById('hover').textContent = !hc ? '—' : hc.name.toLowerCase() + (layers.pressure ? ' · ' + (!hp || hp.status === 'none' ? 'no carbon price' : hp.status === 'pilot' ? 'pilot, no price yet' : '~€' + Math.round(hp.eur) + '/t') : '');
+  document.getElementById('hover').textContent = !hc ? '—' : hc.name.toLowerCase() + (MODES[mode] ? ' · ' + MODES[mode].txt(isoOf(hc)) : '');
   hotBuyer = buyerAt(e.clientX, e.clientY);
   document.getElementById('buyerHover').innerHTML = hotBuyer ? `buyer<b>${esc(hotBuyer.name.toLowerCase())} · ${hotBuyer.deals.length} deal${hotBuyer.deals.length > 1 ? 's' : ''} · ${esc(hotBuyer.sector)}</b>` : '';
   hotArc = hotBuyer ? null : arcAt(e.clientX, e.clientY);
