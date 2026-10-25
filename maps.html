@@ -370,13 +370,14 @@ const hGeo = new THREE.BufferGeometry();
 hGeo.setAttribute('position', new THREE.Float32BufferAttribute(hPos, 3));
 const hMask = new Float32Array(hC.length); hGeo.setAttribute('mask', new THREE.BufferAttribute(hMask, 1));
 const hMat = new THREE.ShaderMaterial({
+  uniforms: { uSpace: { value: 1 } },
   transparent: true, depthWrite: false, extensions: { derivatives: true },
   vertexShader: `attribute float mask; varying float vM; varying vec2 vW;
     void main() { vM = mask; vW = vec2(position.x, -position.z); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }`,
-  fragmentShader: `varying float vM; varying vec2 vW;
+  fragmentShader: `uniform float uSpace; varying float vM; varying vec2 vW;
     float bit(float k) { return mod(floor(vM / k + .01), 2.); }
     // thin lines (~0.7 px) that fade out where they would crowd closer than ~4 px, so the distance stays calm
-    float lines(float u, float sp) { float t = u / sp, w = max(fwidth(t), 1e-4); float f = abs(fract(t - .5) - .5) / w;
+    float lines(float u, float sp) { sp *= uSpace; float t = u / sp, w = max(fwidth(t), 1e-4); float f = abs(fract(t - .5) - .5) / w;
       return (1. - smoothstep(.2, .9, f)) * (1. - smoothstep(.15, .3, w)); }
     void main() {
       float a = 0.;
@@ -385,7 +386,7 @@ const hMat = new THREE.ShaderMaterial({
       a = max(a, bit(4.) * lines(vW.x - vW.y, 3.4) * .7);     // pilot         \ sparse
       a = max(a, bit(8.) * lines(vW.y, 1.2));                 // subsidies     —
       a = max(a, bit(16.) * lines(vW.x, 1.2));                // funds         |
-      vec2 g = fract(vW / 1.2) - .5; float r = length(g) * 1.2;
+      vec2 g = fract(vW / (1.2 * uSpace)) - .5; float r = length(g) * 1.2;
       a = max(a, bit(32.) * (1. - smoothstep(.11, .11 + 1.5 * fwidth(r), r)));   // caps  ·
       if (a < .02) discard;
       gl_FragColor = vec4(.93, .94, .96, a * .42);
@@ -883,6 +884,8 @@ renderer.setAnimationLoop(t => {
   const k = Math.min(1, (t - t0) / 1400);
   uniforms.uRise.value = 1 - Math.pow(1 - k, 3);               // quick ease-out
   stepCamera(); clampView(); controls.update();
+  // hatch spacing doubles in steps as the camera pulls back, so lines stay a few pixels apart
+  hMat.uniforms.uSpace.value = Math.pow(2, Math.max(0, Math.round(Math.log2(camera.position.distanceTo(controls.target) / 110))));
   renderer.render(scene, camera);
   drawOverlay(t);
   drawTrade(t);
