@@ -83,6 +83,7 @@
   .key i.ln.d { border-top-style: dashed; }
   .key i.dia { transform: rotate(45deg) scale(.8); border-color: var(--muted); }
   .key .ramp { display: flex; align-items: center; gap: 6px; }
+  .key i.sw { width: 3px; height: 11px; border: 0; margin-right: 4px; vertical-align: -2px; }
   .key i.ln.v { width: 0; height: 11px; border-top: 0; border-left: 1.5px solid var(--ink); vertical-align: -2px; margin-right: 5px; }
   .key i.ln.v.b { border-left-color: #b58c62; }
   .key i.c1 { border-radius: 50%; background: #000; border-color: var(--ink); }
@@ -123,6 +124,7 @@
   .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
   .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
   .row .m { color: var(--muted); }
+  .row .v i.psw { display: inline-block; width: 3px; height: 10px; margin-right: 4px; vertical-align: -1px; }
   .row .m b.rh { color: var(--ink); font-weight: 400; }
   .h2d { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink); flex: none; }
   .h2d.operating { background: var(--ink); }
@@ -185,7 +187,7 @@
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
     <button class="check" data-layer="power">power plants</button>
-    <div class="key col" id="powerKey" hidden><span><i class="ln v"></i>low-carbon <i class="ln v b"></i>coal, gas &amp; oil</span><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
+    <div class="key col" id="powerKey" hidden><span class="fine">right line, low-carbon — steady at the base, variable on top</span><span><i class="sw" style="background:#c48ef2"></i>nuclear <i class="sw" style="background:#5b7fff"></i>hydro <i class="sw" style="background:#e8e8e4"></i>geothermal &amp; bio</span><span><i class="sw" style="background:#7fd6ea"></i>wind <i class="sw" style="background:#f2c14e"></i>solar</span><span class="fine">left line, fossil</span><span><i class="sw" style="background:#8c6450"></i>coal <i class="sw" style="background:#d9a066"></i>gas &amp; oil</span><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
     <button class="check" data-layer="h2">hydrogen production</button>
     <div class="key col" id="h2Key" hidden>
       <button class="check sub on" data-h2="operating"><i class="c1 f"></i>operating</button>
@@ -788,13 +790,25 @@ function selectH2(h) {
 }
 
 /* ---------- power plants: two thin vertical lines per 1° square, low-carbon and fossil ---------- */
+const POWER_COLORS = { solar: '#f2c14e', wind: '#7fd6ea', hydro: '#5b7fff', nuclear: '#c48ef2', other: '#e8e8e4', coal: '#8c6450', 'gas & oil': '#d9a066' };
 const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powerGroup);
 {
-  const v = [], col = [], cw = new THREE.Color('#ffffff'), cb = new THREE.Color('#b58c62');
-  for (const [x, y, fos, cln] of POWER.cells || []) {
+  // two lines per square (fossil left, low-carbon right), each stacked in coloured segments by type.
+  // line height ∝ √(total MW); each segment's share of the height = its share of the MW
+  const v = [], col = [];
+  const C = Object.fromEntries(Object.entries(POWER_COLORS).map(([k, c]) => [k, new THREE.Color(c)]));
+  const TYPES = POWER.cell_types || [];
+  for (const cell of POWER.cells || []) {
+    const [x, y] = cell, mw = Object.fromEntries(TYPES.map((t, i) => [t, cell[i + 2]]));
     const gx = x + .5, gy = y + .5, g = -.44;           // every line starts on the ground plane
-    const stick = (dx, mw, c) => { if (mw < 50) return; const h = 2 * Math.sqrt(mw / 1000); v.push(gx + dx, g, -gy, gx + dx, g + h, -gy); col.push(c.r, c.g, c.b, c.r, c.g, c.b); };
-    stick(-.18, fos, cb); stick(.18, cln, cw);
+    const stack = (dx, types) => {
+      const tot = types.reduce((a, t) => a + (mw[t] || 0), 0); if (tot < 50) return;
+      const H = 2 * Math.sqrt(tot / 1000); let y0 = g;
+      for (const t of types) { const m = mw[t] || 0; if (!m) continue; const y1 = y0 + H * m / tot, c = C[t];
+        v.push(gx + dx, y0, -gy, gx + dx, y1, -gy); col.push(c.r, c.g, c.b, c.r, c.g, c.b); y0 = y1; }
+    };
+    stack(-.18, ['coal', 'gas & oil']);
+    stack(.18, ['nuclear', 'hydro', 'other', 'wind', 'solar']);   // steady sources at the base, variable on top
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
@@ -912,6 +926,7 @@ function showCountry(c) {
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
   const row = (k, val, c, src) => `<div class="row"><div class="k"><span class="c ${c}" title="${CERT[c]}"></span>${esc(k)}</div><div class="v">${esc(val)}${(src || []).map(ref).join('')}</div></div>`;
+  const rowH = (k, html, c, src) => `<div class="row"><div class="k"><span class="c ${c}" title="${CERT[c]}"></span>${esc(k)}</div><div class="v">${html}${(src || []).map(ref).join('')}</div></div>`;
   const fold = (title, inner, n) => inner ? `<details><summary><span>${esc(title)}${n != null ? ` <i>${n}</i>` : ''}</span></summary><div class="rows">${inner}</div></details>` : '';
   const fig = (k, val, wide) => `<div class="fig"${wide ? ' style="grid-column:1/-1"' : ''}><div class="k">${k}</div><div class="v">${val}</div></div>`;
 
@@ -958,10 +973,11 @@ function showCountry(c) {
     const gw = v => v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1) + ' GW' : Math.round(v) + ' MW';
     const tot = Object.values(pw.op).reduce((a, b) => a + b, 0);
     const ORDER = ['solar', 'wind', 'hydro', 'nuclear', 'geothermal', 'bioenergy', 'gas & oil', 'coal'];
-    const mix = o => ORDER.filter(k => o[k]).map(k => `${k} ${gw(o[k])}`).join(' · ');
+    const PC = { ...POWER_COLORS, geothermal: POWER_COLORS.other, bioenergy: POWER_COLORS.other };
+    const mix = o => ORDER.filter(k => o[k]).map(k => `<i class="psw" style="background:${PC[k]}"></i>${k} ${gw(o[k])}`).join(' · ');
     figs += fig('low-carbon power', `${Math.round(pw.clean_share * 100)}% of capacity${ref('gem_power')}`);
-    let rows = row('operating capacity', `${gw(tot)}: ${mix(pw.op)}.`, 'high', ['gem_power']);
-    if (pw.build_clean_share != null) rows += row('under construction', `${mix(pw.build)} — ${Math.round(pw.build_clean_share * 100)}% low-carbon.`, 'high', ['gem_power']);
+    let rows = rowH('operating capacity', `${gw(tot)}: ${mix(pw.op)}.`, 'high', ['gem_power']);
+    if (pw.build_clean_share != null) rows += rowH('under construction', `${mix(pw.build)} — ${Math.round(pw.build_clean_share * 100)}% low-carbon.`, 'high', ['gem_power']);
     const st = pw.steel || {}, stTot = Object.values(st).reduce((a, b) => a + b, 0);
     if (stTot) rows += row('power plants serving steelworks', `${gw(stTot)} operating: ${Object.entries(st).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${gw(v)}`).join(' · ')}. Steelworks gases are blast-furnace and coke-oven gas burned for power.`, 'high', ['gem_power'])
       + pw.steel_top.map(([n, t, m]) => `<div class="row"><div class="v">${esc(n)} <span class="m">— ${esc(t)}, ${gw(m)}</span></div></div>`).join('');
