@@ -93,6 +93,12 @@
   .key i.c1.s { border-color: var(--accent); }
   .key .check.sub { font-size: 9.5px; color: var(--muted); padding: 2px 0; }
   .key .check.sub::before { width: 7px; height: 7px; }
+  .key .check.sub { gap: 8px; }
+  .key .check.sub.on { color: var(--ink); }
+  .key .check.sub i { margin-right: 0; }
+  .key i.ln.t { border-top-width: 1px; }
+  .key i.ln.dt { border-top: 1px dotted var(--muted); }
+  .check .m { color: var(--muted); font-size: 9.5px; margin-left: 4px; }
   .key .ramp i { width: 70px; height: 6px; border: 0; margin: 0; background: linear-gradient(90deg, #8a6f63, #f08a4b); }
   .key i.pl { background: #4a3a33; border-color: #6f564a; }
   .key i.np { background: #10141c; border-color: #2a2f3a; }
@@ -167,7 +173,7 @@
 <canvas id="plantsCanvas"></canvas>
 <svg id="over"></svg>
 <a class="back" href="experiments.html">← experiments</a>
-<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span><span id="buyerHover"></span><span id="h2Hover"></span></div>
+<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span><span id="buyerHover"></span><span id="h2Hover"></span><span id="netHover"></span></div>
 
 <button id="tab" aria-label="toggle menu" title="layers">
   <svg viewBox="0 0 12 12"><path d="M1 3h10M1 6h10M1 9h10"/></svg>
@@ -181,8 +187,22 @@
     <button class="check" data-layer="power">power plants</button>
     <div class="key col" id="powerKey" hidden><span><i class="ln v"></i>low-carbon <i class="ln v b"></i>coal, gas &amp; oil</span><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
     <button class="check" data-layer="h2">hydrogen production</button>
-    <div class="key col" id="h2Key" hidden><span><i class="c1 f"></i>operating <i class="c1 b"></i>under construction</span><span><i class="c1"></i>planned <i class="c1 p"></i>paused <i class="c1 x"></i>cancelled</span><span><i class="c1 s"></i>meant for iron &amp; steel</span>
-      <button class="check sub" id="h2All">include planned, paused &amp; cancelled</button><span class="fine">IEA, Hydrogen Production Projects Database · Jun 2026</span></div>
+    <div class="key col" id="h2Key" hidden>
+      <button class="check sub on" data-h2="operating"><i class="c1 f"></i>operating</button>
+      <button class="check sub on" data-h2="construction"><i class="c1 b"></i>under construction</button>
+      <button class="check sub" data-h2="planned"><i class="c1"></i>planned</button>
+      <button class="check sub" data-h2="paused"><i class="c1 p"></i>paused</button>
+      <button class="check sub" data-h2="cancelled"><i class="c1 x"></i>cancelled</button>
+      <button class="check sub" id="h2Steel"><i class="c1 s"></i>only those meant for iron &amp; steel</button>
+      <span class="fine">IEA, Hydrogen Production Projects Database · Jun 2026</span></div>
+    <button class="check" data-layer="net">hydrogen pipelines <span class="m">schematic</span></button>
+    <div class="key col" id="netKey" hidden>
+      <button class="check sub on" data-net="operating"><i class="ln"></i>operating</button>
+      <button class="check sub on" data-net="construction"><i class="ln t"></i>under construction</button>
+      <button class="check sub on" data-net="planned"><i class="ln d"></i>planned</button>
+      <button class="check sub" data-net="cancelled"><i class="ln dt"></i>cancelled</button>
+      <span class="fine">lines join countries' hydrogen hubs (+), rings are pipelines inside a country — not real routes</span>
+      <span class="fine">IEA, Hydrogen Infrastructure Projects Database · Jun 2026</span></div>
     <button class="check" data-layer="trade">steel exports</button>
     <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
     <button class="check" data-layer="demand">green steel buyers</button>
@@ -237,7 +257,7 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DATA, POWER] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DATA, POWER, H2NET] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
@@ -249,6 +269,7 @@ const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DAT
   json('atlas_shapes.json', {}),                           // country outlines for the hatched ground
   json('atlas_h2.json', { projects: [], countries: {}, reach: {} }), // IEA hydrogen production projects
   json('atlas_power.json', { countries: {}, cells: [] }),  // GEM power plants, aggregated
+  json('atlas_h2net.json', { hubs: {}, links: [], domestic: {} }), // IEA hydrogen infrastructure, schematic
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -433,7 +454,7 @@ function updateHatch() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false, demand: false, h2: false, power: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false, h2: false, power: false, net: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -721,14 +742,15 @@ const H2 = (H2DATA.projects || []).map(([name, iso, lat, lon, st, mw, kt, yr, rt
 const H2_REAL = { operating: 1, construction: 1 };
 const H2_ST = { operating: 'operating', construction: 'under construction', planned: 'planned', paused: 'paused', cancelled: 'cancelled' };
 const H2_RT = { e: 'electrolysis', c: 'fossil + carbon capture', b: 'biomass', o: 'other' };
-let h2All = false, pickedH2 = null;
+const h2Show = { operating: true, construction: true, planned: false, paused: false, cancelled: false };
+let h2SteelOnly = false, pickedH2 = null;
 const fmtMW = v => v == null ? 'size n/a' : v >= 1000 ? (v / 1000).toFixed(1) + ' GW' : Math.round(v * 10) / 10 + ' MW';
 function drawH2() {
   if (!layers.h2) { for (const h of H2) h.on = false; return; }
   const dpr = devicePixelRatio; px.setTransform(dpr, 0, 0, dpr, 0, 0);
   for (const h of H2) {
     h.on = false;
-    if (!h2All && !H2_REAL[h.st]) continue;
+    if (!h2Show[h.st] || (h2SteelOnly && !h.steel)) continue;
     const s = toScreen(h.ground);
     if (s.behind || s.x < -10 || s.x > innerWidth + 10 || s.y < -10 || s.y > innerHeight + 10) continue;
     h.on = true; h.sx = s.x; h.sy = s.y - 30;
@@ -780,6 +802,72 @@ const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powe
   powerGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, depthWrite: false })));
 }
 
+/* ---------- hydrogen pipelines, schematic: who plans to connect to whom ---------- */
+const netGroup = new THREE.Group(); netGroup.visible = false; scene.add(netGroup);
+const netShow = { operating: true, construction: true, planned: true, cancelled: false };
+const NET_ST = { operating: 'operating', construction: 'under construction', planned: 'planned', cancelled: 'cancelled' };
+const netItems = [];
+const hubV = iso => { const h = H2NET.hubs?.[iso]; return h ? new THREE.Vector3(h[0], quickGround(h[0], h[1]) + .35, -h[1]) : null; };
+function netMat(st, km) {
+  const w = { operating: 2.2, construction: 1.6, planned: 1, cancelled: 1 }[st] * (km ? Math.min(1.8, .8 + Math.sqrt(km / 1500)) : 1);
+  return new LineMaterial({ color: 0xffffff, linewidth: w, transparent: true, depthWrite: false,
+    opacity: { operating: 1, construction: .9, planned: .7, cancelled: .3 }[st],
+    dashed: st === 'planned' || st === 'cancelled', dashSize: st === 'cancelled' ? .15 : .7, gapSize: st === 'cancelled' ? .5 : .5 });
+}
+function addLine(pts, st, info) {
+  const g = new LineGeometry(); g.setPositions(pts.flatMap(p => [p.x, p.y, p.z]));
+  const mat = netMat(st, info.km), line = new Line2(g, mat); line.computeLineDistances(); netGroup.add(line);
+  netItems.push({ pts, st, mat, line, ...info });
+}
+// cross-border links: a straight line on the ground between two hubs (parallel offsets when one pair has several statuses)
+const pairCount = {};
+for (const [a, b, st, n, km, names] of H2NET.links || []) {
+  const A = hubV(a), B = hubV(b); if (!A || !B) continue;
+  const k = a + b, i = pairCount[k] = (pairCount[k] || 0) + 1;
+  const off = new THREE.Vector3(-(B.z - A.z), 0, B.x - A.x).setLength((i - 1) * .35);
+  const pts = []; for (let s = 0; s <= 32; s++) { const p = A.clone().lerp(B, s / 32).add(off); p.y = quickGround(p.x, -p.z) + .35; pts.push(p); }
+  addLine(pts, st, { kind: 'link', a, b, n, km, names });
+}
+// pipelines inside a country: rings around its hub, growing outward from real to paper
+for (const [iso, d] of Object.entries(H2NET.domestic || {})) {
+  const C = hubV(iso); if (!C) continue;
+  let cum = 0;
+  for (const st of ['operating', 'construction', 'planned', 'cancelled']) {
+    if (!d[st]) continue;
+    const [n, km, names] = d[st]; cum += km || 0;
+    const r = Math.min(4.5, .3 + .22 * Math.sqrt(cum / 10)), pts = [];
+    for (let s = 0; s <= 64; s++) { const t = s / 64 * Math.PI * 2; const x = C.x + Math.cos(t) * r, z = C.z + Math.sin(t) * r; pts.push(new THREE.Vector3(x, quickGround(x, -z) + .35, z)); }
+    addLine(pts, st, { kind: 'domestic', a: iso, n, km, names });
+  }
+}
+let hotNet = null;
+function netAt(x, y) {
+  if (!layers.net) return null;
+  let best = null, bd = 49;
+  for (const it of netItems) { if (!netShow[it.st]) continue;
+    for (let k = 0; k < it.pts.length; k += 2) { const s = toScreen(it.pts[k]); if (s.behind) continue; const d = (s.x - x) ** 2 + (s.y - y) ** 2; if (d < bd) { bd = d; best = it; } } }
+  return best;
+}
+const netText = it => it.kind === 'link'
+  ? `${cname(it.a)} ↔ ${cname(it.b)} · ${it.n} pipeline${it.n > 1 ? 's' : ''}${it.km ? ' · ' + Math.round(it.km).toLocaleString('en') + ' km' : ''} · ${NET_ST[it.st]}`
+  : `${cname(it.a)}, inside the country · ${it.n} pipeline${it.n > 1 ? 's' : ''}${it.km ? ' · ' + Math.round(it.km).toLocaleString('en') + ' km' : ''} · ${NET_ST[it.st]}`;
+function drawNet() {
+  netGroup.visible = layers.net;
+  if (!layers.net) return;
+  const focus = hotNet;
+  for (const it of netItems) {
+    it.line.visible = netShow[it.st];
+    it.mat.resolution.set(innerWidth, innerHeight);
+    const base = { operating: 1, construction: .9, planned: .7, cancelled: .3 }[it.st];
+    it.mat.opacity = !focus ? base : it === focus ? 1 : base * .3;
+  }
+  // a small cross marks each hub
+  const dpr = devicePixelRatio; px.setTransform(dpr, 0, 0, dpr, 0, 0);
+  px.strokeStyle = 'rgba(255,255,255,.8)'; px.lineWidth = 1;
+  for (const iso of Object.keys(H2NET.hubs || {})) { const v = hubV(iso); if (!v) continue; const s = toScreen(v); if (s.behind) continue;
+    px.beginPath(); px.moveTo(s.x - 3, s.y); px.lineTo(s.x + 3, s.y); px.moveTo(s.x, s.y - 3); px.lineTo(s.x, s.y + 3); px.stroke(); }
+}
+
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
 const setMenu = open => { document.body.classList.toggle('menu', open); fly.offsetTo = open && innerWidth > 640 ? menu.offsetWidth / 2 : 0; };
@@ -789,12 +877,15 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   btn.classList.toggle('on', layers[btn.dataset.layer]);
   document.getElementById('plantKey').hidden = !layers.plants;
   document.getElementById('h2Key').hidden = !layers.h2;
+  document.getElementById('netKey').hidden = !layers.net;
   document.getElementById('powerKey').hidden = !layers.power;
   powerGroup.visible = layers.power;
   document.getElementById('tradeKey').hidden = !layers.trade;
   document.getElementById('demandKey').hidden = !layers.demand;
 });
-document.getElementById('h2All').onclick = e => { h2All = !h2All; e.currentTarget.classList.toggle('on', h2All); };
+document.querySelectorAll('[data-h2]').forEach(b => b.onclick = () => { const k = b.dataset.h2; h2Show[k] = !h2Show[k]; b.classList.toggle('on', h2Show[k]); });
+document.getElementById('h2Steel').onclick = e => { h2SteelOnly = !h2SteelOnly; e.currentTarget.classList.toggle('on', h2SteelOnly); };
+document.querySelectorAll('[data-net]').forEach(b => b.onclick = () => { const k = b.dataset.net; netShow[k] = !netShow[k]; b.classList.toggle('on', netShow[k]); });
 document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick = () => {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b === btn));
   setMode(btn.dataset.mode);
@@ -815,7 +906,7 @@ function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
   if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)] && !H2DATA.countries?.[isoOf(c)] && !POWER.countries?.[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
-  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source, iea_h2: H2DATA.source, gem_power: POWER.source };
+  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source, iea_h2: H2DATA.source, gem_power: POWER.source, iea_h2net: H2NET.source };
   const used = [];
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
@@ -892,6 +983,21 @@ function showCountry(c) {
     if (big.length) rows += `<div class="row"><div class="k">largest real projects (other uses)</div></div>` + big.map(h => `<div class="row"><div class="k"><span class="h2d ${h.st}"></span>${H2_ST[h.st]}</div><div class="v">${line(h)}</div></div>`).join('');
     folds += fold('hydrogen', rows);
   }
+  const dom = H2NET.domestic?.[iso], lk = (H2NET.links || []).filter(l => l[0] === iso || l[1] === iso);
+  const sto = H2NET.storage?.[iso], ter = H2NET.terminals?.[iso];
+  if (dom || lk.length || sto || ter) {
+    const km = v => v ? Math.round(v).toLocaleString('en') + ' km' : 'length n/a';
+    let rows = '';
+    if (dom) rows += row('pipelines inside the country', ['operating', 'construction', 'planned', 'cancelled'].filter(k => dom[k]).map(k => `${NET_ST[k]}: ${dom[k][0]} (${km(dom[k][1])})`).join(' · ') + '.', 'high', ['iea_h2net'])
+      + ['operating', 'construction'].filter(k => dom[k]).flatMap(k => dom[k][2].map(([n, l]) => `<div class="row"><div class="k">${NET_ST[k]}</div><div class="v">${esc(n)} <span class="m">— ${km(l)}</span></div></div>`)).join('');
+    if (lk.length) rows += row('links to other countries', lk.map(([a, b, st, n, k]) => `${cname(a === iso ? b : a)}: ${n} ${NET_ST[st]} (${km(k)})`).join(' · ') + '.', 'high', ['iea_h2net']);
+    else rows += row('links to other countries', 'None listed.', 'high', ['iea_h2net']);
+    const cnt = o => Object.entries(o).map(([k, v]) => `${v} ${NET_ST[k] || k}`).join(' · ');
+    if (sto) rows += row('underground hydrogen storage', cnt(sto) + '.', 'high', ['iea_h2net']);
+    if (ter) rows += row('hydrogen import / export terminals', cnt(ter) + '.', 'high', ['iea_h2net']);
+    rows += row('note', H2NET.note, 'medium', []);
+    folds += fold('hydrogen network', rows);
+  }
   const tr = T[isoOf(c)];
   if (tr) {
     figs += fig(`steel exports ${TRADE.year}`, `${fmt$(tr.exp)}${ref('comtrade')}`) + fig(`steel imports ${TRADE.year}`, fmt$(tr.imp));
@@ -957,8 +1063,10 @@ renderer.domElement.addEventListener('pointermove', e => {
   hotArc = hotBuyer ? null : arcAt(e.clientX, e.clientY);
   document.getElementById('tradeHover').innerHTML = hotArc ? `export<b>${esc(cname(hotArc.o))} → ${esc(cname(hotArc.d))} · ${fmt$(hotArc.val)} · ${TRADE.year}${hotArc.mirror ? ' · reported by importer' : ''}</b>` : '';
   const best = plantAt(e.clientX, e.clientY), hh = best ? null : h2At(e.clientX, e.clientY);
+  hotNet = best || hh ? null : netAt(e.clientX, e.clientY);
+  document.getElementById('netHover').innerHTML = hotNet ? `pipeline<b>${esc(netText(hotNet))}</b>` : '';
   document.getElementById('h2Hover').innerHTML = hh ? `hydrogen<b>${esc(hh.name.toLowerCase())} · ${fmtMW(hh.mw)} · ${H2_ST[hh.st]}${hh.yr ? ' · ' + hh.yr : ''}${hh.steel ? ' · for steel' : ''}</b>` : '';
-  renderer.domElement.style.cursor = best || hh || hotArc || hotBuyer ? 'pointer' : '';
+  renderer.domElement.style.cursor = best || hh || hotNet || hotArc || hotBuyer ? 'pointer' : '';
   const ph = document.getElementById('plantHover');
   ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
@@ -996,6 +1104,8 @@ renderer.domElement.addEventListener('pointerup', e => {
   const hh = h2At(e.clientX, e.clientY);
   if (hh) return selectH2(hh);
   pickedH2 = null;
+  const nt = netAt(e.clientX, e.clientY);
+  if (nt) { const c = countries.find(c => isoOf(c) === nt.a && c.bounds); if (c) { select(c); const el = [...countryBox.querySelectorAll('details summary')].find(x => x.textContent.includes('hydrogen network')); if (el) el.parentElement.open = true; return; } }
   const a = arcAt(e.clientX, e.clientY);
   if (a) { const c = countries.find(c => isoOf(c) === a.o && c.bounds); if (c) return select(c); }
   picked = null;
@@ -1025,6 +1135,7 @@ renderer.setAnimationLoop(t => {
   drawTrade(t);
   drawDemand();
   drawH2();
+  drawNet();
 });
 </script>
 </body>
