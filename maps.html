@@ -187,7 +187,15 @@
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
     <button class="check" data-layer="power">power plants</button>
-    <div class="key col" id="powerKey" hidden><span class="fine">right line, low-carbon — steady at the base, variable on top</span><span><i class="sw" style="background:#c48ef2"></i>nuclear <i class="sw" style="background:#5b7fff"></i>hydro <i class="sw" style="background:#e8e8e4"></i>geothermal &amp; bio</span><span><i class="sw" style="background:#7fd6ea"></i>wind <i class="sw" style="background:#f2c14e"></i>solar</span><span class="fine">left line, fossil</span><span><i class="sw" style="background:#8c6450"></i>coal <i class="sw" style="background:#d9a066"></i>gas &amp; oil</span><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
+    <div class="key col" id="powerKey" hidden><span class="fine">right line, low-carbon — steady at the base, variable on top</span>
+      <button class="check sub on" data-pw="nuclear"><i class="sw" style="background:#c48ef2"></i>nuclear</button>
+      <button class="check sub on" data-pw="hydro"><i class="sw" style="background:#5b7fff"></i>hydro</button>
+      <button class="check sub on" data-pw="other"><i class="sw" style="background:#e8e8e4"></i>geothermal &amp; bioenergy</button>
+      <button class="check sub on" data-pw="wind"><i class="sw" style="background:#7fd6ea"></i>wind</button>
+      <button class="check sub on" data-pw="solar"><i class="sw" style="background:#f2c14e"></i>solar</button>
+      <span class="fine">left line, fossil</span>
+      <button class="check sub on" data-pw="coal"><i class="sw" style="background:#8c6450"></i>coal</button>
+      <button class="check sub on" data-pw="gas & oil"><i class="sw" style="background:#d9a066"></i>gas &amp; oil</button><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
     <button class="check" data-layer="h2">hydrogen production</button>
     <div class="key col" id="h2Key" hidden>
       <button class="check sub on" data-h2="operating"><i class="c1 f"></i>operating</button>
@@ -792,7 +800,9 @@ function selectH2(h) {
 /* ---------- power plants: two thin vertical lines per 1° square, low-carbon and fossil ---------- */
 const POWER_COLORS = { solar: '#f2c14e', wind: '#7fd6ea', hydro: '#5b7fff', nuclear: '#c48ef2', other: '#e8e8e4', coal: '#8c6450', 'gas & oil': '#d9a066' };
 const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powerGroup);
-{
+const powerShow = { nuclear: true, hydro: true, other: true, wind: true, solar: true, coal: true, 'gas & oil': true };
+function buildPower() {
+  powerGroup.children.forEach(o => { o.geometry.dispose(); o.material.dispose(); }); powerGroup.clear();
   // two lines per square (fossil left, low-carbon right), each stacked in coloured segments by type.
   // line height ∝ √(total MW); each segment's share of the height = its share of the MW
   const v = [], col = [];
@@ -802,6 +812,7 @@ const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powe
     const [x, y] = cell, mw = Object.fromEntries(TYPES.map((t, i) => [t, cell[i + 2]]));
     const gx = x + .5, gy = y + .5, g = -.44;           // every line starts on the ground plane
     const stack = (dx, types) => {
+      types = types.filter(t => powerShow[t]);        // only the ticked types count, also for the line height
       const tot = types.reduce((a, t) => a + (mw[t] || 0), 0); if (tot < 50) return;
       const H = 2 * Math.sqrt(tot / 1000); let y0 = g;
       for (const t of types) { const m = mw[t] || 0; if (!m) continue; const y1 = y0 + H * m / tot, c = C[t];
@@ -815,6 +826,7 @@ const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powe
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   powerGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, depthWrite: false })));
 }
+buildPower();
 
 /* ---------- hydrogen pipelines, schematic: who plans to connect to whom ---------- */
 const netGroup = new THREE.Group(); netGroup.visible = false; scene.add(netGroup);
@@ -900,6 +912,7 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
 });
 document.querySelectorAll('[data-h2]').forEach(b => b.onclick = () => { const k = b.dataset.h2; h2Show[k] = !h2Show[k]; b.classList.toggle('on', h2Show[k]); });
 document.getElementById('h2Steel').onclick = e => { h2SteelOnly = !h2SteelOnly; e.currentTarget.classList.toggle('on', h2SteelOnly); };
+document.querySelectorAll('[data-pw]').forEach(b => b.onclick = () => { const k = b.dataset.pw; powerShow[k] = !powerShow[k]; b.classList.toggle('on', powerShow[k]); buildPower(); });
 document.querySelectorAll('[data-net]').forEach(b => b.onclick = () => { const k = b.dataset.net; netShow[k] = !netShow[k]; b.classList.toggle('on', netShow[k]); });
 document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick = () => {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b === btn));
