@@ -83,6 +83,8 @@
   .key i.ln.d { border-top-style: dashed; }
   .key i.dia { transform: rotate(45deg) scale(.8); border-color: var(--muted); }
   .key .ramp { display: flex; align-items: center; gap: 6px; }
+  .key i.ln.v { width: 0; height: 11px; border-top: 0; border-left: 1.5px solid var(--ink); vertical-align: -2px; margin-right: 5px; }
+  .key i.ln.v.b { border-left-color: #b58c62; }
   .key i.c1 { border-radius: 50%; background: #000; border-color: var(--ink); }
   .key i.c1.f { background: var(--ink); }
   .key i.c1.b { background: radial-gradient(circle, var(--ink) 0 1.5px, #000 2px); }
@@ -176,6 +178,8 @@
     <button class="check on" data-layer="boxes">countries with ongoing projects</button>
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
+    <button class="check" data-layer="power">power plants</button>
+    <div class="key col" id="powerKey" hidden><span><i class="ln v"></i>low-carbon <i class="ln v b"></i>coal, gas &amp; oil</span><span class="fine">operating capacity per 1° square · line height ∝ √MW</span><span class="fine">GEM, Global Integrated Power Tracker · Sep 2026</span></div>
     <button class="check" data-layer="h2">hydrogen production</button>
     <div class="key col" id="h2Key" hidden><span><i class="c1 f"></i>operating <i class="c1 b"></i>under construction</span><span><i class="c1"></i>planned <i class="c1 p"></i>paused <i class="c1 x"></i>cancelled</span><span><i class="c1 s"></i>meant for iron &amp; steel</span>
       <button class="check sub" id="h2All">include planned, paused &amp; cancelled</button><span class="fine">IEA, Hydrogen Production Projects Database · Jun 2026</span></div>
@@ -190,6 +194,7 @@
     <button class="radio" data-mode="steel">steel price</button>
     <button class="radio" data-mode="carbon">carbon price</button>
     <button class="radio" data-mode="pct">carbon cost, % of steel price</button>
+    <button class="radio" data-mode="clean">low-carbon share of power</button>
     <div class="key col" id="modeKey" hidden><span class="ramp"><em id="rampLo"></em> <i></i> <em id="rampHi"></em></span><span id="modePilot"><i class="pl"></i>pilot, no price yet</span><span><i class="np"></i>no data</span><span class="fine" id="modeNote"></span></div>
   </div>
   <div class="grp">
@@ -223,7 +228,7 @@ const POINT  = 1.0;     // dot size
 const LENS   = 28;      // camera lens (smaller = flatter, more axonometric)
 // dot colour from low ground → high peaks. pick one tone (or try ?tone=b in the address bar)
 const TONES = {
-  a: ['#5f7fae', '#f4f6fa'],   // steel blue
+  a: ['#82a0cb', '#f4f6fa'],   // steel blue (lightened)
   b: ['#3557c9', '#eef2ff'],   // deep blue
   c: ['#3f8fb4', '#f2f8fa'],   // cyan
   d: ['#97abc9', '#ffffff'],   // faint blue
@@ -232,7 +237,7 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DATA] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DATA, POWER] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
@@ -243,6 +248,7 @@ const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DAT
   json('atlas_policy.json', { countries: {}, cbam: {}, sources: {}, markets: {} }), // carbon prices, markets, subsidies
   json('atlas_shapes.json', {}),                           // country outlines for the hatched ground
   json('atlas_h2.json', { projects: [], countries: {}, reach: {} }), // IEA hydrogen production projects
+  json('atlas_power.json', { countries: {}, cells: [] }),  // GEM power plants, aggregated
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -308,6 +314,9 @@ const MODES = {
   carbon: { lo: '€0', hi: '€90 per tonne CO₂', note: 'headline price · free allowances lower what steel actually pays', pilot: true,
             val: q => { const p = POLICY.countries[q]; return !p ? -1 : p.status === 'pilot' ? .04 : p.status === 'price' ? .2 + .8 * Math.sqrt(Math.min(p.eur, 90) / 90) : -1; },
             txt: q => { const p = POLICY.countries[q]; return !p || p.status === 'none' ? 'no carbon price' : p.status === 'pilot' ? 'pilot, no price yet' : '~€' + Math.round(p.eur) + '/t CO₂'; } },
+  clean:  { lo: '0%', hi: '100% low-carbon', note: 'share of operating power capacity that is solar, wind, hydro, nuclear, geothermal or bioenergy · capacity, not generation', pilot: false,
+            val: q => { const c = POWER.countries[q]; return c?.clean_share == null ? -1 : .1 + .9 * c.clean_share; },
+            txt: q => { const c = POWER.countries[q]; return c?.clean_share == null ? 'no data' : Math.round(c.clean_share * 100) + '% low-carbon power capacity'; } },
   pct:    { lo: '0%', hi: '25% of the steel price', note: 'carbon price × CO₂ per tonne of steel ÷ steel price · before free allowances', pilot: true,
             val: q => { const p = POLICY.countries[q]; if (p?.carbon_cost) return .15 + .85 * Math.min(1, p.carbon_cost.pct / .25); return p?.status === 'pilot' ? .04 : -1; },
             txt: q => { const p = POLICY.countries[q]; return p?.carbon_cost ? `≈${Math.round(p.carbon_cost.pct * 100)}% of steel price (€${p.carbon_cost.eur_per_t}/t)` : p?.status === 'pilot' ? 'pilot, no price yet' : 'no estimate'; } },
@@ -424,7 +433,7 @@ function updateHatch() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false, demand: false, h2: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false, h2: false, power: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -756,6 +765,21 @@ function selectH2(h) {
   if (el) { el.closest('details').open = true; el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
 
+/* ---------- power plants: two thin vertical lines per 1° square, low-carbon and fossil ---------- */
+const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powerGroup);
+{
+  const v = [], col = [], cw = new THREE.Color('#ffffff'), cb = new THREE.Color('#b58c62');
+  for (const [x, y, fos, cln] of POWER.cells || []) {
+    const gx = x + .5, gy = y + .5, g = quickGround(gx, gy);
+    const stick = (dx, mw, c) => { if (mw < 50) return; const h = 1.4 * Math.sqrt(mw / 1000); v.push(gx + dx, g, -gy, gx + dx, g + h, -gy); col.push(c.r, c.g, c.b, c.r, c.g, c.b); };
+    stick(-.18, fos, cb); stick(.18, cln, cw);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  powerGroup.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: .85, depthWrite: false })));
+}
+
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
 const setMenu = open => { document.body.classList.toggle('menu', open); fly.offsetTo = open && innerWidth > 640 ? menu.offsetWidth / 2 : 0; };
@@ -765,6 +789,8 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   btn.classList.toggle('on', layers[btn.dataset.layer]);
   document.getElementById('plantKey').hidden = !layers.plants;
   document.getElementById('h2Key').hidden = !layers.h2;
+  document.getElementById('powerKey').hidden = !layers.power;
+  powerGroup.visible = layers.power;
   document.getElementById('tradeKey').hidden = !layers.trade;
   document.getElementById('demandKey').hidden = !layers.demand;
 });
@@ -787,9 +813,9 @@ const CERT = { high: 'official or primary source', medium: 'reported, estimated 
 const META = WORLD._meta;
 function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
-  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)] && !H2DATA.countries?.[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)] && !H2DATA.countries?.[isoOf(c)] && !POWER.countries?.[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
-  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source, iea_h2: H2DATA.source };
+  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source, iea_h2: H2DATA.source, gem_power: POWER.source };
   const used = [];
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
@@ -834,6 +860,21 @@ function showCountry(c) {
       (sup.granted || []).map(([v, s, c]) => row('granted', v + '.', c, [s])).join('')
       + (sup.funds || []).map(([v, s, c]) => row('available on paper', v + '.', c, [s])).join('')
       + (sup.withdrawn || []).map(([v, s, c]) => row('declined or redirected', v + '.', c, [s])).join(''));
+  }
+  const pw = POWER.countries?.[iso];
+  if (pw && pw.clean_share != null) {
+    const gw = v => v >= 1000 ? (v / 1000).toFixed(v >= 10000 ? 0 : 1) + ' GW' : Math.round(v) + ' MW';
+    const tot = Object.values(pw.op).reduce((a, b) => a + b, 0);
+    const ORDER = ['solar', 'wind', 'hydro', 'nuclear', 'geothermal', 'bioenergy', 'gas & oil', 'coal'];
+    const mix = o => ORDER.filter(k => o[k]).map(k => `${k} ${gw(o[k])}`).join(' · ');
+    figs += fig('low-carbon power', `${Math.round(pw.clean_share * 100)}% of capacity${ref('gem_power')}`);
+    let rows = row('operating capacity', `${gw(tot)}: ${mix(pw.op)}.`, 'high', ['gem_power']);
+    if (pw.build_clean_share != null) rows += row('under construction', `${mix(pw.build)} — ${Math.round(pw.build_clean_share * 100)}% low-carbon.`, 'high', ['gem_power']);
+    const st = pw.steel || {}, stTot = Object.values(st).reduce((a, b) => a + b, 0);
+    if (stTot) rows += row('power plants serving steelworks', `${gw(stTot)} operating: ${Object.entries(st).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${gw(v)}`).join(' · ')}. Steelworks gases are blast-furnace and coke-oven gas burned for power.`, 'high', ['gem_power'])
+      + pw.steel_top.map(([n, t, m]) => `<div class="row"><div class="v">${esc(n)} <span class="m">— ${esc(t)}, ${gw(m)}</span></div></div>`).join('');
+    rows += row('note', POWER.note, 'medium', []);
+    folds += fold('power', rows);
   }
   const hz = H2DATA.countries?.[iso];
   if (hz) {
