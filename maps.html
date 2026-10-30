@@ -792,8 +792,8 @@ const powerGroup = new THREE.Group(); powerGroup.visible = false; scene.add(powe
 {
   const v = [], col = [], cw = new THREE.Color('#ffffff'), cb = new THREE.Color('#b58c62');
   for (const [x, y, fos, cln] of POWER.cells || []) {
-    const gx = x + .5, gy = y + .5, g = quickGround(gx, gy);
-    const stick = (dx, mw, c) => { if (mw < 50) return; const h = 1.4 * Math.sqrt(mw / 1000); v.push(gx + dx, g, -gy, gx + dx, g + h, -gy); col.push(c.r, c.g, c.b, c.r, c.g, c.b); };
+    const gx = x + .5, gy = y + .5, g = -.44;           // every line starts on the ground plane
+    const stick = (dx, mw, c) => { if (mw < 50) return; const h = 2 * Math.sqrt(mw / 1000); v.push(gx + dx, g, -gy, gx + dx, g + h, -gy); col.push(c.r, c.g, c.b, c.r, c.g, c.b); };
     stick(-.18, fos, cb); stick(.18, cln, cw);
   }
   const g = new THREE.BufferGeometry();
@@ -807,7 +807,8 @@ const netGroup = new THREE.Group(); netGroup.visible = false; scene.add(netGroup
 const netShow = { operating: true, construction: true, planned: true, cancelled: false };
 const NET_ST = { operating: 'operating', construction: 'under construction', planned: 'planned', cancelled: 'cancelled' };
 const netItems = [];
-const hubV = iso => { const h = H2NET.hubs?.[iso]; return h ? new THREE.Vector3(h[0], quickGround(h[0], h[1]) + .35, -h[1]) : null; };
+const FLOOR = -.44;                                   // the ground plane, just above the grid
+const hubV = iso => { const h = H2NET.hubs?.[iso]; return h ? new THREE.Vector3(h[0], FLOOR, -h[1]) : null; };
 function netMat(st, km) {
   const w = { operating: 2.2, construction: 1.6, planned: 1, cancelled: 1 }[st] * (km ? Math.min(1.8, .8 + Math.sqrt(km / 1500)) : 1);
   return new LineMaterial({ color: 0xffffff, linewidth: w, transparent: true, depthWrite: false,
@@ -825,7 +826,7 @@ for (const [a, b, st, n, km, names] of H2NET.links || []) {
   const A = hubV(a), B = hubV(b); if (!A || !B) continue;
   const k = a + b, i = pairCount[k] = (pairCount[k] || 0) + 1;
   const off = new THREE.Vector3(-(B.z - A.z), 0, B.x - A.x).setLength((i - 1) * .35);
-  const pts = []; for (let s = 0; s <= 32; s++) { const p = A.clone().lerp(B, s / 32).add(off); p.y = quickGround(p.x, -p.z) + .35; pts.push(p); }
+  const pts = []; for (let s = 0; s <= 32; s++) { const p = A.clone().lerp(B, s / 32).add(off); p.y = FLOOR; pts.push(p); }
   addLine(pts, st, { kind: 'link', a, b, n, km, names });
 }
 // pipelines inside a country: rings around its hub, growing outward from real to paper
@@ -836,7 +837,7 @@ for (const [iso, d] of Object.entries(H2NET.domestic || {})) {
     if (!d[st]) continue;
     const [n, km, names] = d[st]; cum += km || 0;
     const r = Math.min(4.5, .3 + .22 * Math.sqrt(cum / 10)), pts = [];
-    for (let s = 0; s <= 64; s++) { const t = s / 64 * Math.PI * 2; const x = C.x + Math.cos(t) * r, z = C.z + Math.sin(t) * r; pts.push(new THREE.Vector3(x, quickGround(x, -z) + .35, z)); }
+    for (let s = 0; s <= 64; s++) { const t = s / 64 * Math.PI * 2; const x = C.x + Math.cos(t) * r, z = C.z + Math.sin(t) * r; pts.push(new THREE.Vector3(x, FLOOR, z)); }
     addLine(pts, st, { kind: 'domestic', a: iso, n, km, names });
   }
 }
