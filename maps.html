@@ -83,6 +83,14 @@
   .key i.ln.d { border-top-style: dashed; }
   .key i.dia { transform: rotate(45deg) scale(.8); border-color: var(--muted); }
   .key .ramp { display: flex; align-items: center; gap: 6px; }
+  .key i.c1 { border-radius: 50%; background: #000; border-color: var(--ink); }
+  .key i.c1.f { background: var(--ink); }
+  .key i.c1.b { background: radial-gradient(circle, var(--ink) 0 1.5px, #000 2px); }
+  .key i.c1.p { border-style: dashed; opacity: .6; }
+  .key i.c1.x { opacity: .4; }
+  .key i.c1.s { border-color: var(--accent); }
+  .key .check.sub { font-size: 9.5px; color: var(--muted); padding: 2px 0; }
+  .key .check.sub::before { width: 7px; height: 7px; }
   .key .ramp i { width: 70px; height: 6px; border: 0; margin: 0; background: linear-gradient(90deg, #8a6f63, #f08a4b); }
   .key i.pl { background: #4a3a33; border-color: #6f564a; }
   .key i.np { background: #10141c; border-color: #2a2f3a; }
@@ -107,6 +115,11 @@
   .fig .v.txt, .fig .txt { font-family: var(--sans); font-size: 11.5px; line-height: 1.45; }
   .fig sup a, .row sup a { color: var(--muted); font-size: 8.5px; margin-left: 2px; }
   .row .m { color: var(--muted); }
+  .row .m b.rh { color: var(--ink); font-weight: 400; }
+  .h2d { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink); flex: none; }
+  .h2d.operating { background: var(--ink); }
+  .h2d.construction { background: radial-gradient(circle, var(--ink) 0 1.2px, transparent 1.6px); }
+  .h2d.planned { opacity: .6; } .h2d.paused { border-style: dashed; opacity: .6; } .h2d.cancelled { opacity: .35; }
   .row.hl { box-shadow: inset 2px 0 0 var(--accent); padding-left: 10px; margin-left: -10px; transition: box-shadow .3s; }
   .st { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink); flex: none; }
   .st.operating { background: var(--accent); border-color: var(--accent); }
@@ -152,7 +165,7 @@
 <canvas id="plantsCanvas"></canvas>
 <svg id="over"></svg>
 <a class="back" href="experiments.html">← experiments</a>
-<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span><span id="buyerHover"></span></div>
+<div class="status"><span>cursor<b id="cursor">—</b></span><span>country<b id="hover">—</b></span><span id="plantHover"></span><span id="tradeHover"></span><span id="buyerHover"></span><span id="h2Hover"></span></div>
 
 <button id="tab" aria-label="toggle menu" title="layers">
   <svg viewBox="0 0 12 12"><path d="M1 3h10M1 6h10M1 9h10"/></svg>
@@ -163,6 +176,9 @@
     <button class="check on" data-layer="boxes">countries with ongoing projects</button>
     <button class="check" data-layer="plants">steel factories</button>
     <div class="key" id="plantKey" hidden><span><i class="t"></i>in transition</span><span><i></i>conventional</span><span><i class="c"></i>building</span></div>
+    <button class="check" data-layer="h2">hydrogen production</button>
+    <div class="key col" id="h2Key" hidden><span><i class="c1 f"></i>operating <i class="c1 b"></i>under construction</span><span><i class="c1"></i>planned <i class="c1 p"></i>paused <i class="c1 x"></i>cancelled</span><span><i class="c1 s"></i>meant for iron &amp; steel</span>
+      <button class="check sub" id="h2All">include planned, paused &amp; cancelled</button><span class="fine">IEA, Hydrogen Production Projects Database · Jun 2026</span></div>
     <button class="check" data-layer="trade">steel exports</button>
     <div class="key col" id="tradeKey" hidden><span><i class="ln"></i>line width = export value, US$ · <em id="tradeYear"></em></span><span><i class="ring"></i>exporter runs a green steel pilot</span><span><i class="ln g"></i>full-scale green production — none yet</span></div>
     <button class="check" data-layer="demand">green steel buyers</button>
@@ -216,7 +232,7 @@ const TONE = TONES[new URLSearchParams(location.search).get('tone')] || TONES.a;
 /* -------------------------------------------------------------------- */
 
 const json = (u, fallback) => fetch(u).then(r => r.ok ? r.json() : fallback).catch(() => fallback);
-const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES] = await Promise.all([
+const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES, H2DATA] = await Promise.all([
   fetch('world_points.bin').then(r => r.arrayBuffer()),
   fetch('countries.json').then(r => r.json()),
   json('atlas_world.json', { _meta: {}, _ids: {} }),     // GEM + LeadIT, every country
@@ -226,6 +242,7 @@ const [buf, countries, WORLD, PLANTS, DEEP, TRADE, DEMAND, POLICY, SHAPES] = awa
   json('atlas_demand.json', { buyers: [], sources: {} }), // green steel buyers and their deals
   json('atlas_policy.json', { countries: {}, cbam: {}, sources: {}, markets: {} }), // carbon prices, markets, subsidies
   json('atlas_shapes.json', {}),                           // country outlines for the hatched ground
+  json('atlas_h2.json', { projects: [], countries: {}, reach: {} }), // IEA hydrogen production projects
 ]);
 const byIndex = new Map(countries.map(c => [c.i, c]));
 const isoOf = c => WORLD._ids[c.id];
@@ -407,7 +424,7 @@ function updateHatch() {
 /* ---------- overlay (boxes + factories) ---------- */
 const over = document.getElementById('over'), NS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); parent.appendChild(n); return n; };
-const layers = { boxes: true, plants: false, trade: false, demand: false };
+const layers = { boxes: true, plants: false, trade: false, demand: false, h2: false };
 const v = new THREE.Vector3();
 const toScreen = p => { v.copy(p).project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, behind: v.z > 1 }; };
 const ongoing = w => w ? w.projects.operating + w.projects.construction + w.projects.announced : 0;
@@ -685,6 +702,60 @@ function selectBuyer(b) {
   fly.target.copy(b.at).setY(0); fly.on = true; fly.dist = Math.min(260, Math.max(90, Math.max(...b.deals.map(d => b.at.distanceTo(d.to)), 10) * 2.2));
 }
 
+/* ---------- hydrogen production: stem + circle, like the factories ---------- */
+// height of the cloud on a ½° grid, so thousands of markers can sit on the terrain quickly
+const hgrid = new Map();
+for (let i = 0; i < N; i++) { const k = Math.floor(pos[i*3] * 2) + ',' + Math.floor(-pos[i*3+2] * 2); if (!(hgrid.get(k) > pos[i*3+1])) hgrid.set(k, pos[i*3+1]); }
+const quickGround = (lon, lat) => hgrid.get(Math.floor(lon * 2) + ',' + Math.floor(lat * 2)) || 0;
+const H2 = (H2DATA.projects || []).map(([name, iso, lat, lon, st, mw, kt, yr, rt, steel]) =>
+  ({ name, iso, st, mw, kt, yr, rt, steel, ground: new THREE.Vector3(lon, quickGround(lon, lat), -lat), sx: -1, sy: -1, on: false }));
+const H2_REAL = { operating: 1, construction: 1 };
+const H2_ST = { operating: 'operating', construction: 'under construction', planned: 'planned', paused: 'paused', cancelled: 'cancelled' };
+const H2_RT = { e: 'electrolysis', c: 'fossil + carbon capture', b: 'biomass', o: 'other' };
+let h2All = false, pickedH2 = null;
+const fmtMW = v => v == null ? 'size n/a' : v >= 1000 ? (v / 1000).toFixed(1) + ' GW' : Math.round(v * 10) / 10 + ' MW';
+function drawH2() {
+  if (!layers.h2) { for (const h of H2) h.on = false; return; }
+  const dpr = devicePixelRatio; px.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const h of H2) {
+    h.on = false;
+    if (!h2All && !H2_REAL[h.st]) continue;
+    const s = toScreen(h.ground);
+    if (s.behind || s.x < -10 || s.x > innerWidth + 10 || s.y < -10 || s.y > innerHeight + 10) continue;
+    h.on = true; h.sx = s.x; h.sy = s.y - 30;
+    const real = !!H2_REAL[h.st], dim = real ? 1 : h.st === 'planned' ? .5 : .35;
+    px.globalAlpha = dim; px.strokeStyle = '#ffffff'; px.lineWidth = 1;
+    px.beginPath(); px.moveTo(s.x, s.y); px.lineTo(s.x, h.sy); px.stroke();
+    const y = h.sy - 3.5;
+    px.beginPath(); px.arc(s.x, y, 3.5, 0, 7);
+    if (h.st === 'operating') { px.fillStyle = '#ffffff'; px.fill(); }
+    else {
+      px.fillStyle = '#000'; px.fill();
+      if (h.st === 'paused') px.setLineDash([1.5, 1.5]);
+      px.stroke(); px.setLineDash([]);
+      if (h.st === 'construction') { px.fillStyle = '#ffffff'; px.beginPath(); px.arc(s.x, y, 1.3, 0, 7); px.fill(); }
+      if (h.st === 'cancelled') { px.beginPath(); px.moveTo(s.x - 2.2, y - 2.2); px.lineTo(s.x + 2.2, y + 2.2); px.moveTo(s.x + 2.2, y - 2.2); px.lineTo(s.x - 2.2, y + 2.2); px.stroke(); }
+    }
+    if (h.steel) { px.strokeStyle = '#c8e054'; px.beginPath(); px.arc(s.x, y, 5.6, 0, 7); px.stroke(); }   // meant for iron & steel
+    if (h === pickedH2) { px.strokeStyle = '#c8e054'; px.lineWidth = 1.2; px.strokeRect(s.x - 7.5, y - 7.5, 15, 15); }
+    px.globalAlpha = 1;
+  }
+}
+function h2At(x, y) {
+  if (!layers.h2) return null;
+  let best = null, bd = 64;
+  for (const h of H2) { if (!h.on) continue; const d = (h.sx - x) ** 2 + (h.sy - 3.5 - y) ** 2; if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+function selectH2(h) {
+  const c = countries.find(c => isoOf(c) === h.iso && c.bounds);
+  pickedH2 = h;
+  if (!c) return;
+  if (selected !== c) select(c); else showCountry(c);
+  const el = document.getElementById('h2-picked');
+  if (el) { el.closest('details').open = true; el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+
 /* ---------- menu ---------- */
 const menu = document.getElementById('menu'), countryBox = document.getElementById('country');
 const setMenu = open => { document.body.classList.toggle('menu', open); fly.offsetTo = open && innerWidth > 640 ? menu.offsetWidth / 2 : 0; };
@@ -693,9 +764,11 @@ document.querySelectorAll('[data-layer]').forEach(btn => btn.onclick = () => {
   layers[btn.dataset.layer] = !layers[btn.dataset.layer];
   btn.classList.toggle('on', layers[btn.dataset.layer]);
   document.getElementById('plantKey').hidden = !layers.plants;
+  document.getElementById('h2Key').hidden = !layers.h2;
   document.getElementById('tradeKey').hidden = !layers.trade;
   document.getElementById('demandKey').hidden = !layers.demand;
 });
+document.getElementById('h2All').onclick = e => { h2All = !h2All; e.currentTarget.classList.toggle('on', h2All); };
 document.querySelectorAll('[data-mode]').forEach(btn => btn.onclick = () => {
   document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b === btn));
   setMode(btn.dataset.mode);
@@ -714,9 +787,9 @@ const CERT = { high: 'official or primary source', medium: 'reported, estimated 
 const META = WORLD._meta;
 function showCountry(c) {
   const w = worldOf(c), d = deepOf(c);
-  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
+  if (!w && !d && !T[isoOf(c)] && !POLICY.countries[isoOf(c)] && !POLICY.markets[isoOf(c)] && !H2DATA.countries?.[isoOf(c)]) { countryBox.innerHTML = `<div class="grp"><div class="name">${esc(c.name)}</div><div class="hint" style="margin-top:8px">no large steel plants or green projects tracked</div></div>${credit([])}`; return; }
   // sources: dataset credits first, then the research sources, numbered in order of use
-  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source };
+  const srcs = { ...(d?.sources || {}), ...(POLICY.sources || {}), gem: META.gem, leadit: META.leadit, comtrade: TRADE.source, iea_h2: H2DATA.source };
   const used = [];
   const ref = id => { if (!srcs[id]) return ''; if (!used.includes(id)) used.push(id); const s = srcs[id];
     return `<sup><a href="${esc(s.u)}" target="_blank" rel="noopener" title="${esc(s.t)} · ${esc(s.d)}">${used.indexOf(id) + 1}</a></sup>`; };
@@ -733,7 +806,7 @@ function showCountry(c) {
     if (w.project_list.length) figs += fig('project status', statusText(w.projects), true);
     const pl = w.project_list.slice().sort((a, b) => ['operating', 'construction', 'announced', 'paused', 'cancelled', 'finalized'].indexOf(a.status) - ['operating', 'construction', 'announced', 'paused', 'cancelled', 'finalized'].indexOf(b.status));
     folds += fold('green steel projects', pl.map(p => `<div class="row"><div class="k"><span class="st ${p.status}"></span>${esc(p.status === 'finalized' ? 'R&D finished' : p.status)}${p.qualified ? ' · qualifies as green' : ''}</div>
-      <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span></div></div>`).join(''), pl.length);
+      <div class="v">${esc(/not available/i.test(p.name) ? 'unnamed project' : p.name)} <span class="m">— ${esc(p.company)}${p.scale ? ', ' + esc(p.scale.toLowerCase()) : ''}${p.steel_mt ? `, ${p.steel_mt} Mt steel` : p.iron_mt ? `, ${p.iron_mt} Mt iron` : ''}${p.commissioning && !['finalized', 'cancelled', 'operating'].includes(p.status) ? `, planned ${p.commissioning}` : ''}</span>${(() => { const r = H2DATA.reach?.[p.id]; if (!r || !/DRI|hydrogen|H2/i.test(p.tech || '')) return ''; return `<br><span class="m">hydrogen within 150 km: <b class="rh">${fmtMW(r.real_mw)}</b> operating or building · ${fmtMW(r.planned_mw)} planned</span>${ref('iea_h2')}`; })()}</div></div>`).join(''), pl.length);
     const mine = plants.filter(f => f.iso === w.iso).sort((a, b) => b.cap - a.cap);
     folds += fold('steel plants', mine.map(f => `<div class="row" id="plant-${plants.indexOf(f)}"><div class="k"><span class="sq ${f.tr ? 't' : f.st === 'c' ? 'c' : ''}"></span>${esc(f.route)}${f.st === 'c' ? ' · under construction' : ''}${f.tr ? ' · in transition' : ''}</div><div class="v">${esc(f.name)} <span class="m">— ${(f.cap / 1000).toFixed(1)} Mt/y${f.parent ? ', ' + esc(f.parent) : ''}</span></div></div>`).join(''), mine.length);
   }
@@ -761,6 +834,22 @@ function showCountry(c) {
       (sup.granted || []).map(([v, s, c]) => row('granted', v + '.', c, [s])).join('')
       + (sup.funds || []).map(([v, s, c]) => row('available on paper', v + '.', c, [s])).join('')
       + (sup.withdrawn || []).map(([v, s, c]) => row('declined or redirected', v + '.', c, [s])).join(''));
+  }
+  const hz = H2DATA.countries?.[iso];
+  if (hz) {
+    const mw = hz.mw || {}, n = hz.n || {};
+    figs += fig('electrolysis', `${fmtMW(mw.operating || 0)} operating${ref('iea_h2')}<br><span class="m">${fmtMW(mw.construction || 0)} under construction</span>`);
+    const mine = H2.filter(h => h.iso === iso);
+    const pk = pickedH2 && pickedH2.iso === iso ? pickedH2 : null;
+    const line = h => `${esc(h.name)} <span class="m">— ${fmtMW(h.mw)}, ${H2_RT[h.rt]}${h.yr ? ', ' + (h.st === 'operating' ? 'since ' : '') + h.yr : ''}</span>`;
+    let rows = '';
+    if (pk) rows += `<div class="row hl" id="h2-picked"><div class="k"><span class="h2d ${pk.st}"></span>${H2_ST[pk.st]}${pk.steel ? ' · meant for iron & steel' : ''}</div><div class="v">${line(pk)}${ref('iea_h2')}</div></div>`;
+    rows += row('pipeline of projects', `Electrolysis capacity: ${fmtMW(mw.operating || 0)} operating, ${fmtMW(mw.construction || 0)} under construction, ${fmtMW(mw.planned || 0)} planned, ${fmtMW(mw.paused || 0)} paused, ${fmtMW(mw.cancelled || 0)} cancelled. ${n.cancelled || 0} projects cancelled, ${n.paused || 0} paused.`, 'high', ['iea_h2']);
+    const st = mine.filter(h => h.steel).sort((a, b) => (b.mw || 0) - (a.mw || 0));
+    if (st.length) rows += `<div class="row"><div class="k">meant for iron &amp; steel · ${st.length}</div></div>` + st.map(h => `<div class="row"><div class="k"><span class="h2d ${h.st}"></span>${H2_ST[h.st]}</div><div class="v">${line(h)}</div></div>`).join('');
+    const big = mine.filter(h => H2_REAL[h.st] && !h.steel).sort((a, b) => (b.mw || 0) - (a.mw || 0)).slice(0, 6);
+    if (big.length) rows += `<div class="row"><div class="k">largest real projects (other uses)</div></div>` + big.map(h => `<div class="row"><div class="k"><span class="h2d ${h.st}"></span>${H2_ST[h.st]}</div><div class="v">${line(h)}</div></div>`).join('');
+    folds += fold('hydrogen', rows);
   }
   const tr = T[isoOf(c)];
   if (tr) {
@@ -826,8 +915,9 @@ renderer.domElement.addEventListener('pointermove', e => {
   document.getElementById('buyerHover').innerHTML = hotBuyer ? `buyer<b>${esc(hotBuyer.name.toLowerCase())} · ${hotBuyer.deals.length} deal${hotBuyer.deals.length > 1 ? 's' : ''} · ${esc(hotBuyer.sector)}</b>` : '';
   hotArc = hotBuyer ? null : arcAt(e.clientX, e.clientY);
   document.getElementById('tradeHover').innerHTML = hotArc ? `export<b>${esc(cname(hotArc.o))} → ${esc(cname(hotArc.d))} · ${fmt$(hotArc.val)} · ${TRADE.year}${hotArc.mirror ? ' · reported by importer' : ''}</b>` : '';
-  const best = plantAt(e.clientX, e.clientY);
-  renderer.domElement.style.cursor = best || hotArc || hotBuyer ? 'pointer' : '';
+  const best = plantAt(e.clientX, e.clientY), hh = best ? null : h2At(e.clientX, e.clientY);
+  document.getElementById('h2Hover').innerHTML = hh ? `hydrogen<b>${esc(hh.name.toLowerCase())} · ${fmtMW(hh.mw)} · ${H2_ST[hh.st]}${hh.yr ? ' · ' + hh.yr : ''}${hh.steel ? ' · for steel' : ''}</b>` : '';
+  renderer.domElement.style.cursor = best || hh || hotArc || hotBuyer ? 'pointer' : '';
   const ph = document.getElementById('plantHover');
   ph.innerHTML = best ? `plant<b>${esc(best.name.toLowerCase())} · ${(best.cap / 1000).toFixed(1)} Mt/y · ${esc(best.route)}${best.tr ? ' · in transition' : ''}</b>` : '';
 });
@@ -862,6 +952,9 @@ renderer.domElement.addEventListener('pointerup', e => {
   pickedBuyer = null;
   const f = plantAt(e.clientX, e.clientY);
   if (f) return selectPlant(f);
+  const hh = h2At(e.clientX, e.clientY);
+  if (hh) return selectH2(hh);
+  pickedH2 = null;
   const a = arcAt(e.clientX, e.clientY);
   if (a) { const c = countries.find(c => isoOf(c) === a.o && c.bounds); if (c) return select(c); }
   picked = null;
@@ -890,6 +983,7 @@ renderer.setAnimationLoop(t => {
   drawOverlay(t);
   drawTrade(t);
   drawDemand();
+  drawH2();
 });
 </script>
 </body>
